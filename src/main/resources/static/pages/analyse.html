@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes" />
+    <title>弹幕统计分析</title>
+    <link rel="stylesheet" href="../modules/layui/css/layui.css">
+    <link rel="stylesheet" href="../css/public.css">
+    <script src="../modules/layui/layui.js"></script>
+    <script src="../js/public.js"></script>
+    <script src="/pages/dialog/hotListDetail.js"></script>
+    <script src="/pages/dialog/liveDetail.js"></script>
+    </head>
+<body>
+<ul class="layui-nav layui-bg-cyan" lay-filter="demo">
+    <li class="layui-nav-item"><a href="liveChat.html">弹幕列表</a></li>
+    <li class="layui-nav-item layui-this"><a href="analyse.html">弹幕统计</a></li>
+    <li class="layui-nav-item"><a href="liveInfo.html">数据管理</a></li>
+</ul>
+<div class="layuimini-container layuimini-page-anim">
+    <div class="layuimini-main">
+        <fieldset class="table-search-fieldset">
+            <form class="layui-form layui-form-pane" lay-filter="search-form">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <label class="layui-form-label">选择日期</label>
+                        <div class="layui-input-inline">
+                            <select name="liveDate" id="liveDate" lay-verify="required" lay-filter="live-date-select">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">时间间隔</label>
+                        <div class="layui-input-inline">
+                            <select name="intervalMinutes" id="intervalMinutes" lay-verify="required">
+                                <option value="1">1分钟</option>
+                                <option value="2">2分钟</option>
+                                <option value="5" selected>5分钟</option>
+                                <option value="10">10分钟</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">关键字</label>
+                        <div class="layui-input-inline">
+                            <label>
+                                <input type="text" name="keyWords" class="layui-input" placeholder="请输入内容">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <button type="submit" id="submit" class="layui-btn"  lay-submit lay-filter="data-search-btn"><i class="layui-icon"></i>统计</button>
+                    </div>
+                    <div class="layui-inline">
+                        <button id="showDetail" class="layui-btn layui-btn-primary"><i class="layui-icon"></i>详情</button>
+                    </div>
+                </div>
+            </form>
+        </fieldset>
+        <div class="layui-collapse">
+            <div class="layui-colla-item">
+                <h2 class="layui-colla-title">图表</h2>
+                <div class="layui-colla-content layui-show">
+                    <div class="layui-card">
+                        <div class="layui-card-body">
+                            <div id="echarts-hotList" style="width: 100%;min-height:500px"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-colla-item">
+                <h2 class="layui-colla-title">表格</h2>
+                <div class="layui-colla-content layui-show">
+                    <table class="layui-hide" id="analyse_data" lay-filter="currentTableFilter"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    layui.config({
+        base: '/modules/'
+    }).extend({
+        echarts: 'echarts'
+    }).use(['form', 'table', 'echarts', 'element'], function (){
+        const $ = layui.jquery,
+            form = layui.form,
+            table = layui.table,
+            echarts = layui.echarts;
+        let liveInfo = null;
+        initLiveDateSelector((info)=>{
+            liveInfo = info;
+            table.reload('analyse_data', {
+                loading: true,
+                url: '/analyse/queryHotList',
+                where: {
+                    liveDate: info.liveDate,
+                    liveStatus: info.liveStatus,
+                    intervalMinutes: $("#intervalMinutes").val()
+                }
+            });
+        })
+        table.render({
+            elem: '#analyse_data',
+            method:'post',
+            initSort: {
+                field: 'startSecond', //排序字段，对应 cols 设定的各字段名
+                // type: 'desc' //排序方式  asc: 升序、desc: 降序、null: 默认排序
+            },
+            cols: [[
+                {field: 'startSecond', width: 140, title: '弹幕区间', sort: true, templet: (d)=>{
+                    const startTime = d.startTime;
+                    const endTime = d.endTime;
+                    const startSecond = d.startSecond;
+                    const url = liveInfo.url;
+                    if (url && url.indexOf("youtube") > -1 && startSecond != null){
+                    return '<a target="_blank" href="'+ getYtUrl(url, startSecond) +'" data-startTime="'+ startTime +'">'+ startTime + " ~ " + endTime +'</a>';
+                }
+                return startTime + " ~ " + endTime;
+                }},
+                {field: 'count', width: 105, title: '弹幕条数', sort: true, align: "right"},
+                {field: 'messages', minWidth: 350, title: '相关弹幕',templet: (d)=>{
+                    let content = [];
+                    for (let i = 0; i < d.messages.length; i ++){
+                        let message = d.messages[i][0];
+                        const count = d.messages[i][1];
+                        if(message && d.messages[i][2] > 0){
+                            message = getEmoteMssage(message);
+                        }
+                        if(count >= 20){
+                            message = '<span style="font-weight: bold;color: red;">('+ count +')[' + message + ']</span>';
+                        }else if(count >= 10){
+                            message = '<span style="font-weight: bold;color: orangered;">('+ count +')[' + message + ']</span>';
+                        }else if(count >= 5){
+                            message = '<span style="font-weight: bold;color: orange;">('+ count +')[' + message + ']</span>';
+                        }else if(count > 1){
+                            message = '<span style="font-weight: bold;color: burlywood;">('+ count +')[' + message + ']</span>';
+                        }else{
+                            message = '<span style="font-weight: bold;color: #999;">[' + message + ']</span>';
+                        }
+                        content += message;
+                        if(i != d.messages.length - 1){
+                            content += "，"
+                        }
+                    }
+                    return content;
+                }},
+            ]],
+            loading: false,
+            done: function(res){
+                $("#submit").removeClass("layui-btn-disabled");
+                if(!res.data || res.data.length == 0){
+                    layer.msg("该日期暂无弹幕数据或未开播，请选择其他日期");
+                    return false;
+                }
+                echartsHotList.showLoading({text: "数据正在加载中", textColor: "#666"});
+                initEcharts(res.data);
+            }
+        });
+        // 监听搜索操作
+        form.on('submit(data-search-btn)', function (data){
+            if($("#submit").hasClass("layui-btn-disabled")){
+                return false;
+            }
+            $("#submit").addClass("layui-btn-disabled");
+            //执行搜索重载
+            const queryInfo = data.field;
+            queryInfo.liveStatus = liveInfo.liveStatus;
+            table.reload('analyse_data', {where: queryInfo});
+            //加载中
+            return false;
+        });
+        form.on('select(live-date-select)',function (){
+            if($("#submit").hasClass("layui-btn-disabled")){
+                return false;
+            }
+            $("#submit").addClass("layui-btn-disabled");
+            liveInfo = $("#liveDate option:selected").data("liveInfo");
+            const data = form.val("search-form");
+            data.liveStatus = liveInfo.liveStatus;
+            table.reload('analyse_data', {where: data});
+        })
+        //图表
+        const echartsHotList = echarts.init(document.getElementById('echarts-hotList'), 'walden');
+        echartsHotList.on('click',(params) => {
+            const liveDate = $("#liveDate").val();
+            const url = liveInfo.url;
+            const startTime = params.name;
+            const intervalMinutes = $("#intervalMinutes").val()
+            const tr = $('.layui-table a[data-startTime="' + startTime + '"]').closest("tr");
+            showHotListDetailDialog(liveDate, startTime, intervalMinutes, url, tr);
+        })
+        function initEcharts(hotListData){
+            const startTimes = hotListData.map((item) => {
+                return item.startTime;
+            });
+            const counts = hotListData.map((item) => {
+                return item.count;
+            });
+            const optionHotList = {
+                tooltip: {trigger: 'axis'},
+                grid: {left: '3%', right: '4%', bottom: '3%', containLabel: true},
+                toolbox: {feature: {saveAsImage: {}}},
+                xAxis: {type: 'category', boundaryGap: false, data: startTimes},
+                yAxis: {type: 'value'},
+                series: {name: '弹幕数', type: 'line', data: counts}
+            };
+            echartsHotList.setOption(optionHotList);
+            echartsHotList.hideLoading();
+
+            // echarts 窗口缩放自适应
+            window.onresize = function (){
+                echartsHotList.resize();
+            }
+        }
+        $("#showDetail").click(() => {
+            showLiveDetailDialog(liveInfo);
+            return false;
+        })
+    });
+</script>
+</body>
+</html>

@@ -1,3 +1,7 @@
+/log/
+/out/
+/.idea/
+/target/
 # Compiled class file
 *.class
 

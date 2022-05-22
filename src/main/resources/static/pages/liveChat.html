@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes" />
+    <title>弹幕统计分析</title>
+    <link rel="stylesheet" href="../modules/layui/css/layui.css">
+    <link rel="stylesheet" href="../css/public.css">
+    <script src="../modules/layui/layui.js"></script>
+    <script src="../js/public.js"></script>
+    <script src="/pages/dialog/liveDetail.js"></script>
+</head>
+<body>
+<ul class="layui-nav layui-bg-cyan" lay-filter="demo">
+    <li class="layui-nav-item layui-this"><a href="liveChat.html">弹幕列表</a></li>
+    <li class="layui-nav-item"><a href="analyse.html">弹幕统计</a></li>
+    <li class="layui-nav-item"><a href="liveInfo.html">数据管理</a></li>
+    </li>
+</ul>
+<div class="layuimini-container layuimini-page-anim">
+    <div class="layuimini-main" style="min-height: 690px;">
+        <fieldset class="table-search-fieldset">
+            <form class="layui-form layui-form-pane" lay-filter="search-form">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <label class="layui-form-label">选择日期</label>
+                        <div class="layui-input-inline">
+                            <select name="liveDate" id="liveDate" lay-filter="live-date-select">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">关键字</label>
+                        <div class="layui-input-inline">
+                            <input type="text" name="keyWords" class="layui-input" placeholder="请输入内容">
+                        </div>
+                    </div>
+                    <div class="layui-inline ">
+                        <label class="layui-form-label">用户名</label>
+                        <div class="layui-input-inline">
+                            <input type="text" name="authorName" class="layui-input" placeholder="请输入内容">
+                        </div>
+                    </div>
+                    <div class="layui-inline hide">
+                        <label class="layui-form-label">显示日期</label>
+                        <div class="layui-input-block">
+                            <input type="checkbox" name="showDate" lay-skin="switch" lay-filter="show-date-checkbox">
+                        </div>
+                    </div>
+                    <div class="layui-inline hide">
+                        <label class="layui-form-label">自动刷新</label>
+                        <div class="layui-input-block">
+                            <input type="checkbox" name="refersh" lay-skin="switch" lay-filter="refersh-checkbox">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <button id="submit" class="layui-btn" lay-submit lay-filter="search-btn"><i class="layui-icon"></i>查询</button>
+                    </div>
+                    <div class="layui-inline">
+                        <button id="showDetail" class="layui-btn layui-btn-primary"><i class="layui-icon"></i>详情</button>
+                    </div>
+                </div>
+            </form>
+        </fieldset>
+        <table class="layui-hide" id="liveChatData" lay-filter="currentTableFilter">
+        </table>
+    </div>
+</div>
+<script>
+    layui.use(['form', 'table', 'element'], function (){
+        const $ = layui.jquery,
+            form = layui.form,
+            table = layui.table;
+        let liveInfo = null;
+        let interval = null;
+        const cols = [[
+            {field: 'liveDate', width: 110, title: '日期', sort: true, hide: true},
+            {field: 'authorName', width: 180, title: '用户名',templet: (d)=>{
+                if(d.authorImage){
+                    return '<div><img class="header" src="'+ d.authorImage +'=s32-c-k-c0x00ffffff-no-rj">'+ d.authorName +'</div>'
+                }
+                return d.authorName;
+            }},
+            {field: 'message', minWidth: 180, title: '消息',templet: (d)=>{
+                const message = d.message;
+                if(message && d.emotesCount){
+                    return getEmoteMssage(message)
+                }
+                return message;
+            }},
+            {field: 'timeText', width: 90, title: '时间', sort: true, align: "right", templet: (d)=>{
+                const timeText = d.timeText;
+                const url = liveInfo ? liveInfo["url"] : null;
+                if (timeText){
+                    if (url && url.indexOf("youtube") > -1){
+                        return getYtUrlTag(url, timeText);
+                    }
+                    return timeText;
+                }
+                return new Date(d.timestamp / 1000).toTimeString().substr(0, 8);
+            }},
+        ]];
+        table.render({
+            elem: '#liveChatData',
+            method:'post',
+            cols: cols,
+            loading: false,
+            done: function(res){
+                $("#submit").removeClass("layui-btn-disabled");
+            },
+            page: true,
+            limits: [10, 15, 20, 50, 100],
+            limit: 20,
+        });
+        // 监听搜索操作
+        form.on('submit(search-btn)', (data) => {
+            if($("#submit").hasClass("layui-btn-disabled")){
+                return false;
+            }
+            $("#submit").addClass("layui-btn-disabled");
+            //执行搜索重载
+            const queryInfo = data.field;
+            if(liveInfo){
+                queryInfo.liveStatus = liveInfo.liveStatus;
+            }
+            table.reload('liveChatData', {
+                page: {curr: 1},
+                where: queryInfo
+            });
+            if(data.field.refersh == "on"){
+                $("input[name='refersh']").prop("checked",false);
+                form.render();
+                clearInterval(interval);
+            }
+            return false;
+        });
+        form.on('select(live-date-select)', () => {
+            const data = form.val("search-form");
+            liveInfo = $("#liveDate option:selected").data("liveInfo");
+            if(liveInfo){
+                data.liveStatus = liveInfo.liveStatus;
+                if(liveInfo.liveStatus == "1"){
+                    $("input[name='refersh']").closest(".layui-inline").removeClass("hide");
+                    $("input[name='refersh']").prop("checked",true);
+                    form.render();
+                    setRefershInterval();
+                }else{
+                    $("input[name='refersh']").closest(".layui-inline").addClass("hide");
+                }
+                $("input[name='showDate']").closest(".layui-inline").addClass("hide");
+            }else{
+                $("input[name='showDate']").closest(".layui-inline").removeClass("hide");
+            }
+            table.reload('liveChatData', {
+                page: {curr: 1},
+                where: data
+            });
+        })
+        $("#showDetail").click(() => {
+            showLiveDetailDialog(liveInfo);
+            return false;
+        })
+        form.on('switch(refersh-checkbox)',(res) => {
+            const checked = $(res.elem).prop("checked");
+            if(checked){
+                setRefershInterval();
+            }else {
+                clearInterval(interval);
+            }
+        })
+        form.on('switch(show-date-checkbox)',(res) => {
+            const checked = $(res.elem).prop("checked");
+            cols[0][0]["hide"] = !checked;
+            table.reload('liveChatData', {cols: cols});
+        })
+        initLiveDateSelector((info)=>{
+            liveInfo = info;
+            table.reload('liveChatData', {
+                loading: true,
+                url: '/liveChat/queryList',
+                where: {
+                    liveDate: info.liveDate,
+                    liveStatus: info.liveStatus
+                }
+            });
+            if(liveInfo && liveInfo.liveStatus == "1"){
+                $("input[name='refersh']").closest(".layui-inline").removeClass("hide");
+                $("input[name='refersh']").prop("checked",true);
+                form.render();
+                setRefershInterval();
+            }
+        },true)
+        function setRefershInterval(){
+            interval = setInterval(()=>{
+                if(liveInfo && liveInfo.liveStatus == "1"){
+                    table.reload('liveChatData');
+                }else{
+                    clearInterval(interval);
+                }
+            }, 8000)
+        }
+    });
+</script>
+</body>
+</html>

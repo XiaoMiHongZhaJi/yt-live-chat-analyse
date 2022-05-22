@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes" />
+    <title>弹幕统计分析</title>
+    <link rel="stylesheet" href="../modules/layui/css/layui.css">
+    <link rel="stylesheet" href="../css/public.css">
+    <script src="../modules/layui/layui.js"></script>
+    <script src="../js/public.js"></script>
+    <script src="/pages/dialog/liveDetail.js"></script>
+    <style>
+        .tableBar a{
+           margin: 2px;
+        }
+    </style>
+</head>
+<body>
+<ul class="layui-nav layui-bg-cyan" lay-filter="demo">
+    <li class="layui-nav-item"><a href="liveChat.html">弹幕列表</a></li>
+    <li class="layui-nav-item"><a href="analyse.html">弹幕统计</a></li>
+    <li class="layui-nav-item layui-this"><a href="liveInfo.html">数据管理</a></li>
+</ul>
+<div class="layuimini-container layuimini-page-anim">
+    <div class="layuimini-main">
+        <table class="layui-hide" id="liveInfo" lay-filter="currentTableFilter"></table>
+    </div>
+    <div class="layuimini-main">
+        <fieldset class="table-search-fieldset">
+            <legend>新增条目</legend>
+            <form class="layui-form layui-form-pane" lay-filter="search-form" action="/liveInfo/addLiveInfo" method="post" enctype="multipart/form-data" role="form">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <label class="layui-form-label">开播地址</label>
+                        <div class="layui-input-inline">
+                            <input type="text" name="url" lay-verify="required" autocomplete="off" class="layui-input" placeholder="url，必填">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">开播日期</label>
+                        <div class="layui-input-inline">
+                            <input type="text" name="liveDate" autocomplete="off" id="liveDate" class="layui-input" placeholder="非必填">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">标题</label>
+                        <div class="layui-input-inline">
+                            <input type="text" name="title" autocomplete="off" class="layui-input" placeholder="非必填">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">直播状态</label>
+                        <div class="layui-input-inline">
+                            <select name="liveStatus" class="">
+                                <option value="">自动判断</option>
+                                <option value="0">直播预告</option>
+                                <option value="1">直播中</option>
+                                <option value="2">已结束</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!--<div class="layui-inline">
+                        <label class="layui-form-label">Json文件</label>
+                        <div class="layui-input-inline">
+                            <input type="file" name="file" id="file" autocomplete="off" style="line-height: 38px;">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <div class="layui-text">
+                            <p style="margin: 0">* 以2万条弹幕数据为例，提交预计需要1-2分钟，请耐心等待</p>
+                        </div>
+                    </div>-->
+                    <div class="layui-inline">
+                        <label class="layui-form-label">补全信息</label>
+                        <div class="layui-input-block">
+                            <input type="checkbox" name="getLiveInfo" checked lay-skin="switch">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">下载弹幕</label>
+                        <div class="layui-input-block">
+                            <input type="checkbox" name="downLiveChat" checked lay-skin="switch">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <button class="layui-btn" id="submit" lay-submit lay-filter="add-btn">提交</button>
+                    </div>
+                </div>
+            </form>
+        </fieldset>
+    </div>
+</div>
+<script type="text/html" id="currentTableBar">
+    <div class="tableBar" style="padding-top: 5px;">
+        <a lay-event="download" id="download" title="导入弹幕数据">
+            <svg t="1653157120457" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8022" width="16" height="16"><path d="M828.975746 894.125047 190.189132 894.125047c-70.550823 0-127.753639-57.18542-127.753639-127.752616L62.435493 606.674243c0-17.634636 14.308891-31.933293 31.93227-31.933293l63.889099 0c17.634636 0 31.93227 14.298658 31.93227 31.933293l0 95.821369c0 35.282574 28.596292 63.877843 63.87682 63.877843L765.098927 766.373455c35.281551 0 63.87682-28.595268 63.87682-63.877843l0-95.821369c0-17.634636 14.298658-31.933293 31.943526-31.933293l63.877843 0c17.634636 0 31.933293 14.298658 31.933293 31.933293l0 159.699212C956.729385 836.939627 899.538849 894.125047 828.975746 894.125047L828.975746 894.125047zM249.938957 267.509636c12.921287-12.919241 33.884738-12.919241 46.807049 0l148.97087 148.971893L445.716876 94.89323c0-17.634636 14.300704-31.94762 31.933293-31.94762l63.875796 0c17.637706 0 31.945573 14.312984 31.945573 31.94762l0 321.588299 148.97087-148.971893c12.921287-12.919241 33.875528-12.919241 46.796816 0l46.814212 46.818305c12.921287 12.922311 12.921287 33.874505 0 46.807049L552.261471 624.930025c-1.140986 1.137916-21.664416 13.68365-42.315758 13.69286-20.87647 0.010233-41.878806-12.541641-43.020816-13.69286L203.121676 361.13499c-12.922311-12.933567-12.922311-33.884738 0-46.807049L249.938957 267.509636 249.938957 267.509636z" p-id="8023" fill="#515151"></path></svg>
+        </a>
+        <a lay-event="edit" title="编辑信息">
+            <svg t="1653155523891" class="icon" viewBox="0 0 1069 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6972" width="16" height="16"><path d="M746.027944 190.083832q-11.241517 0-18.906188-7.664671t-12.774451-17.884232-7.664671-20.9501-2.55489-17.884232l0-125.700599 2.043912 0q9.197605 0 17.373253 2.043912t19.928144 9.708583 28.61477 21.461078 42.411178 36.279441q27.592814 24.526946 43.944112 41.389222t25.037924 28.61477 10.730539 19.928144 2.043912 14.307385l0 16.351297-150.227545 0zM1063.856287 671.42515q3.065868 8.175649 4.087824 20.439122t-10.219561 23.50499q-5.10978 5.10978-9.197605 9.708583t-7.153693 7.664671q-4.087824 4.087824-7.153693 6.131737l-86.866267-85.844311q6.131737-5.10978 13.796407-12.263473t12.774451-11.241517q12.263473-11.241517 26.570858-9.708583t23.50499 6.642715q10.219561 5.10978 21.972056 17.884232t17.884232 27.081836zM703.105788 766.467066q22.483034 0 37.812375-12.263473l-198.259481 206.43513-282.05988 0q-19.417166 0-42.411178-11.241517t-42.922156-29.636727-33.213573-42.411178-13.285429-49.56487l0-695.952096q0-21.461078 9.708583-44.966068t26.570858-42.411178 38.323353-31.680639 44.966068-12.774451l391.409182 0 0 127.744511q0 19.417166 6.131737 41.9002t18.906188 41.389222 33.213573 31.680639 49.053892 12.774451l149.205589 0 0 338.267465-140.007984 145.117764q11.241517-16.351297 11.241517-35.768463 0-26.570858-18.906188-45.477046t-45.477046-18.906188l-383.233533 0q-26.570858 0-44.966068 18.906188t-18.39521 45.477046 18.39521 44.966068 44.966068 18.39521l383.233533 0zM319.872255 383.233533q-26.570858 0-44.966068 18.906188t-18.39521 45.477046 18.39521 44.966068 44.966068 18.39521l383.233533 0q26.570858 0 45.477046-18.39521t18.906188-44.966068-18.906188-45.477046-45.477046-18.906188l-383.233533 0zM705.149701 895.233533l13.285429-13.285429 25.548902-25.548902q15.329341-15.329341 33.724551-34.235529t36.790419-37.301397q43.944112-43.944112 99.129741-98.107784l85.844311 85.844311-99.129741 99.129741-36.790419 36.790419-33.724551 33.724551q-14.307385 14.307385-24.015968 24.526946t-10.730539 11.241517q-5.10978 4.087824-11.241517 8.686627t-12.263473 7.664671-18.906188 7.664671-26.05988 8.686627-25.548902 7.153693-18.39521 4.087824q-12.263473 2.043912-16.351297-3.065868t-2.043912-17.373253q1.021956-6.131737 4.087824-18.39521t7.153693-25.037924 7.664671-24.015968 5.620758-15.329341q6.131737-13.285429 16.351297-23.50499z" p-id="6973" fill="#515151"></path></svg>
+        </a>
+        <a lay-event="delete" title="删除弹幕数据">
+            <svg t="1653156981229" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7726" width="16" height="16"><path d="M861.184 192.512q30.72 0 50.688 10.24t31.744 25.6 16.384 33.28 4.608 33.28q0 7.168-0.512 11.264t-0.512 7.168l0 6.144-67.584 0 0 537.6q0 20.48-8.192 39.424t-23.552 33.28-37.376 23.04-50.688 8.704l-456.704 0q-26.624 0-50.176-8.192t-40.448-23.04-26.624-35.84-9.728-47.616l0-527.36-63.488 0q-1.024-1.024-1.024-5.12-1.024-5.12-1.024-31.744 0-13.312 6.144-29.696t18.432-30.208 31.744-23.04 46.08-9.216l91.136 0 0-62.464q0-26.624 18.432-45.568t45.056-18.944l320.512 0q35.84 0 49.664 18.944t13.824 45.568l0 63.488q21.504 1.024 46.08 1.024l47.104 0zM384 192.512l320.512 0 0-64.512-320.512 0 0 64.512zM352.256 840.704q32.768 0 32.768-41.984l0-475.136-63.488 0 0 475.136q0 21.504 6.656 31.744t24.064 10.24zM545.792 839.68q17.408 0 23.552-9.728t6.144-31.232l0-475.136-63.488 0 0 475.136q0 40.96 33.792 40.96zM738.304 837.632q18.432 0 24.576-9.728t6.144-31.232l0-473.088-64.512 0 0 473.088q0 40.96 33.792 40.96z" p-id="7727" fill="#515151"></path></svg>
+        </a>
+    </div>
+</script>
+<script>
+    layui.use(['form', 'table', 'laydate', 'element'], function (){
+        const $ = layui.jquery,
+            form = layui.form,
+            table = layui.table,
+            laydate = layui.laydate;
+        let downloadingIdList = [];
+        let interval = null;
+        const liveStatusDict = ["直播预告", "直播中", "已结束"]
+        table.render({
+            elem: '#liveInfo',
+            method:'post',
+            cols: [[
+                {field: 'id', width: 40, title: 'id', hide: true},
+                {field: 'liveDate', width: 120, title: '日期', sort: true},
+                {field: 'title', title: '标题', templet: (d)=>{
+                    const title = d.title ? d.title.replace("陈一发儿：", "") : "-";
+                    return getATag(d.url, title);
+                }},
+                {field: 'liveStatus', width: 90, title: '直播状态', templet: (d)=>{
+                    if(d.liveStatus){
+                        return liveStatusDict[d.liveStatus];
+                    }
+                    return "-";
+                }},
+                {field: 'viewCount', width: 85, title: '播放数', align: 'right', templet: (d)=>{
+                    return formatNum(d.viewCount);
+                }},
+                {field: 'likeCount', width: 75, title: '点赞数', align: 'right', templet: (d)=>{
+                    return formatNum(d.likeCount);
+                }},
+                {field: 'chatCount', width: 75, title: '弹幕数', align: 'right', templet: (d)=>{
+                    return '<span class="chatCount" data-id='+ d.id +'>'+ formatNum(d.chatCount) +'</span>';
+                }},
+                {title: '操作', width: 100, toolbar: '#currentTableBar', align: 'center'}
+            ]],
+            loading: true,
+            url: '/liveInfo/queryList',
+            page: true,
+            limits: [10, 15, 35, 50, 100],
+            limit: 10,
+            done: (obj) => {
+                const list = obj.data;
+                //初始化按钮状态
+                for(let i = 0; i < list.length; i++){
+                    const data = list[i];
+                    if(data.downloadStatus == "1"){
+                        //下载中
+                        const tr = $(".layui-table tr[data-index=" + i + "]");
+                        const downBtn = tr.find("#download");
+                        downBtn.addClass("layui-btn-disabled");
+                        downBtn.html('下载中<img src="/img/loading.gif" style="height: 12px;margin-bottom: 3px;">');
+                        downloadingIdList.push(data.id);
+                    }
+                }
+                if(downloadingIdList.length > 0){
+                    setDownloadingInterval();
+                }
+            }
+        });
+        table.on('tool(currentTableFilter)', function (obj){
+            const data = obj.data;
+            const tr = obj.tr;
+            if(obj.event === 'download'){
+                if(tr.find("#download").hasClass("layui-btn-disabled")){
+                    return ;
+                }
+                if(data.liveStatus == "2" && data.chatCount > 0){
+                    layer.confirm('该日期已存在'+ data.chatCount +'条弹幕，确定要重新下载吗？已有的弹幕数据将会被覆盖！', function (){
+                        downloadChatData(obj);
+                    })
+                }else{
+                    downloadChatData(obj);
+                }
+            }else if(obj.event === 'edit'){
+                showLiveDetailDialog(data, true);
+            }else if(obj.event === 'delete'){
+                layer.confirm('确定删除该条数据吗？', function (){
+                    const delInfo = {
+                        id: data["id"],
+                        liveStatus: "4"
+                    };
+                    $.ajax({
+                        url: '/liveInfo/updateLiveInfo',
+                        data: delInfo,
+                        method: 'post'
+                    }).then(() => {
+                        obj.del();
+                        layer.closeAll();
+                        layer.msg("删除成功");
+                    }, () => {
+                        layer.msg("删除失败");
+                    })
+                });
+            }
+        });
+        form.on('submit(add-btn)', (data) => {
+            if($("#submit").hasClass("layui-btn-disabled")){
+                return false;
+            }
+            $("#submit").addClass("layui-btn-disabled");
+            //执行搜索重载
+            const liveInfo = data.field;
+            liveInfo.url = $.trim(liveInfo.url);
+            liveInfo.title = $.trim(liveInfo.title);
+            liveInfo.downLiveChat = $("input[name='downLiveChat']").prop("checked");
+            liveInfo.getLiveInfo = $("input[name='getLiveInfo']").prop("checked");
+            $.ajax({
+                url: '/liveInfo/addLiveInfo',
+                data: liveInfo,
+                method: 'post'
+            }).then((result) => {
+                if(result == 0){
+                    layer.msg("已存在该URL，新增失败");
+                }else{
+                    layer.msg("新增成功");
+                    table.reload('liveInfo');
+                }
+                $("#submit").removeClass("layui-btn-disabled");
+            }, () => {
+                $("#submit").removeClass("layui-btn-disabled");
+                layer.msg("新增失败");
+            })
+            return false;
+        });
+        laydate.render({
+            elem: '#liveDate'
+        });
+        function setDownloadingInterval(){
+            if(interval != null){
+                clearInterval(interval);
+            }
+            interval = setInterval(()=>{
+                $.ajax({
+                    url: '/liveInfo/queryListById',
+                    data: {id: downloadingIdList.join(",")},
+                    method: 'post'
+                }).then((result) => {
+                    let tr;
+                    let hasDownloading = false;
+                    for(let i = 0; i < result.length; i++){
+                        const data = result[i];
+                        tr = $(".layui-table tr[data-index=" + i + "]");
+                        if(data.downloadStatus == "1"){
+                            //下载中
+                            hasDownloading = true;
+                            $(".chatCount[data-id="+ data.id +"]").text(formatNum(data.chatCount));
+                        }else if(data.downloadStatus == "2"){
+                            //下载完成
+                            tr = $(".chatCount[data-id="+ data.id +"]").closest("tr");
+                            const downBtn = tr.find("#download");
+                            downBtn.html("下载完成");
+                            downBtn.removeClass("layui-btn-disabled");
+                        }
+                    }
+                    if(!hasDownloading){
+                        clearInterval(interval);
+                    }
+                }, () => {
+                    clearInterval(interval);
+                })
+            }, 5000)
+        }
+        function downloadChatData(obj){
+            const data = obj.data;
+            const tr = obj.tr;
+            const downBtn = tr.find("#download");
+            downBtn.addClass("layui-btn-disabled");
+            downBtn.html('下载中<img src="/img/loading.gif" style="height: 12px;margin-bottom: 3px;">');
+            data["updateTime"] = null;
+            $.ajax({
+                url: '/liveInfo/downloadChatData',
+                data: {
+                    url: data.url,
+                    id: data.id,
+                    liveDate: data.liveDate
+                },
+                method: 'post'
+            }).then(() => {
+                downloadingIdList.push(data.id);
+                setDownloadingInterval();
+                layer.msg("正在下载中...");
+            }, () => {
+                downBtn.removeClass("layui-btn-disabled");
+                downBtn.text("下载弹幕");
+                layer.msg("弹幕下载失败");
+            })
+        }
+    })
+</script>
+</body>
+</html>
