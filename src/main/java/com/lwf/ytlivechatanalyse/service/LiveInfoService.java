@@ -1,7 +1,6 @@
 package com.lwf.ytlivechatanalyse.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.lwf.ytlivechatanalyse.bean.LiveChatData;
 import com.lwf.ytlivechatanalyse.bean.LiveInfo;
 import com.lwf.ytlivechatanalyse.bean.LivingChatData;
@@ -11,7 +10,6 @@ import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 import java.util.Date;
 import java.util.List;
@@ -28,15 +26,14 @@ public class LiveInfoService {
     @Autowired
     LivingChatDataMapper livingChatDataMapper;
 
-    public Long selectCountByUrl(String url){
+    public void insertOrUpdate(LiveInfo liveInfo){
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("url", url);
-        queryWrapper.notIn("live_status", "4");
-        return liveInfoMapper.selectCount(queryWrapper);
-    }
-
-    public int insert(LiveInfo liveInfo){
-        return liveInfoMapper.insert(liveInfo);
+        queryWrapper.eq("url", liveInfo.getUrl());
+        Long count = liveInfoMapper.selectCount(queryWrapper);
+        if(count > 0){
+            liveInfoMapper.delete(queryWrapper);
+        }
+        liveInfoMapper.insert(liveInfo);
     }
 
     public List<LiveInfo> queryListBySelector(){
@@ -47,12 +44,12 @@ public class LiveInfoService {
         return liveInfoMapper.selectList(queryWrapper);
     }
 
-    public List<LiveInfo> queryListById(String id){
+    public List<LiveInfo> queryListById(String ids){
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.orderByDesc("live_date");
-        if(StringUtils.isNotBlank(id)){
-            queryWrapper.in("id", id.split(","));
+        if(StringUtils.isNotBlank(ids)){
+            queryWrapper.in("id", ids.split(","));
         }
         return liveInfoMapper.selectList(queryWrapper);
     }

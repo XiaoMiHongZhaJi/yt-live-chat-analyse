@@ -4,54 +4,59 @@ function showLiveDetailDialog(liveInfo, showEdit){
     const table = layui.table;
     const $ = layui.jquery;
     const form = layui.form;
-    showDialog("/pages/dialog/liveDetail.html", {
-        title: "开播详情",
-        success: function(layero){
-            if(showEdit){
-                $(layero).find(".getInfo").removeClass("hide");
-                $(layero).find(".live-detail-div :input").each((i, e) => {
-                    const input = $(e);
-                    if (!input.prop("disabled")){
-                        input.next("span.detail").addClass("hide");
-                        input.removeClass("hide");
-                    }
-                })
-            }else{
-                $(layero).find(".layui-layer-btn0").addClass("hide");
-            }
-            $(layero).find(".getInfo").click(() => {
-                if($(this).hasClass("layui-btn-disabled")){
-                    return;
+    let height = null;
+    $.ajax({url: '/liveInfo/queryLiveInfo', data: {id: liveInfo.id}}).then((data) => {
+        if(showEdit || data.timeline){
+            height = Math.min(650, size[1]) + 'px';
+        }
+        showDialog("/pages/dialog/liveDetail.html", {
+            title: "开播详情",
+            area: [null, height],
+            success: function(layero){
+                if(showEdit){
+                    $(layero).find(".getInfo").removeClass("layui-hide");
+                    $(layero).find(".live-detail-div :input").each((i, e) => {
+                        const input = $(e);
+                        if (!input.prop("disabled")){
+                            input.next("span.detail").addClass("layui-hide");
+                            input.removeClass("layui-hide");
+                        }
+                    })
+                }else{
+                    $(layero).find(".layui-layer-btn0").addClass("layui-hide");
                 }
-                const url = $(layero).find("input[name='url']").val();
-                if(!url){
-                    layer.msg("请先输入URL");
-                    return;
-                }
-                $.ajax({url: '/liveInfo/getLiveInfoByUrl', data: {url: url}}).then((data) => {
-                    $(layero).find(".getInfo").addClass("layui-btn-disabled");
-                    if(!data || !data.viewCount){
-                        layer.msg("获取信息失败，请尝试更换节点或稍后再试");
+                $(layero).find(".getInfo").click(() => {
+                    if($(this).hasClass("layui-btn-disabled")){
                         return;
                     }
-                    if(data.viewCount){
-                        $(layero).find("input[name='viewCount']").val(formatNum(data.viewCount));
+                    const url = $(layero).find("input[name='url']").val();
+                    if(!url){
+                        layer.msg("请先输入URL");
+                        return;
                     }
-                    if(data.likeCount){
-                        $(layero).find("input[name='likeCount']").val(formatNum(data.likeCount));
-                    }
-                    if(data.title){
-                        $(layero).find("input[name='title']").val(data.title);
-                    }
-                    if(data.liveDate && !$(layero).find("input[name='liveDate']").val()){
-                        $(layero).find("input[name='liveDate']").val(data.liveDate);
-                    }
-                    layer.msg("已获取最新数据");
-                }, () => {
-                    layer.msg("获取信息失败");
-                })
-            });
-            $.ajax({url: '/liveInfo/queryLiveInfo', data: {id: liveInfo.id}}).then((data) => {
+                    $.ajax({url: '/liveInfo/getLiveInfo', data: {url: url}}).then((data) => {
+                        $(layero).find(".getInfo").addClass("layui-btn-disabled");
+                        if(!data || !data.viewCount){
+                            layer.msg("获取信息失败，请尝试更换节点或稍后再试");
+                            return;
+                        }
+                        if(data.viewCount){
+                            $(layero).find("input[name='viewCount']").val(formatNum(data.viewCount));
+                        }
+                        if(data.likeCount){
+                            $(layero).find("input[name='likeCount']").val(formatNum(data.likeCount));
+                        }
+                        if(data.title){
+                            $(layero).find("input[name='title']").val(data.title);
+                        }
+                        if(data.liveDate && !$(layero).find("input[name='liveDate']").val()){
+                            $(layero).find("input[name='liveDate']").val(data.liveDate);
+                        }
+                        layer.msg("已获取最新数据");
+                    }, () => {
+                        layer.msg("获取信息失败");
+                    })
+                });
                 $(".live-detail-div :input").each((i, e) => {
                     const input = $(e);
                     const name = input.attr("name");
@@ -76,35 +81,35 @@ function showLiveDetailDialog(liveInfo, showEdit){
                     }else{
                         input.next("span.detail").text("-");
                         if(name == "timeline" && !showEdit){
-                            input.closest(".layui-form-item").addClass("hide");
+                            input.closest(".layui-form-item").addClass("layui-hide");
                         }
                     }
                 })
-            })
-        },
-        btn: ["更新", "关闭"],
-        yes: function (){
-            const liveInfo = form.val("live-info-form");
-            const viewCount = liveInfo.viewCount;
-            const chatCount = liveInfo.chatCount;
-            if(viewCount){
-                liveInfo["viewCount"] = viewCount.replace(/,|-| /g,"");
+            },
+            btn: ["更新", "关闭"],
+            yes: function (){
+                const liveInfo = form.val("live-info-form");
+                const viewCount = liveInfo.viewCount;
+                const chatCount = liveInfo.chatCount;
+                if(viewCount){
+                    liveInfo["viewCount"] = viewCount.replace(/,|-| /g,"");
+                }
+                if(chatCount){
+                    liveInfo["chatCount"] = chatCount.replace(/,|-| /g,"");
+                }
+                $.ajax({
+                    url: '/liveInfo/updateLiveInfo',
+                    data: liveInfo,
+                    method: 'post'
+                }).then(() => {
+                    layer.closeAll();
+                    layer.msg("更新成功");
+                    table.reload('liveInfo');
+                }, () => {
+                    layer.msg("更新失败");
+                })
             }
-            if(chatCount){
-                liveInfo["chatCount"] = chatCount.replace(/,|-| /g,"");
-            }
-            $.ajax({
-                url: '/liveInfo/updateLiveInfo',
-                data: liveInfo,
-                method: 'post'
-            }).then(() => {
-                layer.closeAll();
-                layer.msg("更新成功");
-                table.reload('liveInfo');
-            }, () => {
-                layer.msg("更新失败");
-            })
-        }
+        })
     })
 }
 

@@ -1,8 +1,8 @@
 
 function showHotListDetailDialog(liveDate, startTime, intervalMinutes, url, tr){
-    var size = getWindowSize();
-    var $ = layui.jquery;
-    var table = layui.table;
+    const size = getWindowSize();
+    const $ = layui.jquery;
+    const table = layui.table;
     showDialog("/pages/dialog/hotListDetail.html", {
         title: "弹幕详情",
         area: [Math.min(800, size[0]) + 'px', Math.min(600, size[1]) + 'px'],
@@ -28,15 +28,15 @@ function showHotListDetailDialog(liveDate, startTime, intervalMinutes, url, tr){
                         return d.authorName;
                     }},
                     {field: 'message', minWidth: 180, title: '消息',templet: (d)=>{
-                        var message = d.message;
-                        if(message && d.emotesCount){
+                            const message = d.message;
+                            if(message && d.emotesCount){
                             return getEmoteMssage(message);
                         }
                         return message;
                     }},
                     {field: 'timeText', width: 90, title: '时间', sort: true, align: "right",templet: (d)=>{
-                        var timeText = d.timeText;
-                        if(url && timeText){
+                            const timeText = d.timeText;
+                            if(url && timeText){
                             return getYtUrlTag(url, timeText);
                         }
                         return timeText;

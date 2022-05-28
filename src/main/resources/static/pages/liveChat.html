@@ -41,13 +41,13 @@
                             <input type="text" name="authorName" class="layui-input" placeholder="请输入内容">
                         </div>
                     </div>
-                    <div class="layui-inline hide">
+                    <div class="layui-inline layui-hide">
                         <label class="layui-form-label">显示日期</label>
                         <div class="layui-input-block">
                             <input type="checkbox" name="showDate" lay-skin="switch" lay-filter="show-date-checkbox">
                         </div>
                     </div>
-                    <div class="layui-inline hide">
+                    <div class="layui-inline layui-hide">
                         <label class="layui-form-label">自动刷新</label>
                         <div class="layui-input-block">
                             <input type="checkbox" name="refersh" lay-skin="switch" lay-filter="refersh-checkbox">
@@ -74,7 +74,7 @@
         let liveInfo = null;
         let interval = null;
         const cols = [[
-            {field: 'liveDate', width: 110, title: '日期', sort: true, hide: true},
+            {field: 'liveDate', width: 120, title: '日期', sort: true, hide: true},
             {field: 'authorName', width: 180, title: '用户名',templet: (d)=>{
                 if(d.authorImage){
                     return '<div><img class="header" src="'+ d.authorImage +'=s32-c-k-c0x00ffffff-no-rj">'+ d.authorName +'</div>'
@@ -140,16 +140,16 @@
             if(liveInfo){
                 data.liveStatus = liveInfo.liveStatus;
                 if(liveInfo.liveStatus == "1"){
-                    $("input[name='refersh']").closest(".layui-inline").removeClass("hide");
+                    $("input[name='refersh']").closest(".layui-inline").removeClass("layui-hide");
                     $("input[name='refersh']").prop("checked",true);
                     form.render();
                     setRefershInterval();
                 }else{
-                    $("input[name='refersh']").closest(".layui-inline").addClass("hide");
+                    $("input[name='refersh']").closest(".layui-inline").addClass("layui-hide");
                 }
-                $("input[name='showDate']").closest(".layui-inline").addClass("hide");
+                $("input[name='showDate']").closest(".layui-inline").addClass("layui-hide");
             }else{
-                $("input[name='showDate']").closest(".layui-inline").removeClass("hide");
+                $("input[name='showDate']").closest(".layui-inline").removeClass("layui-hide");
             }
             table.reload('liveChatData', {
                 page: {curr: 1},
@@ -170,7 +170,7 @@
         })
         form.on('switch(show-date-checkbox)',(res) => {
             const checked = $(res.elem).prop("checked");
-            cols[0][0]["hide"] = !checked;
+            cols[0][0]["layui-hide"] = !checked;
             table.reload('liveChatData', {cols: cols});
         })
         initLiveDateSelector((info)=>{
@@ -184,7 +184,7 @@
                 }
             });
             if(liveInfo && liveInfo.liveStatus == "1"){
-                $("input[name='refersh']").closest(".layui-inline").removeClass("hide");
+                $("input[name='refersh']").closest(".layui-inline").removeClass("layui-hide");
                 $("input[name='refersh']").prop("checked",true);
                 form.render();
                 setRefershInterval();

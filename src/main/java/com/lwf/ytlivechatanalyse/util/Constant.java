@@ -49,4 +49,9 @@ public class Constant {
      * 例如 ”？“ 在 ”？？？！“ 中占比 75%，判断可以合并为 “？？？”
      */
     public static final int ANALYSE_MERGE_WORD_PROPORTION = 60;
+
+    /**
+     * 下载弹幕异常退出时重试次数
+     */
+    public static final int DOWNLOAD_FAILURE_RETRY_COUNT = 2;
 }

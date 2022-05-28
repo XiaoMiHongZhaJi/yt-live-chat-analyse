@@ -36,6 +36,7 @@ public class LiveInfo {
     public static final String DOWNLOAD_STATUS_NONE = "0";//未下载
     public static final String DOWNLOAD_STATUS_DOWNLOADING = "1";//下载中
     public static final String DOWNLOAD_STATUS_DONE = "2";//已下载
+    public static final String DOWNLOAD_STATUS_FILURE = "4";//下载失败
 
 
 }

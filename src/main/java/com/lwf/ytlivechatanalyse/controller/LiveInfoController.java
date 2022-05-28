@@ -7,7 +7,8 @@ import com.lwf.ytlivechatanalyse.service.LiveChatDataService;
 import com.lwf.ytlivechatanalyse.service.LiveInfoService;
 import com.lwf.ytlivechatanalyse.util.*;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateFormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +23,8 @@ import java.util.Map;
 @RequestMapping("/liveInfo")
 public class LiveInfoController {
 
+    private final Logger logger = LoggerFactory.getLogger(LiveInfoController.class);
+
     @Autowired
     LiveChatDataService liveChatDataService;
 
@@ -30,11 +33,8 @@ public class LiveInfoController {
 
     @PostMapping("/addLiveInfo")
     public int addLiveInfo(LiveInfo liveInfo, boolean downLiveChat, boolean getLiveInfo, MultipartFile file){
-        Long count = liveInfoService.selectCountByUrl(liveInfo.getUrl());
-        if(count > 0){
-            return 0;
-        }
         if(getLiveInfo){
+            //补全信息
             Map<String, String> info = CurlUtil.getLiveInfo(liveInfo.getUrl());
             if(StringUtils.isNotBlank(info.get("viewCount"))){
                 liveInfo.setViewCount(Integer.valueOf(info.get("viewCount")));
@@ -53,9 +53,9 @@ public class LiveInfoController {
             }
         }
         if(StringUtils.isBlank(liveInfo.getLiveDate())){
-            liveInfo.setLiveDate(DateFormatUtils.format(new Date(), "yyyy-MM-dd"));
+            liveInfo.setLiveDate(DateUtil.getNowDate());
         }
-        liveInfoService.insert(liveInfo);
+        liveInfoService.insertOrUpdate(liveInfo);
         if(downLiveChat){
             downloadChatData(liveInfo);
         }
@@ -77,14 +77,13 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/queryListById")
-    public List<LiveInfo> queryListById(String id){
+    public List<LiveInfo> queryListById(String ids){
         //用于定时器更新
-        List<LiveInfo> liveInfoList = liveInfoService.queryListById(id);
+        List<LiveInfo> liveInfoList = liveInfoService.queryListById(ids);
         for(LiveInfo liveInfo : liveInfoList){
             if(LiveInfo.DOWNLOAD_STATUS_DOWNLOADING.equals(liveInfo.getDownloadStatus())){
                 //下载中
-                Long count = liveChatDataService.selectCount(liveInfo);
-                liveInfo.setChatCount(Math.toIntExact(count));
+                liveInfo.setChatCount(liveChatDataService.selectCount(liveInfo));
                 LiveInfo updateLiveInfo = new LiveInfo();
                 updateLiveInfo.setId(liveInfo.getId());
                 updateLiveInfo.setChatCount(liveInfo.getChatCount());
@@ -116,8 +115,8 @@ public class LiveInfoController {
         liveInfoService.updateLiveInfoById(liveInfo);
     }
 
-    @RequestMapping("/getLiveInfoByUrl")
-    public Map<String,String> getLiveInfoByUrl(String url){
+    @RequestMapping("/getLiveInfo")
+    public Map<String,String> getLiveInfo(String url){
         Map<String, String> info = CurlUtil.getLiveInfo(url);
         return info;
     }
@@ -141,14 +140,50 @@ public class LiveInfoController {
             liveChatDataService.deleteByLiveDate(liveDate);
         }
         new Thread(() ->{
-            CmdUtil.execCmd("chat_downloader " + url, "GBK", true, false);
-            //下载完成
-            Long count = liveChatDataService.selectCount(liveInfo);
-            updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
-            updateLiveInfo.setLiveStatus(LiveInfo.LIVE_STATUS_DONE);
-            updateLiveInfo.setChatCount(Math.toIntExact(count));
-            updateLiveInfo.setUpdateTime(new Date());
-            liveInfoService.updateLiveInfoById(updateLiveInfo);
+            if(LiveInfo.LIVE_STATUS_DONE.equals(liveInfo.getLiveStatus())){
+                //本身是已结束的状态，说明不是实时，无需更新状态
+                CmdUtil.execCmd("chat_downloader " + url + " --output output/" + liveDate + ".json", true, false);
+                updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
+                updateLiveInfo.setChatCount(liveChatDataService.selectCount(liveInfo));
+                updateLiveInfo.setUpdateTime(new Date());
+                liveInfoService.updateLiveInfoById(updateLiveInfo);
+                logger.info("下载弹幕信息完成");
+                return;
+            }
+            //直播中或预告状态
+            for (int i = 0; i < Constant.DOWNLOAD_FAILURE_RETRY_COUNT; i++) {
+                String fileName = DateUtil.getNowDateTime() + "_living.json";
+                CmdUtil.execCmd("chat_downloader " + url + " --output output/" + fileName, true, false);
+                //命令行结束，判断直播是否结束
+                Map<String, String> newInfo = CurlUtil.getLiveInfo(url);
+                String newLiveStatus = newInfo.get("liveStatus");
+                if(StringUtils.isBlank(newLiveStatus)){
+                    logger.error("获取直播信息失败");
+                    updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_FILURE);
+                    liveInfoService.updateLiveInfoById(updateLiveInfo);
+                    return;
+                }
+                updateLiveInfo.setLiveStatus(newLiveStatus);
+                updateLiveInfo.setChatCount(liveChatDataService.selectCount(liveInfo));
+                updateLiveInfo.setViewCount(Integer.valueOf(newInfo.get("viewCount")));
+                updateLiveInfo.setLikeCount(newInfo.get("likeCount"));
+                updateLiveInfo.setUpdateTime(new Date());
+                if(LiveInfo.LIVE_STATUS_DONE.equals(newLiveStatus)){
+                    //直播结束，更新状态
+                    updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
+                    liveInfoService.updateLiveInfoById(updateLiveInfo);
+                    logger.info("直播已结束");
+                    return;
+                }
+                if(i == Constant.DOWNLOAD_FAILURE_RETRY_COUNT - 1){
+                    //多次失败
+                    updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_FILURE);
+                    liveInfoService.updateLiveInfoById(updateLiveInfo);
+                    logger.error("下载失败，重试次数" + (i + 1) + "，时间：" + DateUtil.getNowDateTime());
+                }else{
+                    logger.error("第" + (i + 1) + "次下载失败，正在重试，时间：" + DateUtil.getNowDateTime());
+                }
+            }
         }).start();
         return "1";
     }

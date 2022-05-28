@@ -31,9 +31,6 @@ dl.layui-anim dd {
 .layui-form-pane label.layui-form-label{
     text-align: right;
 }
-.hide{
-    display: none !important;
-}
 a{
     cursor: pointer;
     color: green;

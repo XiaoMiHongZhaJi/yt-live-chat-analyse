@@ -76,16 +76,16 @@ public class LiveChatDataService {
         return liveChatDataMapper.updateTimestamp(liveDate, timestamp);
     }
 
-    public Long selectCount(LiveInfo liveInfo){
+    public int selectCount(LiveInfo liveInfo){
         if(LiveInfo.LIVE_STATUS_DONE.equals(liveInfo.getLiveStatus())){
             QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("live_date", liveInfo.getLiveDate());
-            return liveChatDataMapper.selectCount(queryWrapper);
+            return Math.toIntExact(liveChatDataMapper.selectCount(queryWrapper));
         }
         //直播中，直播预告
         QueryWrapper<LivingChatData> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("live_date", liveInfo.getLiveDate());
-        return livingChatDataMapper.selectCount(queryWrapper);
+        return Math.toIntExact(livingChatDataMapper.selectCount(queryWrapper));
     }
 
     public void insertBatch(List<LiveChatData> batchList){

@@ -63,7 +63,7 @@
                 <div class="layui-colla-content layui-show">
                     <div class="layui-card">
                         <div class="layui-card-body">
-                            <div id="echarts-hotList" style="width: 100%;min-height:500px"></div>
+                            <div id="echarts-hotList" class="layui-hide" style="width: 100%;min-height:500px;"></div>
                         </div>
                     </div>
                 </div>
@@ -88,6 +88,7 @@
             table = layui.table,
             echarts = layui.echarts;
         let liveInfo = null;
+        let echartsHotList = null;
         initLiveDateSelector((info)=>{
             liveInfo = info;
             table.reload('analyse_data', {
@@ -151,10 +152,13 @@
                 $("#submit").removeClass("layui-btn-disabled");
                 if(!res.data || res.data.length == 0){
                     layer.msg("该日期暂无弹幕数据或未开播，请选择其他日期");
+                    echartsHotList.hideLoading();
                     return false;
                 }
-                echartsHotList.showLoading({text: "数据正在加载中", textColor: "#666"});
-                initEcharts(res.data);
+                if(!echartsHotList){
+                    initEcharts();
+                }
+                refershEcharts(res.data);
             }
         });
         // 监听搜索操作
@@ -168,6 +172,7 @@
             queryInfo.liveStatus = liveInfo.liveStatus;
             table.reload('analyse_data', {where: queryInfo});
             //加载中
+            echartsHotList.showLoading({text: "数据正在加载中", textColor: "#666"});
             return false;
         });
         form.on('select(live-date-select)',function (){
@@ -179,18 +184,27 @@
             const data = form.val("search-form");
             data.liveStatus = liveInfo.liveStatus;
             table.reload('analyse_data', {where: data});
+            echartsHotList.showLoading({text: "数据正在加载中", textColor: "#666"});
         })
-        //图表
-        const echartsHotList = echarts.init(document.getElementById('echarts-hotList'), 'walden');
-        echartsHotList.on('click',(params) => {
-            const liveDate = $("#liveDate").val();
-            const url = liveInfo.url;
-            const startTime = params.name;
-            const intervalMinutes = $("#intervalMinutes").val()
-            const tr = $('.layui-table a[data-startTime="' + startTime + '"]').closest("tr");
-            showHotListDetailDialog(liveDate, startTime, intervalMinutes, url, tr);
-        })
-        function initEcharts(hotListData){
+        function initEcharts(){
+            //图表
+            $("#echarts-hotList").removeClass("layui-hide");
+            echartsHotList = echarts.init($("#echarts-hotList")[0]);
+            echartsHotList.showLoading({text: "数据正在加载中", textColor: "#666"});
+            echartsHotList.on('click',(params) => {
+                const liveDate = $("#liveDate").val();
+                const url = liveInfo.url;
+                const startTime = params.name;
+                const intervalMinutes = $("#intervalMinutes").val()
+                const tr = $('.layui-table a[data-startTime="' + startTime + '"]').closest("tr");
+                showHotListDetailDialog(liveDate, startTime, intervalMinutes, url, tr);
+            })
+            // echarts 窗口缩放自适应
+            window.onresize = function (){
+                echartsHotList.resize();
+            }
+        }
+        function refershEcharts(hotListData){
             const startTimes = hotListData.map((item) => {
                 return item.startTime;
             });
@@ -198,20 +212,26 @@
                 return item.count;
             });
             const optionHotList = {
+                title: {
+                    text: liveInfo.liveDate + "_" + liveInfo.title,
+                    left: "2.5%",
+                    textStyle: {
+                        margenLeft: 15,
+                        fontSize: 15,
+                        fontFamily: "Consolas",
+                        color: 'gray'
+                    }
+                },
+                legend: {data: ['弹幕条数'], top: 25},
                 tooltip: {trigger: 'axis'},
                 grid: {left: '3%', right: '4%', bottom: '3%', containLabel: true},
-                toolbox: {feature: {saveAsImage: {}}},
+                toolbox: {feature: {saveAsImage: {}}, top: 25},
                 xAxis: {type: 'category', boundaryGap: false, data: startTimes},
                 yAxis: {type: 'value'},
-                series: {name: '弹幕数', type: 'line', data: counts}
+                series: [{name: '弹幕条数', type: 'line', data: counts, smooth: true}]
             };
             echartsHotList.setOption(optionHotList);
             echartsHotList.hideLoading();
-
-            // echarts 窗口缩放自适应
-            window.onresize = function (){
-                echartsHotList.resize();
-            }
         }
         $("#showDetail").click(() => {
             showLiveDetailDialog(liveInfo);

@@ -1,6 +1,22 @@
 package com.lwf.ytlivechatanalyse.util;
 
+import org.apache.commons.lang3.time.DateFormatUtils;
+
+import java.util.Date;
+
 public class DateUtil {
+
+    public static String getNowDate(){
+        return DateFormatUtils.format(new Date(), "yyyy-MM-dd");
+    }
+
+    public static String getNowTime(){
+        return DateFormatUtils.format(new Date(), "hh:mm:ss");
+    }
+
+    public static String getNowDateTime(){
+        return DateFormatUtils.format(new Date(), "yyyy-MM-dd_hh-mm-ss");
+    }
     /**
      * xxx秒转x时x分x秒
      */

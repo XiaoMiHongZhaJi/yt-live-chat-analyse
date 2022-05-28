@@ -149,20 +149,6 @@ public class CurlUtil {
     }
     public static String execCurl(String url){
         String cmd = "curl -X GET " + url;
-        return CmdUtil.execCmd(cmd, "UTF-8", false, true);
-    }
-
-    public static String execCurls(String... args){
-        String[] cmds = {"curl", "", "-X", "GET"};
-        if(args == null || args.length == 0){
-            return null;
-        }
-        if(args.length > 0){
-            cmds[1] = args[0];
-        }
-        if(args.length > 1){
-            cmds[3] = args[1].toUpperCase();
-        }
-        return CmdUtil.execCmds(cmds, "UTF-8", false, true);
+        return CmdUtil.execCmd(cmd, false, true, "UTF-8");
     }
 }
