@@ -2,20 +2,24 @@ package com.lwf.ytlivechatanalyse.util;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 
-import java.util.Date;
+import java.util.Calendar;
 
 public class DateUtil {
 
+    public static void main(String[] args) {
+        System.out.printf(getNowDateTime());
+    }
+
     public static String getNowDate(){
-        return DateFormatUtils.format(new Date(), "yyyy-MM-dd");
+        return DateFormatUtils.format(Calendar.getInstance(), "yyyy-MM-dd");
     }
 
     public static String getNowTime(){
-        return DateFormatUtils.format(new Date(), "hh:mm:ss");
+        return DateFormatUtils.format(Calendar.getInstance(), "HH:mm:ss");
     }
 
     public static String getNowDateTime(){
-        return DateFormatUtils.format(new Date(), "yyyy-MM-dd_hh-mm-ss");
+        return DateFormatUtils.format(Calendar.getInstance(), "yyyy-MM-dd_HH-mm-ss");
     }
     /**
      * xxx秒转x时x分x秒

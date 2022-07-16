@@ -23,7 +23,7 @@ public class AnalyseController {
     EmotesDataService emotesDataService;
 
     @RequestMapping("/queryHotList")
-    public Result<HotList> queryList(LiveChatData liveChatData, Integer intervalMinutes, String liveStatus){
+    public Result<HotList> queryHotList(LiveChatData liveChatData, Integer intervalMinutes, String liveStatus){
         if(StringUtils.isBlank(liveChatData.getLiveDate())){
             return new Result<>();
         }

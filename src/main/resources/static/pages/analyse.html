@@ -59,19 +59,29 @@
         </fieldset>
         <div class="layui-collapse">
             <div class="layui-colla-item">
-                <h2 class="layui-colla-title">图表</h2>
+                <h2 class="layui-colla-title">实时密度</h2>
                 <div class="layui-colla-content layui-show">
                     <div class="layui-card">
                         <div class="layui-card-body">
-                            <div id="echarts-hotList" class="layui-hide" style="width: 100%;min-height:500px;"></div>
+                            <div id="echarts-density" class="layui-hide" style="width: 100%;min-height:500px;"></div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="layui-colla-item">
-                <h2 class="layui-colla-title">表格</h2>
+                <h2 class="layui-colla-title">往期对比</h2>
                 <div class="layui-colla-content layui-show">
-                    <table class="layui-hide" id="analyse_data" lay-filter="currentTableFilter"></table>
+                    <div class="layui-card">
+                        <div class="layui-card-body">
+                            <div id="echarts-compare" class="layui-hide" style="width: 100%;min-height:900px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-colla-item">
+                <h2 class="layui-colla-title">弹幕列表</h2>
+                <div class="layui-colla-content layui-show">
+                    <table class="layui-hide" id="table-list"></table>
                 </div>
             </div>
         </div>
@@ -88,10 +98,11 @@
             table = layui.table,
             echarts = layui.echarts;
         let liveInfo = null;
-        let echartsHotList = null;
+        let echartsDensity = null;
+        let echartsCompare = null;
         initLiveDateSelector((info)=>{
             liveInfo = info;
-            table.reload('analyse_data', {
+            table.reload('table-list', {
                 loading: true,
                 url: '/analyse/queryHotList',
                 where: {
@@ -102,7 +113,7 @@
             });
         })
         table.render({
-            elem: '#analyse_data',
+            elem: '#table-list',
             method:'post',
             initSort: {
                 field: 'startSecond', //排序字段，对应 cols 设定的各字段名
@@ -152,13 +163,14 @@
                 $("#submit").removeClass("layui-btn-disabled");
                 if(!res.data || res.data.length == 0){
                     layer.msg("该日期暂无弹幕数据或未开播，请选择其他日期");
-                    echartsHotList.hideLoading();
+                    echartsDensity.hideLoading();
                     return false;
                 }
-                if(!echartsHotList){
+                if(!echartsDensity){
                     initEcharts();
                 }
-                refershEcharts(res.data);
+                refershDensity(res.data);
+                refershCompare(res.data);
             }
         });
         // 监听搜索操作
@@ -170,9 +182,9 @@
             //执行搜索重载
             const queryInfo = data.field;
             queryInfo.liveStatus = liveInfo.liveStatus;
-            table.reload('analyse_data', {where: queryInfo});
+            table.reload('table-list', {where: queryInfo});
             //加载中
-            echartsHotList.showLoading({text: "数据正在加载中", textColor: "#666"});
+            echartsDensity.showLoading({text: "数据正在加载中", textColor: "#666"});
             return false;
         });
         form.on('select(live-date-select)',function (){
@@ -183,15 +195,27 @@
             liveInfo = $("#liveDate option:selected").data("liveInfo");
             const data = form.val("search-form");
             data.liveStatus = liveInfo.liveStatus;
-            table.reload('analyse_data', {where: data});
-            echartsHotList.showLoading({text: "数据正在加载中", textColor: "#666"});
+            table.reload('table-list', {where: data});
+            echartsDensity.showLoading({text: "数据正在加载中", textColor: "#666"});
         })
         function initEcharts(){
             //图表
-            $("#echarts-hotList").removeClass("layui-hide");
-            echartsHotList = echarts.init($("#echarts-hotList")[0]);
-            echartsHotList.showLoading({text: "数据正在加载中", textColor: "#666"});
-            echartsHotList.on('click',(params) => {
+            $("#echarts-density").removeClass("layui-hide");
+            echartsDensity = echarts.init($("#echarts-density")[0]);
+            echartsDensity.showLoading({text: "数据正在加载中", textColor: "#666"});
+            echartsDensity.on('click',(params) => {
+                const liveDate = $("#liveDate").val();
+                const url = liveInfo.url;
+                const startTime = params.name;
+                const intervalMinutes = $("#intervalMinutes").val()
+                const tr = $('.layui-table a[data-startTime="' + startTime + '"]').closest("tr");
+                showHotListDetailDialog(liveDate, startTime, intervalMinutes, url, tr);
+            })
+
+            $("#echarts-compare").removeClass("layui-hide");
+            echartsCompare = echarts.init($("#echarts-compare")[0]);
+            echartsCompare.showLoading({text: "数据正在加载中", textColor: "#666"});
+            echartsCompare.on('click',(params) => {
                 const liveDate = $("#liveDate").val();
                 const url = liveInfo.url;
                 const startTime = params.name;
@@ -201,17 +225,18 @@
             })
             // echarts 窗口缩放自适应
             window.onresize = function (){
-                echartsHotList.resize();
+                echartsDensity.resize();
+                echartsCompare.resize();
             }
         }
-        function refershEcharts(hotListData){
+        function refershDensity(hotListData){
             const startTimes = hotListData.map((item) => {
                 return item.startTime;
             });
             const counts = hotListData.map((item) => {
                 return item.count;
             });
-            const optionHotList = {
+            const optionDensity = {
                 title: {
                     text: liveInfo.liveDate + "_" + liveInfo.title,
                     left: "2.5%",
@@ -230,8 +255,83 @@
                 yAxis: {type: 'value'},
                 series: [{name: '弹幕条数', type: 'line', data: counts, smooth: true}]
             };
-            echartsHotList.setOption(optionHotList);
-            echartsHotList.hideLoading();
+            echartsDensity.setOption(optionDensity);
+            echartsDensity.hideLoading();
+        }
+        function refershCompare(hotListData){
+            const startTimes = hotListData.map((item) => {
+                return item.startTime;
+            });
+            const totalcounts = hotListData.map((item) => {
+                return item.totalCount;
+            });
+            const optionDensity = {
+                title: {
+                    text: liveInfo.liveDate + "_" + liveInfo.title,
+                    left: "2.5%",
+                    textStyle: {
+                        margenLeft: 15,
+                        fontSize: 15,
+                        fontFamily: "Consolas",
+                        color: 'gray'
+                    }
+                },
+                legend: {data: ['本期累计条数'], top: 25},
+                tooltip: {trigger: 'axis'},
+                grid: {left: '3%', right: '4%', bottom: '3%', containLabel: true},
+                toolbox: {feature: {saveAsImage: {}}, top: 25},
+                xAxis: {type: 'category', boundaryGap: false, data: startTimes},
+                yAxis: {type: 'value'},
+                series: [
+                    {name: '本期累计条数', type: 'line', data: totalcounts, smooth: true}
+                ]
+            };
+            echartsCompare.setOption(optionDensity);
+            echartsCompare.hideLoading();
+            //上期
+            $.ajax({url: '/liveInfo/queryLastLiveInfo', data: {liveDate: liveInfo.liveDate}}).then((lastLiveDate) => {
+                if(!lastLiveDate){
+                    return ;
+                }
+                $.ajax({
+                    url: '/analyse/queryHotList',
+                    data: {
+                        liveDate: lastLiveDate,
+                        liveStatus: "2",
+                        intervalMinutes: $("#intervalMinutes").val()
+                    }
+                }).then((lastData) => {
+                    const lastTotalCount = lastData.data.map((item) => {
+                        return item.totalCount;
+                    });
+                    const lastSeries = {name: lastLiveDate, type: 'line', data: lastTotalCount, smooth: true};
+                    optionDensity.series.push(lastSeries);
+                    optionDensity.legend.data.push(lastLiveDate);
+                    echartsCompare.setOption(optionDensity);
+                })
+                //上上期
+                $.ajax({url: '/liveInfo/queryLastLiveInfo', data: {liveDate: lastLiveDate}}).then((lastLiveDate) => {
+                    if(!lastLiveDate){
+                        return ;
+                    }
+                    $.ajax({
+                        url: '/analyse/queryHotList',
+                        data: {
+                            liveDate: lastLiveDate,
+                            liveStatus: "2",
+                            intervalMinutes: $("#intervalMinutes").val()
+                        }
+                    }).then((lastData) => {
+                        const lastTotalCount = lastData.data.map((item) => {
+                            return item.totalCount;
+                        });
+                        const lastSeries = {name: lastLiveDate, type: 'line', data: lastTotalCount, smooth: true};
+                        optionDensity.series.push(lastSeries);
+                        optionDensity.legend.data.push(lastLiveDate);
+                        echartsCompare.setOption(optionDensity);
+                    })
+                })
+            })
         }
         $("#showDetail").click(() => {
             showLiveDetailDialog(liveInfo);

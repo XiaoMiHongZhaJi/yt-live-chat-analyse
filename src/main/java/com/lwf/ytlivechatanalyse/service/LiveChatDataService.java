@@ -127,6 +127,8 @@ public class LiveChatDataService {
         int startSecond = 0;
         //间隔秒数
         int intervalSeconds = intervalMinutes == null || intervalMinutes < 1 ? 60 : intervalMinutes * 60;
+        //累计条数
+        int totalCount = 0;
         //组装数据
         List<LiveChatData> liveChatList = new ArrayList<>();
         for (int i = 0; i < liveChatAll.size(); i++){
@@ -140,6 +142,8 @@ public class LiveChatDataService {
             if (sendtime >  startSecond + intervalSeconds){
                 //超出时间段
                 HotList hotList = getHotList(startSecond, intervalSeconds, liveChatList);
+                totalCount += liveChatList.size();
+                hotList.setTotalCount(totalCount);
                 hotListList.add(hotList);
                 liveChatList.clear();
                 startSecond += intervalSeconds;
@@ -148,6 +152,8 @@ public class LiveChatDataService {
             if(i == liveChatAll.size() - 1){
                 //最后一个区间
                 HotList hotList = getHotList(startSecond, intervalSeconds, liveChatList);
+                totalCount += liveChatList.size();
+                hotList.setTotalCount(totalCount);
                 hotListList.add(hotList);
                 liveChatList.clear();
             }

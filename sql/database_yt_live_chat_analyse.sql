@@ -45,7 +45,7 @@ CREATE TABLE yt_live_chat_analyse.living_chat_data (
 #直播信息表
 CREATE TABLE yt_live_chat_analyse.live_info (
     id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
-    live_date VARCHAR(30) NOT NULL COMMENT '开播日期',
+    live_date VARCHAR(30) DEFAULT NULL COMMENT '开播日期',
     url VARCHAR(200) DEFAULT NULL COMMENT '开播地址',
     title VARCHAR(200) DEFAULT NULL COMMENT '标题',
     img VARCHAR(200) DEFAULT NULL COMMENT '标题图片地址',

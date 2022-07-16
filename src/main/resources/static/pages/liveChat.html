@@ -42,12 +42,6 @@
                         </div>
                     </div>
                     <div class="layui-inline layui-hide">
-                        <label class="layui-form-label">显示日期</label>
-                        <div class="layui-input-block">
-                            <input type="checkbox" name="showDate" lay-skin="switch" lay-filter="show-date-checkbox">
-                        </div>
-                    </div>
-                    <div class="layui-inline layui-hide">
                         <label class="layui-form-label">自动刷新</label>
                         <div class="layui-input-block">
                             <input type="checkbox" name="refersh" lay-skin="switch" lay-filter="refersh-checkbox">
@@ -147,13 +141,14 @@
                 }else{
                     $("input[name='refersh']").closest(".layui-inline").addClass("layui-hide");
                 }
-                $("input[name='showDate']").closest(".layui-inline").addClass("layui-hide");
+                cols[0][0]["hide"] = true;
             }else{
-                $("input[name='showDate']").closest(".layui-inline").removeClass("layui-hide");
+                cols[0][0]["hide"] = false;
             }
             table.reload('liveChatData', {
                 page: {curr: 1},
-                where: data
+                where: data,
+                cols: cols
             });
         })
         $("#showDetail").click(() => {
@@ -167,11 +162,6 @@
             }else {
                 clearInterval(interval);
             }
-        })
-        form.on('switch(show-date-checkbox)',(res) => {
-            const checked = $(res.elem).prop("checked");
-            cols[0][0]["layui-hide"] = !checked;
-            table.reload('liveChatData', {cols: cols});
         })
         initLiveDateSelector((info)=>{
             liveInfo = info;
