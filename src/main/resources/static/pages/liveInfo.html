@@ -138,7 +138,7 @@
                     return formatNum(d.likeCount);
                 }},
                 {field: 'chatCount', width: 75, title: '弹幕数', align: 'right', templet: (d)=>{
-                    return '<span class="chatCount" data-id='+ d.id +'>'+ formatNum(d.chatCount) +'</span>';
+                    return getChatCount(d);
                 }},
                 {title: '操作', width: 100, toolbar: '#currentTableBar', align: 'center'}
             ]],
@@ -169,11 +169,8 @@
             const data = obj.data;
             const tr = obj.tr;
             if(obj.event === 'download'){
-                if(tr.find("#download").hasClass("layui-btn-disabled")){
-                    return false;
-                }
-                if(data.liveStatus == "2" && data.chatCount > 0){
-                    layer.confirm('该日期已存在'+ data.chatCount +'条弹幕，确定要重新下载吗？已有的弹幕数据将会被覆盖！', function (){
+                if(data.liveStatus == "2" && data.liveChatCount > 0){
+                    layer.confirm('该日期已存在'+ data.liveChatCount +'条弹幕，确定要重新下载吗？已有的弹幕数据将会被覆盖！', function (){
                         downloadChatData(obj);
                     })
                 }else{
@@ -217,12 +214,8 @@
                 data: liveInfo,
                 method: 'post'
             }).then((result) => {
-                if(result == 0){
-                    layer.msg("已存在该URL，新增失败");
-                }else{
-                    layer.msg("新增成功");
-                    table.reload('liveInfo');
-                }
+                layer.msg("新增成功");
+                table.reload('liveInfo');
                 $("#submit").removeClass("layui-btn-disabled");
             }, () => {
                 $("#submit").removeClass("layui-btn-disabled");
@@ -233,25 +226,31 @@
         laydate.render({
             elem: '#liveDate'
         });
-        function updateStatus(downBtn, downloadStatus){
+        function getChatCount(data){
+            var content = '<span class="chatCount" data-id='+ data.id;
+            if(data.platform == "t"){
+                return  content + '>'+ formatNum(data.livingChatCount) +'</span>';
+            }
+            if(data.liveChatCount){
+                return content + '>'+ formatNum(data.liveChatCount) +'</span>';
+            }
+            return content + ' style="color: blue;">'+ formatNum(data.livingChatCount) +'</span>';
+        }
+        function updateStatus(downBtn, downloadStatus, liveChatCount){
             downBtn.find(".icon").addClass("layui-hide");
             if(downloadStatus == "1"){
                 //正在导入弹幕数据
-                downBtn.addClass("layui-btn-disabled");
                 downBtn.find(".loading").removeClass("layui-hide");
                 downBtn.attr("title", "正在导入弹幕数据");
-            }else if(downloadStatus == "2"){
+            }else if(downloadStatus == "2" && liveChatCount > 0){
                 //导入完成
-                downBtn.removeClass("layui-btn-disabled");
                 downBtn.find(".done").removeClass("layui-hide");
                 downBtn.attr("title", "已导入弹幕数据");
             }else if(downloadStatus == "4"){
                 //导入失败
-                downBtn.removeClass("layui-btn-disabled");
                 downBtn.find(".error").removeClass("layui-hide");
                 downBtn.attr("title", "导入失败");
             }else{
-                downBtn.removeClass("layui-btn-disabled");
                 downBtn.find(".down").removeClass("layui-hide");
                 downBtn.attr("title", "导入弹幕数据");
             }
@@ -263,7 +262,7 @@
             interval = setInterval(()=>{
                 $.ajax({
                     url: '/liveInfo/queryListById',
-                    data: {id: downloadingIdList.join(",")},
+                    data: {ids: downloadingIdList.join(",")},
                     method: 'post'
                 }).then((result) => {
                     let tr;
@@ -272,11 +271,11 @@
                         const data = result[i];
                         tr = $(".chatCount[data-id="+ data.id +"]").closest("tr");
                         const downBtn = tr.find("#download");
-                        updateStatus(downBtn, data.downloadStatus);
+                        updateStatus(downBtn, data.downloadStatus, data.liveChatCount);
                         if(data.downloadStatus == "1"){
                             //正在导入弹幕数据
                             hasDownloading = true;
-                            tr.find(".chatCount").text(formatNum(data.chatCount));
+                            tr.find(".chatCount").html(getChatCount(data));
                         }
                     }
                     if(!hasDownloading){

@@ -146,12 +146,12 @@ function initLiveDateSelector(callback, showAll){
         layer.msg("系统出错，请检查数据库连接状态是否正常");
     })
 }
-function formatNum(number){
-    if(number){
-        if(isNaN(number)){
-            return number;
+function formatNum(string){
+    if(string){
+        if(isNaN(string)){
+            return string;
         }
-        return parseInt(number).toLocaleString();
+        return parseInt(string).toLocaleString();
     }
     return "-";
 }

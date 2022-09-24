@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -41,9 +42,6 @@ public class LiveChatDataService {
 
     @Autowired
     EmotesDataService emotesDataService;
-
-    @Autowired
-    LiveInfoService liveInfoService;
 
     public List<LiveChatData> selectList(LiveChatData liveChatData, boolean isAsc){
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
@@ -76,15 +74,17 @@ public class LiveChatDataService {
         return liveChatDataMapper.updateTimestamp(liveDate, timestamp);
     }
 
-    public int selectCount(LiveInfo liveInfo){
-        if(LiveInfo.LIVE_STATUS_DONE.equals(liveInfo.getLiveStatus())){
-            QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("live_date", liveInfo.getLiveDate());
-            return Math.toIntExact(liveChatDataMapper.selectCount(queryWrapper));
-        }
+    public int selectCount(String liveDate){
+        //录像
+        QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("live_date", liveDate);
+        return Math.toIntExact(liveChatDataMapper.selectCount(queryWrapper));
+    }
+
+    public int selectLivingCount(String liveDate){
         //直播中，直播预告
         QueryWrapper<LivingChatData> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("live_date", liveInfo.getLiveDate());
+        queryWrapper.eq("live_date", liveDate);
         return Math.toIntExact(livingChatDataMapper.selectCount(queryWrapper));
     }
 
@@ -112,15 +112,16 @@ public class LiveChatDataService {
     }
 
     public List<HotList> queryHotList(LiveChatData liveChatData, Integer intervalMinutes, String liveStatus){
-        List<LiveChatData> liveChatAll;
-        if("1".equals(liveStatus)){
-            //直播中
-            liveChatAll = selectLivingList(liveChatData, true);
-        }else {
+        List<LiveChatData> liveChatAll = null;
+        if(LiveInfo.DOWNLOAD_STATUS_DONE.equals(liveStatus)){
+            //直播结束
             liveChatAll = selectList(liveChatData, true);
         }
+        if(CollectionUtils.isEmpty(liveChatAll)){
+            liveChatAll = selectLivingList(liveChatData, true);
+        }
         List<HotList> hotListList = new ArrayList<>();
-        if (liveChatAll.size() == 0){
+        if(CollectionUtils.isEmpty(liveChatAll)){
             return hotListList;
         }
         //开始秒数，第一条弹幕的发送时间
@@ -308,15 +309,12 @@ public class LiveChatDataService {
             startSecond = Integer.parseInt(split[0]);
         }
         int endSecond = startSecond + intervalMinutes * 60;
-        List<LiveChatData> liveChatAll = null;
+        List<LiveChatData> liveChatAll = liveChatDataMapper.selectHotListDeail(liveDate, startSecond, endSecond);;
         LiveInfo queryInfo = new LiveInfo();
         queryInfo.setLiveDate(liveDate);
-        LiveInfo liveInfo = liveInfoService.selectOne(queryInfo);
-        if("1".equals(liveInfo.getLiveStatus())){
+        if(CollectionUtils.isEmpty(liveChatAll)){
             //直播中
             liveChatAll = livingChatDataMapper.selectHotListDeail(liveDate, startSecond, endSecond);
-        }else {
-            liveChatAll = liveChatDataMapper.selectHotListDeail(liveDate, startSecond, endSecond);
         }
         return liveChatAll;
     }
@@ -325,5 +323,39 @@ public class LiveChatDataService {
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("live_date", liveDate);
         liveChatDataMapper.delete(queryWrapper);
+    }
+
+    public void addLivingChatList(List<LivingChatData> livingChatList) {
+        if(livingChatList.size() == 1){
+            LivingChatData livingChatData = livingChatList.get(0);
+            livingChatData.setLiveDate(DateUtil.getNowDate());
+            logger.info(livingChatData.showDetail());
+            livingChatDataMapper.insert(livingChatData);
+            return;
+        }
+        SqlSession sqlSession = null;
+        try{
+            sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH);
+            for (LivingChatData livingChatData : livingChatList){
+                livingChatData.setLiveDate(DateUtil.getNowDate());
+                logger.info(livingChatData.showDetail());
+                sqlSession.insert("com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper.insert", livingChatData);
+            }
+            sqlSession.flushStatements();
+        }catch (Exception e){
+            logger.error(e.getMessage());
+            for (LivingChatData livingChatData : livingChatList) {
+                try {
+                    livingChatDataMapper.insert(livingChatData);
+                }catch (Exception e1){
+                    logger.error("批量插入出错，已改为单个插入，错误数据：");
+                    logger.error(livingChatData.toString());
+                    logger.error(e1.getMessage());
+                }
+            }
+        }finally {
+            if(sqlSession != null)
+                sqlSession.close();
+        }
     }
 }

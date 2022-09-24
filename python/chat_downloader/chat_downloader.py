@@ -371,15 +371,16 @@ def run(propagate_interrupt=False, **kwargs):
             def callback(item):
                 chat.print_formatted(item)
 
-        cursor.execute("select start_timestamp, live_status, title, live_date from live_info where url = '" + url + "'")
+        cursor.execute("select start_timestamp, live_status, title, live_date, id from live_info where url = '" + url + "' order by live_date desc limit 1")
         # 获取所有记录列表
         result = cursor.fetchone()
         startTimestamp = result[0]
         liveStatus = result[1]
         title = result[2] if result[2] is not None else chat.title
+        id = result[4]
         if liveDate is None:
             liveDate = result[3] if result[3] is not None else time.strftime('%Y-%m-%d', time.localtime(time.time()))
-        cursor.execute("update live_info set live_date = '" + liveDate + "', title = '" + title + "' where url = '" + url + "'")
+        cursor.execute("update live_info set live_date = '" + liveDate + "', title = '" + title + "' where id = '" + str(id) + "'")
         db.commit()
 
         is_first = True

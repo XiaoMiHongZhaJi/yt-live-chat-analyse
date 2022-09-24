@@ -1,19 +1,30 @@
 package com.lwf.ytlivechatanalyse.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
+@Component
 public class CmdUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(CmdUtil.class);
     public static void main(String[] args){
         String ping = "ping 127.0.0.1";
         logger.info(execCmd(ping));
+    }
+
+    public static String proxy;
+
+    @Value("${proxy}")
+    public void setProxy(String proxy) {
+        CmdUtil.proxy = proxy;
     }
 
     public static String execCmd(String cmd){
@@ -56,5 +67,16 @@ public class CmdUtil {
             logger.error(e.getMessage());
         }
         return null;
+    }
+    public static String chatDownloader(String url, String fileName){
+        String cmd = "chat_downloader ";
+        if(StringUtils.isNotBlank(proxy)){
+            cmd += "--proxy " + proxy + " ";
+        }
+        if(StringUtils.isNotBlank(fileName)){
+            cmd += "--output /output/" + fileName + " ";
+        }
+
+        return CmdUtil.execCmd(cmd + url, true, false);
     }
 }

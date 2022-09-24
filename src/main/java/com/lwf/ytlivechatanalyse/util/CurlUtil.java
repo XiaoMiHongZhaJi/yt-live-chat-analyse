@@ -3,13 +3,16 @@ package com.lwf.ytlivechatanalyse.util;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.lwf.ytlivechatanalyse.bean.LiveInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 
+@Component
 public class CurlUtil {
     private static final Logger logger = LoggerFactory.getLogger(CurlUtil.class);
 
@@ -18,6 +21,13 @@ public class CurlUtil {
         getLiveInfo("https://www.youtube.com/watch?v=QsDsjqxDh7c");
 //        List<Map<String, String>> playlist = getPlaylist("https://www.youtube.com/playlist?list=PLi3zrmUZHiY-eH8eNJiwj-viwP3ngIkcd");
 
+    }
+
+    public static String proxy;
+
+    @Value("${proxy}")
+    public void setConfig1(String proxy) {
+        CurlUtil.proxy = proxy;
     }
 
     public static Map<String, String> getLiveInfo(String url){
@@ -54,11 +64,11 @@ public class CurlUtil {
                 String endTimestamp = putNotNull(info, liveBroadcastDetails, "endTimestamp");
                 info.put("liveDate", startTimestamp.split("T")[0]);
                 if("true".equals(isLiveNow)){
-                    info.put("liveStatus", "1");
+                    info.put("liveStatus", LiveInfo.LIVE_STATUS_LIVEING);
                 }else if(StringUtils.isBlank(endTimestamp)){
-                    info.put("liveStatus", "0");
+                    info.put("liveStatus", LiveInfo.LIVE_STATUS_PREVIEW);
                 }else{
-                    info.put("liveStatus", "2");
+                    info.put("liveStatus", LiveInfo.LIVE_STATUS_DONE);
                 }
             } catch (Exception e){
                 logger.info(e.getMessage());
@@ -148,7 +158,10 @@ public class CurlUtil {
         return jsonArray;
     }
     public static String execCurl(String url){
-        String cmd = "curl -X GET " + url;
-        return CmdUtil.execCmd(cmd, false, true, "UTF-8");
+        String cmd = "curl -X GET ";
+        if(StringUtils.isNotBlank(proxy)){
+            cmd += "--proxy " + proxy + " ";
+        }
+        return CmdUtil.execCmd(cmd + url, false, true, "UTF-8");
     }
 }

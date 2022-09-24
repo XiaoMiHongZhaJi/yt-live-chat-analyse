@@ -17,12 +17,15 @@ function showLiveDetailDialog(liveInfo, showEdit){
                     $(layero).find(".getInfo").removeClass("layui-hide");
                     $(layero).find(".live-detail-div :input").each((i, e) => {
                         const input = $(e);
-                        if (!input.prop("disabled")){
+                        if (input.prop("disabled")){
+                            input.closest(".layui-form-item").addClass("layui-hide");
+                        }else{
                             input.next("span.detail").addClass("layui-hide");
                             input.removeClass("layui-hide");
                         }
                     })
                 }else{
+                    //提交按钮
                     $(layero).find(".layui-layer-btn0").addClass("layui-hide");
                 }
                 $(layero).find(".getInfo").click(() => {
@@ -62,26 +65,36 @@ function showLiveDetailDialog(liveInfo, showEdit){
                     const name = input.attr("name");
                     let value = data[name];
                     if(value){
-                        if(name == "viewCount" || name == "likeCount" || name == "chatCount"){
+                        if(name == "viewCount" || name == "likeCount"){
                             value = formatNum(value);
-                            input.val(value);
                             input.next("span.detail").text(value);
                         }else if(name == "timeline"){
                             //时间线处理
-                            input.val(value);
                             const timeline = getTimeLine(value, data["url"]);
                             input.next("span.detail").html(timeline);
                         }else if(name == "url"){
-                            input.val(value);
                             input.next("span.detail").html('<a target="_blank" href="' + value + '">' + value + '</a>');
                         }else{
-                            input.val(value);
                             input.next("span.detail").text(value);
                         }
+                        input.val(value);
                     }else{
                         input.next("span.detail").text("-");
-                        if(name == "timeline" && !showEdit){
-                            input.closest(".layui-form-item").addClass("layui-hide");
+                        if(name == "timeline"){
+                            if(!showEdit){
+                                input.closest(".layui-form-item").addClass("layui-hide");
+                            }
+                        }else if(name == "chatCount"){
+                            const liveChatCount = data["liveChatCount"];
+                            const livingChatCount = data["livingChatCount"];
+                            if(liveChatCount && livingChatCount){
+                                value = formatNum(liveChatCount) + ' / <span style="color: blue;">' + formatNum(livingChatCount) + '</span>';
+                            }else if(liveChatCount){
+                                value = formatNum(liveChatCount);
+                            }else{
+                                value = '<span style="color: blue;">' + formatNum(livingChatCount) + '</span>';
+                            }
+                            input.next("span.detail").html(value);
                         }
                     }
                 })

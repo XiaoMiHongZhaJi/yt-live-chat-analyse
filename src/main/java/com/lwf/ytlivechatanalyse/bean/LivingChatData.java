@@ -33,4 +33,8 @@ public class LivingChatData {
 
     @TableField(exist = false)
     private Integer count;
+
+    public String showDetail() {
+        return authorName + "：" + message;
+    }
 }
