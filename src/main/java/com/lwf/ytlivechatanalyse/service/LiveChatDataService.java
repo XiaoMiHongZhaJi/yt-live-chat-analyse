@@ -358,4 +358,72 @@ public class LiveChatDataService {
                 sqlSession.close();
         }
     }
+
+
+    /**
+     * 从json文件导入弹幕数据（暂时不需要了）
+     * @param file
+     * @param liveDate
+     * @return
+     */
+    public String importJsonFile(MultipartFile file, String liveDate) {
+        long startTime = System.currentTimeMillis();   //获取开始时间
+        byte[] bytes = null;
+        try {
+            bytes = file.getBytes();
+        } catch (IOException e) {
+            return "Json文件错误";
+        }
+        String jsonData = new String(bytes);
+        JSONArray jsonArray = JSON.parseArray(jsonData);
+        List<LiveChatData> batchList = new ArrayList<>();
+        for(int i = 0; i < jsonArray.size(); i++){
+            JSONObject jsonObject = (JSONObject) jsonArray.get(i);
+            LiveChatData dto = JsonUtil.getLiveChat(jsonObject);
+            dto.setLiveDate(liveDate);
+            String message = dto.getMessage();
+            if(message == null){
+                logger.error("jsonArray 第" + i + "条数据有误，内容：");
+                logger.error(jsonObject.toString());
+                continue;
+            }
+            JSONArray emotes = (JSONArray) jsonObject.get("emotes");
+            if(emotes != null && emotes.size() > 0){
+                //包含emoji
+                List<EmotesData> emotesDataList = JsonUtil.getEmotes(emotes);
+                for (EmotesData emotesData :  emotesDataList) {
+                    emotesDataService.insertNotExists(emotesData);
+                }
+                dto.setEmotesCount(emotes.size());
+            }
+            batchList.add(dto);
+            if(batchList.size() >= Constant.BATCH_IMPORT_SIZE){
+                this.insertBatch(batchList);
+                batchList.clear();
+            }
+        }
+        if(batchList.size() > 0){
+            this.insertBatch(batchList);
+            batchList.clear();
+        }
+        if(((JSONObject)jsonArray.get(0)).get("time_in_seconds") == null){
+            //用于直播中下载弹幕Json文件的情况，此时Json数据中没有timeInSeconds字段，会报错
+            Long startTimestamp = this.selectStartTimestamp(liveDate);
+            if(startTimestamp != null && startTimestamp > 0){
+                this.updateTimestamp(liveDate,startTimestamp);
+            }
+        }
+        int count = selectCount(liveDate);
+        StringBuilder result = new StringBuilder();
+        result.append(liveDate);
+        result.append(" json数据总条数：");
+        result.append(jsonArray.size());
+        result.append("。导入后条数：");
+        result.append(count);
+        result.append(" 。用时：");
+        long time = System.currentTimeMillis() - startTime; //获取结束时间
+        result.append(time / 1000);
+        result.append("秒");
+        return result.toString();
+    }
 }

@@ -308,27 +308,27 @@
                     optionDensity.series.push(lastSeries);
                     optionDensity.legend.data.push(lastLiveDate);
                     echartsCompare.setOption(optionDensity);
-                })
-                //上上期
-                $.ajax({url: '/liveInfo/queryLastLiveInfo', data: {liveDate: lastLiveDate}}).then((lastLiveDate) => {
-                    if(!lastLiveDate){
-                        return ;
-                    }
-                    $.ajax({
-                        url: '/analyse/queryHotList',
-                        data: {
-                            liveDate: lastLiveDate,
-                            liveStatus: "2",
-                            intervalMinutes: $("#intervalMinutes").val()
+                    //上上期
+                    $.ajax({url: '/liveInfo/queryLastLiveInfo', data: {liveDate: lastLiveDate}}).then((lastLiveDate) => {
+                        if(!lastLiveDate){
+                            return ;
                         }
-                    }).then((lastData) => {
-                        const lastTotalCount = lastData.data.map((item) => {
-                            return item.totalCount;
-                        });
-                        const lastSeries = {name: lastLiveDate, type: 'line', data: lastTotalCount, smooth: true};
-                        optionDensity.series.push(lastSeries);
-                        optionDensity.legend.data.push(lastLiveDate);
-                        echartsCompare.setOption(optionDensity);
+                        $.ajax({
+                            url: '/analyse/queryHotList',
+                            data: {
+                                liveDate: lastLiveDate,
+                                liveStatus: "2",
+                                intervalMinutes: $("#intervalMinutes").val()
+                            }
+                        }).then((lastData) => {
+                            const lastTotalCount = lastData.data.map((item) => {
+                                return item.totalCount;
+                            });
+                            const lastSeries = {name: lastLiveDate, type: 'line', data: lastTotalCount, smooth: true};
+                            optionDensity.series.push(lastSeries);
+                            optionDensity.legend.data.push(lastLiveDate);
+                            echartsCompare.setOption(optionDensity);
+                        })
                     })
                 })
             })

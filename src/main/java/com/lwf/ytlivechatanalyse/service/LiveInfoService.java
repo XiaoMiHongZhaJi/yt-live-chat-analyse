@@ -36,8 +36,18 @@ public class LiveInfoService {
     @Autowired
     LiveChatDataService liveChatDataService;
 
-    public void insert(LiveInfo liveInfo){
-        liveInfoMapper.insert(liveInfo);
+    public void insertOrUpdate(LiveInfo liveInfo) {
+        QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("url", liveInfo.getUrl());
+        if(liveInfo.getPlatform().equals("t")){
+            queryWrapper.eq("live_date", liveInfo.getLiveDate());
+        }
+        Long count = liveInfoMapper.selectCount(queryWrapper);
+        if (count > 0){
+            liveInfoMapper.update(liveInfo, queryWrapper);
+        }else {
+            liveInfoMapper.insert(liveInfo);
+        }
     }
 
     public List<LiveInfo> queryListBySelector(){
@@ -62,10 +72,12 @@ public class LiveInfoService {
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         if(liveInfo.getId() != null){
             queryWrapper.eq("id", liveInfo.getId());
-        }else if(StringUtils.isNotBlank(liveInfo.getLiveDate())){
-            queryWrapper.eq("live_date", liveInfo.getLiveDate());
-        }else if(StringUtils.isNotBlank(liveInfo.getUrl())){
-            queryWrapper.eq("url", liveInfo.getUrl());
+        }else {
+            if (StringUtils.isNotBlank(liveInfo.getLiveDate())) {
+                queryWrapper.eq("live_date", liveInfo.getLiveDate());
+            } else if (StringUtils.isNotBlank(liveInfo.getUrl())) {
+                queryWrapper.eq("url", liveInfo.getUrl());
+            }
         }
         return liveInfoMapper.selectOne(queryWrapper);
     }
@@ -117,7 +129,7 @@ public class LiveInfoService {
                 liveInfo.setLiveDate(DateUtil.getNowDate() + "_t");
             }
         }
-        insert(liveInfo);
+        insertOrUpdate(liveInfo);
         if(downLiveChat){
             downloadChatData(liveInfo);
         }

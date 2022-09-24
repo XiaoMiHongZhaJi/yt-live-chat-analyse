@@ -40,10 +40,10 @@ public class LiveInfoController {
         //从文件导入
         if(file != null){
             String filename = file.getOriginalFilename();
-            if(StringUtils.isBlank(filename)){
-                if(filename.endsWith(".xml")){
+            if(filename.endsWith(".xml")){
 
-                }
+            }else if(filename.endsWith("json")){
+                liveChatDataService.importJsonFile(file, liveInfo.getLiveDate());
             }
         }
     }
