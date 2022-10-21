@@ -66,7 +66,7 @@ public class CmdUtil {
         } catch (IOException e){
             logger.error(e.getMessage());
         }
-        return null;
+        return "";
     }
     public static String chatDownloader(String url, String fileName){
         String cmd = "chat_downloader ";
@@ -78,5 +78,17 @@ public class CmdUtil {
         }
 
         return CmdUtil.execCmd(cmd + url, true, false);
+    }
+    public static String kill(String... keywords){
+        if(keywords == null || keywords.length == 0 || StringUtils.isBlank(keywords[0])){
+            return "";
+        }
+        String cmd = "kill9";
+        for(String keyword : keywords){
+            if(StringUtils.isNotBlank(keyword)){
+                cmd += " " + keyword;
+            }
+        }
+        return CmdUtil.execCmd(cmd, true, true);
     }
 }

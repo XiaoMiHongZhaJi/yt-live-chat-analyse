@@ -374,8 +374,7 @@ def run(propagate_interrupt=False, **kwargs):
         cursor.execute("select start_timestamp, live_status, title, live_date, id from live_info where url = '" + url + "' order by live_date desc limit 1")
         # 获取所有记录列表
         result = cursor.fetchone()
-        startTimestamp = result[0]
-        liveStatus = result[1]
+        start_timestamp = result[0]
         title = result[2] if result[2] is not None else chat.title
         id = result[4]
         if liveDate is None:
@@ -406,22 +405,23 @@ def run(propagate_interrupt=False, **kwargs):
                                            (emote.get("images")[0].get("url") if emote.get("images") is not None else "") + "'," +
                                            ("1,'" if emote.get("is_custom_emoji") else "0,'") +
                                            emoteName + "')")
-                if startTimestamp is None or liveStatus == '0' or liveStatus == '4':
-                    startTimestamp = None
+                if start_timestamp is None:
                     if time_in_seconds is not None:
                         # 录像
                         if time_in_seconds > 0:
-                            startTimestamp = timestamp - time_in_seconds * 1000000
-                            liveStatus = '2'
-                    elif messages[:2] == "开了" or ("头号发吹,67373磐石,小米轰炸姬".find(name) > -1 and (messages[:2] == "来了")):
-                        # 开播
-                        startTimestamp = timestamp
-                        liveStatus = '1'
-                    if startTimestamp is not None:
-                        cursor.execute("update live_info set start_timestamp = " + str(startTimestamp) +
-                                       ", live_status = " + liveStatus +
-                                       " where url = '" + url + "'")
-                        db.commit()
+                            start_timestamp = timestamp - time_in_seconds * 1000000
+                    elif "头号发吹,小米轰炸姬".find(name) > -1:
+                        # 查询是否开播
+                        cursor.execute("select start_timestamp from live_info where url = '" + url + "' order by live_date desc limit 1")
+                        result = cursor.fetchone()
+                        start_timestamp = result[0]
+                        if start_timestamp is None and messages[:2] == "开了" or messages[:2] == "来了":
+                            # 开播
+                            start_timestamp = timestamp
+                            cursor.execute("update live_info set start_timestamp = " + str(start_timestamp) +
+                                           ", live_status = '1' where id = '" + str(id) + "'")
+                            db.commit()
+
                 # SQL 插入语句
                 sql = "insert into live_chat_data"
                 if time_in_seconds is None:
@@ -448,8 +448,8 @@ def run(propagate_interrupt=False, **kwargs):
                 if time_in_seconds is not None:
                     sql += str(time_in_seconds) + ",'"
                     sql += str(time_text) + "',"
-                elif startTimestamp is not None:
-                    startSeconds = (timestamp - startTimestamp) / 1000000
+                elif start_timestamp is not None:
+                    startSeconds = (timestamp - start_timestamp) / 1000000
                     sql += str(startSeconds) + ",'"
                     minute, seconds = divmod(startSeconds, 60)
                     hour, minute = divmod(minute, 60)

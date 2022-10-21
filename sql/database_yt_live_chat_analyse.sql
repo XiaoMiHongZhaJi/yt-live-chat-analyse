@@ -12,6 +12,17 @@ CREATE TABLE yt_live_chat_analyse.emotes_data (
   PRIMARY KEY (id)
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
+#字幕表
+CREATE TABLE yt_live_chat_analyse.srt_data (
+  id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
+  live_date VARCHAR(30) DEFAULT NULL COMMENT '开播日期',
+  serial INT(11) DEFAULT NULL COMMENT '序号',
+  start_time VARCHAR(30) DEFAULT NULL COMMENT '开始时间',
+  end_time VARCHAR(30) DEFAULT NULL COMMENT '结束时间',
+  content VARCHAR(600) DEFAULT NULL COMMENT '内容',
+  PRIMARY KEY (id)
+) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+
 #弹幕数据表
 CREATE TABLE yt_live_chat_analyse.live_chat_data (
   id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',

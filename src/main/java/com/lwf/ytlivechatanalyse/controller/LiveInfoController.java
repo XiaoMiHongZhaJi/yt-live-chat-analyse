@@ -5,6 +5,7 @@ import com.github.pagehelper.PageInfo;
 import com.lwf.ytlivechatanalyse.bean.LiveInfo;
 import com.lwf.ytlivechatanalyse.service.LiveChatDataService;
 import com.lwf.ytlivechatanalyse.service.LiveInfoService;
+import com.lwf.ytlivechatanalyse.service.SrtDataService;
 import com.lwf.ytlivechatanalyse.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -33,6 +34,9 @@ public class LiveInfoController {
 
     @Autowired
     LiveInfoService liveInfoService;
+
+    @Autowired
+    SrtDataService srtDataService;
 
     @PostMapping("/addLiveInfo")
     public void addLiveInfo(LiveInfo liveInfo, boolean downLiveChat, boolean getLiveInfo, MultipartFile file){
@@ -122,6 +126,36 @@ public class LiveInfoController {
     @RequestMapping("/downloadChatData")
     public void downloadChatData(LiveInfo liveInfo){
         liveInfoService.downloadChatData(liveInfo);
+    }
+
+    @RequestMapping("/selectCount")
+    public Long selectCount(String liveDate){
+        return srtDataService.selectCount(liveDate);
+    }
+
+    @RequestMapping("/importSrt")
+    public void importSrt(String liveDate, MultipartFile file){
+        //从文件导入
+        if(file == null){
+            throw new RuntimeException("文件不能为空");
+        }
+        String filename = file.getOriginalFilename();
+        if(filename.endsWith(".srt")){
+            srtDataService.importSrt(liveDate, file);
+        }
+    }
+
+    @RequestMapping("/stopDownload")
+    public String stopDownload(LiveInfo liveInfo){
+        String result = CmdUtil.kill("chat_downloader", liveInfo.getUrl());
+        if(result.contains("未发现")){
+            // 这种情况说明 chat_downloader 并未运行，只需要更新数据库状态即可
+            liveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
+            liveInfo.setUpdateTime(new Date());
+            liveInfoService.updateLiveInfoById(liveInfo);
+            return "已更新状态";
+        }
+        return "已停止下载";
     }
 }
 
