@@ -34,11 +34,6 @@ public interface LiveChatDataMapper extends BaseMapper<LiveChatData> {
             "  where time_in_seconds is null and live_date = #{liveDate} ")
     Integer updateTimestamp(@Param("liveDate")String liveDate, @Param("timestamp")Long timestamp);
 
-    @Select("select id,live_date,author_image,author_name,message,time_in_seconds,time_text,timestamp,emotes_count " +
-            "  from live_chat_data where live_date = #{liveDate} " +
-            "   and time_in_seconds >= #{startSecond} and time_in_seconds < #{endSecond} ")
-    List<LiveChatData> selectHotListDeail(String liveDate, Integer startSecond, Integer endSecond);
-
     @Select("select count(1) from live_chat_data where live_date = #{liveDate}")
     Integer queryChatCount(String liveDate);
 

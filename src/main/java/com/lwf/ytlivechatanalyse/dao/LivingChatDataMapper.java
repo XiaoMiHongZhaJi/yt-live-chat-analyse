@@ -21,9 +21,4 @@ public interface LivingChatDataMapper extends BaseMapper<LivingChatData> {
             "</if>" +
             "order by timestamp <if test='!isAsc'> desc </if></script>")
     List<LiveChatData> selectLivingList(LiveChatData liveChatData, @Param("isAsc") boolean isAsc);
-
-    @Select("select id,live_date,author_image,author_name,message,time_in_seconds,time_text,timestamp,emotes_count " +
-            "  from living_chat_data where live_date = #{liveDate} " +
-            "   and time_in_seconds >= #{startSecond} and time_in_seconds < #{endSecond}")
-    List<LiveChatData> selectHotListDeail(String liveDate, Integer startSecond, Integer endSecond);
 }

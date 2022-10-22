@@ -53,6 +53,20 @@ CREATE TABLE yt_live_chat_analyse.living_chat_data (
   PRIMARY KEY (id)
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
+#分析表
+CREATE TABLE yt_live_chat_analyse.hot_list (
+  id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
+  live_date VARCHAR(30) DEFAULT NULL COMMENT '开播日期',
+  interval_seconds INT(11) DEFAULT NULL COMMENT '间隔时间',
+  count INT(11) DEFAULT NULL COMMENT '条数',
+  total_count INT(11) DEFAULT NULL COMMENT '累计条数',
+  start_second INT(11) DEFAULT NULL COMMENT '开始秒数',
+  start_time VARCHAR(30) DEFAULT NULL COMMENT '开始时间',
+  end_time VARCHAR(30) DEFAULT NULL COMMENT '结束时间',
+  messages json DEFAULT NULL COMMENT '相关弹幕',
+  PRIMARY KEY (id)
+) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+
 #直播信息表
 CREATE TABLE yt_live_chat_analyse.live_info (
     id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
