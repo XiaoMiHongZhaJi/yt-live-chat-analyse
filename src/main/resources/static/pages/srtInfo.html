@@ -12,9 +12,9 @@
 </head>
 <body>
 <ul class="layui-nav layui-bg-cyan" lay-filter="demo">
-    <li class="layui-nav-item layui-this"><a href="liveChat.html">弹幕列表</a></li>
+    <li class="layui-nav-item"><a href="liveChat.html">弹幕列表</a></li>
     <li class="layui-nav-item"><a href="analyse.html">弹幕统计</a></li>
-    <li class="layui-nav-item"><a href="srtInfo.html">字幕数据</a></li>
+    <li class="layui-nav-item layui-this"><a href="srtInfo.html">字幕数据</a></li>
     <li class="layui-nav-item"><a href="liveInfo.html">数据管理</a></li>
     </li>
 </ul>
@@ -33,19 +33,7 @@
                     <div class="layui-inline">
                         <label class="layui-form-label">关键字</label>
                         <div class="layui-input-inline">
-                            <input type="text" name="message" class="layui-input" placeholder="请输入内容">
-                        </div>
-                    </div>
-                    <div class="layui-inline ">
-                        <label class="layui-form-label">用户名</label>
-                        <div class="layui-input-inline">
-                            <input type="text" name="authorName" class="layui-input" placeholder="请输入内容">
-                        </div>
-                    </div>
-                    <div class="layui-inline layui-hide">
-                        <label class="layui-form-label">自动刷新</label>
-                        <div class="layui-input-block">
-                            <input type="checkbox" name="refersh" lay-skin="switch" lay-filter="refersh-checkbox">
+                            <input type="text" name="content" class="layui-input" placeholder="请输入内容">
                         </div>
                     </div>
                     <div class="layui-inline">
@@ -57,7 +45,7 @@
                 </div>
             </form>
         </fieldset>
-        <table class="layui-hide" id="liveChatData" lay-filter="currentTableFilter">
+        <table class="layui-hide" id="srtData" lay-filter="currentTableFilter">
         </table>
     </div>
 </div>
@@ -70,33 +58,21 @@
         let interval = null;
         const cols = [[
             {field: 'liveDate', width: 120, title: '日期', sort: true, hide: true},
-            {field: 'authorName', width: 180, title: '用户名',templet: (d)=>{
-                if(d.authorImage){
-                    return '<div><img class="header" src="'+ d.authorImage +'=s32-c-k-c0x00ffffff-no-rj">'+ d.authorName +'</div>'
-                }
-                return d.authorName;
-            }},
-            {field: 'message', minWidth: 180, title: '消息',templet: (d)=>{
-                const message = d.message;
-                if(message && d.emotesCount){
-                    return getEmoteMssage(message)
-                }
-                return message;
-            }},
-            {field: 'timeText', width: 90, title: '时间', sort: true, align: "right", templet: (d)=>{
-                const timeText = d.timeText;
+            {field: 'startTime', width: 90, title: '时间', sort: true, align: "right", templet: (d)=>{
+                const startTime = d.startTime.split(",")[0];
                 const url = liveInfo ? liveInfo["url"] : null;
-                if (timeText){
+                if (startTime){
                     if (url && url.indexOf("youtube") > -1){
-                        return getYtUrlTag(url, timeText);
+                        return getYtUrlTag(url, startTime);
                     }
-                    return timeText;
+                    return startTime;
                 }
-                return new Date(d.timestamp / 1000).toTimeString().substr(0, 8);
+                return startTime;
             }},
+            {field: 'content', minWidth: 180, title: '字幕'},
         ]];
         table.render({
-            elem: '#liveChatData',
+            elem: '#srtData',
             method:'post',
             cols: cols,
             loading: false,
@@ -115,38 +91,21 @@
             $("#submit").addClass("layui-btn-disabled");
             //执行搜索重载
             const queryInfo = data.field;
-            if(liveInfo){
-                queryInfo.liveStatus = liveInfo.liveStatus;
-            }
-            table.reload('liveChatData', {
+            table.reload('srtData', {
                 page: {curr: 1},
                 where: queryInfo
             });
-            if(data.field.refersh == "on"){
-                $("input[name='refersh']").prop("checked",false);
-                form.render();
-                clearInterval(interval);
-            }
             return false;
         });
         form.on('select(live-date-select)', () => {
             const data = form.val("search-form");
             liveInfo = $("#liveDate option:selected").data("liveInfo");
             if(liveInfo){
-                data.liveStatus = liveInfo.liveStatus;
-                if(liveInfo.liveStatus == "1"){
-                    $("input[name='refersh']").closest(".layui-inline").removeClass("layui-hide");
-                    $("input[name='refersh']").prop("checked",true);
-                    form.render();
-                    setRefershInterval();
-                }else{
-                    $("input[name='refersh']").closest(".layui-inline").addClass("layui-hide");
-                }
                 cols[0][0]["hide"] = true;
             }else{
                 cols[0][0]["hide"] = false;
             }
-            table.reload('liveChatData', {
+            table.reload('srtData', {
                 page: {curr: 1},
                 where: data,
                 cols: cols
@@ -156,40 +115,16 @@
             showLiveDetailDialog(liveInfo);
             return false;
         })
-        form.on('switch(refersh-checkbox)',(res) => {
-            const checked = $(res.elem).prop("checked");
-            if(checked){
-                setRefershInterval();
-            }else {
-                clearInterval(interval);
-            }
-        })
         initLiveDateSelector((info)=>{
             liveInfo = info;
-            table.reload('liveChatData', {
+            table.reload('srtData', {
                 loading: true,
-                url: '/liveChat/queryList',
+                url: '/srtInfo/queryList',
                 where: {
-                    liveDate: info.liveDate,
-                    liveStatus: info.liveStatus
+                    liveDate: info.liveDate
                 }
             });
-            if(liveInfo && liveInfo.liveStatus == "1"){
-                $("input[name='refersh']").closest(".layui-inline").removeClass("layui-hide");
-                $("input[name='refersh']").prop("checked",true);
-                form.render();
-                setRefershInterval();
-            }
-        },true)
-        function setRefershInterval(){
-            interval = setInterval(()=>{
-                if(liveInfo && liveInfo.liveStatus == "1"){
-                    table.reload('liveChatData');
-                }else{
-                    clearInterval(interval);
-                }
-            }, 8000)
-        }
+        }, true, {srtCount: 1})
     });
 </script>
 </body>

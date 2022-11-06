@@ -47,8 +47,8 @@ public class LiveChatDataService {
 
     public List<LiveChatData> selectList(LiveChatData liveChatData, boolean isAsc){
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
-        if(StringUtils.isNotBlank(liveChatData.getKeyWords())){
-            queryWrapper.like("message", liveChatData.getKeyWords());
+        if(StringUtils.isNotBlank(liveChatData.getMessage())){
+            queryWrapper.like("message", liveChatData.getMessage());
         }
         if(StringUtils.isNotBlank(liveChatData.getAuthorName())){
             queryWrapper.like("author_name", liveChatData.getAuthorName());

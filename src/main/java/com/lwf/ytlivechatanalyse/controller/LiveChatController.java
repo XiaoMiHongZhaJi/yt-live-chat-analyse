@@ -35,17 +35,16 @@ public class LiveChatController {
     LiveInfoService liveInfoService;
 
     @RequestMapping("/queryList")
-    public Result<LiveChatData> queryList(LiveChatData liveChatData, String liveStatus){
-        int limit = liveChatData.getLimit();
+    public Result<LiveChatData> queryList(LiveChatData liveChatData, String liveStatus, int limit, int page){
         limit = limit > Constant.MAX_PAGE_SIZE ? Constant.MAX_PAGE_SIZE : limit;
         if(liveStatus == null || LiveInfo.LIVE_STATUS_DONE.equals(liveStatus)){
-            PageHelper.startPage(liveChatData.getPage(),limit);
+            PageHelper.startPage(page, limit);
             List<LiveChatData> liveChatList = liveChatDataService.selectList(liveChatData, false);
             if(!CollectionUtils.isEmpty(liveChatList)){
                 return new Result<>(new PageInfo<>(liveChatList));
             }
         }
-        PageHelper.startPage(liveChatData.getPage(),limit);
+        PageHelper.startPage(page, limit);
         return new Result<>(new PageInfo<>(liveChatDataService.selectLivingList(liveChatData, false)));
     }
 

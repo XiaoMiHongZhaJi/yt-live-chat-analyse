@@ -15,6 +15,7 @@
 <ul class="layui-nav layui-bg-cyan" lay-filter="demo">
     <li class="layui-nav-item"><a href="liveChat.html">弹幕列表</a></li>
     <li class="layui-nav-item layui-this"><a href="analyse.html">弹幕统计</a></li>
+    <li class="layui-nav-item"><a href="srtInfo.html">字幕数据</a></li>
     <li class="layui-nav-item"><a href="liveInfo.html">数据管理</a></li>
 </ul>
 <div class="layuimini-container layuimini-page-anim">
@@ -40,14 +41,14 @@
                             </select>
                         </div>
                     </div>
-                    <div class="layui-inline">
+                    <!--<div class="layui-inline">
                         <label class="layui-form-label">关键字</label>
                         <div class="layui-input-inline">
                             <label>
-                                <input type="text" name="keyWords" class="layui-input" placeholder="请输入内容">
+                                <input type="text" name="message" class="layui-input" placeholder="请输入内容">
                             </label>
                         </div>
-                    </div>
+                    </div>-->
                     <div class="layui-inline">
                         <button type="submit" id="submit" class="layui-btn"  lay-submit lay-filter="data-search-btn"><i class="layui-icon"></i>统计</button>
                     </div>
@@ -73,7 +74,7 @@
                 <div class="layui-colla-content layui-show">
                     <div class="layui-card">
                         <div class="layui-card-body">
-                            <div id="echarts-compare" class="layui-hide" style="width: 100%;min-height:900px;"></div>
+                            <div id="echarts-compare" class="layui-hide" style="width: 100%;min-height:800px;"></div>
                         </div>
                     </div>
                 </div>
@@ -130,8 +131,23 @@
                 }
                 return startTime + " ~ " + endTime;
                 }},
-                {field: 'count', width: 105, title: '弹幕条数', sort: true, align: "right"},
-                {field: 'messages', minWidth: 350, title: '相关弹幕',templet: (d)=>{
+                {field: 'count', width: 105, title: '弹幕条数', sort: true, align: "right", templet: (d) => {
+                    let content;
+                    const count = d.count;
+                    if(count >= 500){
+                        content = '<span style="font-weight: bold;color: red;">'+ count +'</span>';
+                    }else if(count >= 400){
+                        content = '<span style="font-weight: bold;color: orangered;">'+ count +'</span>';
+                    }else if(count >= 300){
+                        content = '<span style="font-weight: bold;color: orange;">'+ count +'</span>';
+                    }else if(count > 200){
+                        content = '<span style="font-weight: bold;color: burlywood;">'+ count +'</span>';
+                    }else{
+                        content = '<span style="font-weight: bold;color: #999;">'+ count +'</span>';
+                    }
+                    return content;
+                }},
+                {field: 'messages', minWidth: 350, title: '相关弹幕', templet: (d)=>{
                     let content = [];
                     for (let i = 0; i < d.messages.length; i ++){
                         let message = d.messages[i][0];
@@ -301,6 +317,9 @@
                         intervalMinutes: $("#intervalMinutes").val()
                     }
                 }).then((lastData) => {
+                    if(lastData.length > hotListData.length){
+                        lastData = lastData.slice(0, hotListData.length - 1);
+                    }
                     const lastTotalCount = lastData.data.map((item) => {
                         return item.totalCount;
                     });
@@ -321,6 +340,9 @@
                                 intervalMinutes: $("#intervalMinutes").val()
                             }
                         }).then((lastData) => {
+                            if(lastData.length > hotListData.length){
+                                lastData = lastData.slice(0, hotListData.length - 1);
+                            }
                             const lastTotalCount = lastData.data.map((item) => {
                                 return item.totalCount;
                             });

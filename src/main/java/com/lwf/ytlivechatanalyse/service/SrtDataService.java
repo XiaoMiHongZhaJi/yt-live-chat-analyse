@@ -1,10 +1,10 @@
 package com.lwf.ytlivechatanalyse.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.lwf.ytlivechatanalyse.bean.LiveChatData;
 import com.lwf.ytlivechatanalyse.bean.SrtData;
 import com.lwf.ytlivechatanalyse.dao.SrtDataMapper;
 import com.lwf.ytlivechatanalyse.util.SrtUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -63,5 +63,18 @@ public class SrtDataService {
     public void importSrt(String liveDate, MultipartFile file) {
         List<SrtData> srtList = SrtUtil.fileToSrt(file);
         batchInsert(liveDate, srtList);
+    }
+
+    public List<SrtData> selectSrtInfo(SrtData srtData) {
+        QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
+        if(StringUtils.isNotBlank(srtData.getLiveDate())){
+            queryWrapper.eq("live_date", srtData.getLiveDate());
+        }
+        if(StringUtils.isNotBlank(srtData.getContent())){
+            queryWrapper.like("content", srtData.getContent());
+        }
+        queryWrapper.orderByDesc("live_date");
+        queryWrapper.orderByAsc("id");
+        return srtDataMapper.selectList(queryWrapper);
     }
 }

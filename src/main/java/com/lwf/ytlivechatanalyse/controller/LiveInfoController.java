@@ -53,8 +53,8 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/queryListBySelector")
-    public List<LiveInfo> queryListBySelector(){
-        return liveInfoService.queryListBySelector();
+    public List<LiveInfo> queryListBySelector(LiveInfo liveInfo){
+        return liveInfoService.queryListBySelector(liveInfo);
     }
 
     @RequestMapping("/queryListById")

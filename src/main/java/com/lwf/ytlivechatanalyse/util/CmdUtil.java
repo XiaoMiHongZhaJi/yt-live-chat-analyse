@@ -74,7 +74,7 @@ public class CmdUtil {
             cmd += "--proxy " + proxy + " ";
         }
         if(StringUtils.isNotBlank(fileName)){
-            cmd += "--output /output/" + fileName + " ";
+            cmd += "--output output/" + fileName + " ";
         }
 
         return CmdUtil.execCmd(cmd + url, true, false);

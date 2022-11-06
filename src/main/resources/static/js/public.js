@@ -111,10 +111,10 @@ function getYtUrlTag(url, time){
     url = getYtUrl(url, time);
     return '<a target="_blank" href='+ url +'>'+ time +'</a>';
 }
-function initLiveDateSelector(callback, showAll){
+function initLiveDateSelector(callback, showAll, data){
     const $ = layui.jquery;
     const form = layui.form;
-    $.ajax({url: '/liveInfo/queryListBySelector'}).then((data)=>{
+    $.ajax({url: '/liveInfo/queryListBySelector', data: data}).then((data)=>{
         if(!data || data.length == 0){
             layer.msg("暂无弹幕数据");
             return;

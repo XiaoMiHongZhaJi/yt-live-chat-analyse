@@ -79,6 +79,7 @@ CREATE TABLE yt_live_chat_analyse.live_info (
     like_count varchar(10) DEFAULT NULL COMMENT '点赞人数',
     live_chat_count INT(11) DEFAULT NULL COMMENT '录像弹幕数',
     living_chat_count INT(11) DEFAULT NULL COMMENT '直播弹幕数',
+    srt_count INT(11) DEFAULT NULL COMMENT '字幕数',
     platform VARCHAR(1) DEFAULT NULL COMMENT '开播平台，y：YouTube，t：twitch',
     start_timestamp BIGINT(20) DEFAULT NULL COMMENT '开播时间戳，默认取第一个“开了”、“来了”的时间',
     duration_time varchar(10) DEFAULT NULL COMMENT '持续时长',

@@ -18,8 +18,9 @@ public class LiveInfo {
     private String timeline;
     private Integer viewCount; //播放数
     private String likeCount; //点赞数
-    private Integer LiveChatCount; //录像弹幕数
-    private Integer LivingChatCount; //直播弹幕数
+    private Integer liveChatCount; //录像弹幕数
+    private Integer livingChatCount; //直播弹幕数
+    private Integer srtCount; //字幕数
     private String platform;
     private Long startTimestamp;
     private String durationTime;

@@ -18,7 +18,8 @@ public class CurlUtil {
 
     public static void main(String[] args){
 //        execCurl("http://www.baidu.com/", "get");
-        getLiveInfo("https://www.youtube.com/watch?v=QsDsjqxDh7c");
+        Map<String, String> liveInfo = getLiveInfo("https://www.youtube.com/watch?v=ODq5ew4KkDI");
+        System.out.println(liveInfo);
 //        List<Map<String, String>> playlist = getPlaylist("https://www.youtube.com/playlist?list=PLi3zrmUZHiY-eH8eNJiwj-viwP3ngIkcd");
 
     }
@@ -37,9 +38,9 @@ public class CurlUtil {
             return info;
         }
         //"topLevelButtons":[{"toggleButtonRenderer":{
-        int index = curl.indexOf("topLevelButtons");
+        int index = curl.indexOf("toggleButtonRenderer");
         if(index > -1){
-            String curlJson = curl.substring(index + 42);
+            String curlJson = curl.substring(index + 22);
             try {
                 JSONObject jsonObject = getJsonObject(curlJson);
                 String likeCount = ((JSONObject) jsonObject.get("defaultText")).get("simpleText").toString();

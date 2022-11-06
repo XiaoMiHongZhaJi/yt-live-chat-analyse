@@ -22,18 +22,6 @@ public class LivingChatData {
     private Long timestamp;
     private Integer emotesCount;
 
-    @TableField(exist = false)
-    private Integer page;
-
-    @TableField(exist = false)
-    private Integer limit;
-
-    @TableField(exist = false)
-    private String keyWords;
-
-    @TableField(exist = false)
-    private Integer count;
-
     public String showDetail() {
         return authorName + "：" + message;
     }
