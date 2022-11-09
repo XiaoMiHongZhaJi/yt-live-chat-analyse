@@ -17,8 +17,8 @@ public interface LiveChatDataMapper extends BaseMapper<LiveChatData> {
     Integer insertNotExists(LiveChatData liveChatData);
 
     @Select("select id,live_date,author_image,author_name,message,time_in_seconds,time_text,timestamp,emotes_count " +
-            "from live_chat_data where live_date = #{liveDate} and message like CONCAT('%',#{keyWords},'%') ")
-    List<LiveChatData> selectByKeyWords(@Param("liveDate") String liveDate, @Param("keyWords") String keyWords);
+            "from live_chat_data where live_date = #{liveDate} and message like CONCAT('%',#{message},'%') ")
+    List<LiveChatData> selectByKeyWords(@Param("liveDate") String liveDate, @Param("message") String message);
 
     @Select(" select min(timestamp) from " +
             " (select min(timestamp) timestamp from live_chat_data where live_date = #{liveDate} and message like '开了%' " +

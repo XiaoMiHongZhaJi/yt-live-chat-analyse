@@ -13,8 +13,8 @@ import java.util.List;
 public interface LivingChatDataMapper extends BaseMapper<LivingChatData> {
 
     @Select("<script> select * from living_chat_data where live_date = #{liveChatData.liveDate} " +
-            "<if test='liveChatData.keyWords != null and liveChatData.keyWords != \"\" '>" +
-            "  and message like concat('%',#{liveChatData.keyWords},'%') " +
+            "<if test='liveChatData.message != null and liveChatData.message != \"\" '>" +
+            "  and message like concat('%',#{liveChatData.message},'%') " +
             "</if>" +
             "<if test='liveChatData.authorName != null and liveChatData.authorName != \"\" '>" +
             "  and author_name like concat('%',#{liveChatData.authorName},'%') " +
