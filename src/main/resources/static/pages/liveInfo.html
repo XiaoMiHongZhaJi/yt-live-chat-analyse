@@ -190,6 +190,7 @@
                         $(el).parent().find(".loading").addClass("layui-hide");
                         $(el).parent().find(".done").removeClass("layui-hide");
                         layer.msg("导入成功");
+                        table.reload('liveInfo');
                     }, () => {
                         $(el).parent().find(".loading").addClass("layui-hide");
                         $(el).parent().find(".import").removeClass("layui-hide");

@@ -1,6 +1,7 @@
 package com.lwf.ytlivechatanalyse.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.lwf.ytlivechatanalyse.bean.LiveInfo;
 import com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper;
 import com.lwf.ytlivechatanalyse.dao.LiveInfoMapper;
@@ -96,6 +97,13 @@ public class LiveInfoService {
     public int updateLiveInfoById(LiveInfo liveInfo){
         liveInfo.setUpdateTime(new Date());
         return liveInfoMapper.updateById(liveInfo);
+    }
+
+    public int updateLiveInfoByDate(LiveInfo liveInfo){
+        liveInfo.setUpdateTime(new Date());
+        UpdateWrapper<LiveInfo> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("live_date", liveInfo.getLiveDate());
+        return liveInfoMapper.update(liveInfo, updateWrapper);
     }
 
     public void addLiveInfo(LiveInfo liveInfo, boolean downLiveChat, boolean getLiveInfo) {

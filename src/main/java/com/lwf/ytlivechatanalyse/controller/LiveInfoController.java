@@ -141,7 +141,11 @@ public class LiveInfoController {
         }
         String filename = file.getOriginalFilename();
         if(filename.endsWith(".srt")){
-            srtDataService.importSrt(liveDate, file);
+            Long count = srtDataService.importSrt(liveDate, file);
+            LiveInfo liveInfo = new LiveInfo();
+            liveInfo.setLiveDate(liveDate);
+            liveInfo.setSrtCount(count.intValue());
+            liveInfoService.updateLiveInfoByDate(liveInfo);
         }
     }
 

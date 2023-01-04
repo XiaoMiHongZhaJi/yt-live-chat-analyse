@@ -60,9 +60,12 @@ public class SrtDataService {
         }
     }
 
-    public void importSrt(String liveDate, MultipartFile file) {
+    public Long importSrt(String liveDate, MultipartFile file) {
         List<SrtData> srtList = SrtUtil.fileToSrt(file);
         batchInsert(liveDate, srtList);
+        QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("live_date", liveDate);
+        return srtDataMapper.selectCount(queryWrapper);
     }
 
     public List<SrtData> selectSrtInfo(SrtData srtData) {
