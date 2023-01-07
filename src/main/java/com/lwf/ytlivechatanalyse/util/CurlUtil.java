@@ -18,7 +18,7 @@ public class CurlUtil {
 
     public static void main(String[] args){
 //        execCurl("http://www.baidu.com/", "get");
-        Map<String, String> liveInfo = getLiveInfo("https://www.youtube.com/watch?v=ODq5ew4KkDI");
+        Map<String, String> liveInfo = getLiveInfo("https://www.youtube.com/watch?v=e34yqJrO3RU");
         System.out.println(liveInfo);
 //        List<Map<String, String>> playlist = getPlaylist("https://www.youtube.com/playlist?list=PLi3zrmUZHiY-eH8eNJiwj-viwP3ngIkcd");
 
@@ -72,6 +72,33 @@ public class CurlUtil {
                     info.put("liveStatus", LiveInfo.LIVE_STATUS_DONE);
                 }
             } catch (Exception e){
+                logger.info(e.getMessage());
+            }
+        }
+        //"approxDurationMs": "697991",
+        index = curl.indexOf("approxDurationMs");
+        if(index > -1){
+            String duration = curl.substring(index + 17, index + 30);
+            try {
+                duration = duration.split(",")[0];
+                duration = duration.replaceAll("[\\s:\"]", "");
+                String time = DateUtil.secondToString(Integer.parseInt(duration) / 1000);
+                info.put("videoDurationTime", time);
+            }catch (Exception e){
+                logger.info(e.getMessage());
+            }
+        }
+        //"commentCount": {"simpleText": "926"},
+        index = curl.indexOf("commentCount");
+        if(index > -1){
+            String commentCount = curl.substring(index + 16, index + 40);
+            try {
+                index = commentCount.indexOf("simpleText");
+                commentCount = commentCount.substring(index + 12);
+                commentCount = commentCount.split(",")[0];
+                commentCount = commentCount.replaceAll("[\\s:\"{}]", "");
+                info.put("commentCount", commentCount);
+            }catch (Exception e){
                 logger.info(e.getMessage());
             }
         }
@@ -159,7 +186,7 @@ public class CurlUtil {
         return jsonArray;
     }
     public static String execCurl(String url){
-        String cmd = "curl -X GET ";
+        String cmd = "curl --header \"accept-language: zh-CN,zh;q=0.9\" -X GET ";
         if(StringUtils.isNotBlank(proxy)){
             cmd += "--proxy " + proxy + " ";
         }

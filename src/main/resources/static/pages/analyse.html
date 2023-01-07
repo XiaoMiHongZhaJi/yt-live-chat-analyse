@@ -109,6 +109,7 @@
                 where: {
                     liveDate: info.liveDate,
                     liveStatus: info.liveStatus,
+                    downloadStatus: info.downloadStatus,
                     intervalMinutes: $("#intervalMinutes").val()
                 }
             });
@@ -314,6 +315,7 @@
                     data: {
                         liveDate: lastLiveDate,
                         liveStatus: "2",
+                        downloadStatus: "2",
                         intervalMinutes: $("#intervalMinutes").val()
                     }
                 }).then((lastData) => {
@@ -337,6 +339,7 @@
                             data: {
                                 liveDate: lastLiveDate,
                                 liveStatus: "2",
+                                downloadStatus: "2",
                                 intervalMinutes: $("#intervalMinutes").val()
                             }
                         }).then((lastData) => {

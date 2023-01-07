@@ -89,6 +89,22 @@ CREATE TABLE yt_live_chat_analyse.live_info (
     PRIMARY KEY (id)
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE video_info (
+  id int(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
+  live_date varchar(30) DEFAULT NULL COMMENT '开播日期',
+  url varchar(200) DEFAULT NULL COMMENT '开播地址',
+  title varchar(200) DEFAULT NULL COMMENT '标题',
+  img varchar(200) DEFAULT NULL COMMENT '标题图片地址',
+  view_count int(11) DEFAULT NULL COMMENT '观看人数',
+  like_count varchar(10) DEFAULT NULL COMMENT '点赞人数',
+  comment_count int(11) DEFAULT NULL COMMENT '评论数',
+  platform varchar(1) DEFAULT NULL COMMENT '开播平台，y：YouTube，t：twitch',
+  duration_time varchar(10) DEFAULT NULL COMMENT '持续时长',
+  update_time datetime DEFAULT NULL COMMENT '最后更新时间',
+  PRIMARY KEY (id)
+) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+
+
 #添加索引
 ALTER TABLE yt_live_chat_analyse.live_chat_data
     ADD INDEX author_name (author_name);

@@ -39,20 +39,26 @@ public class AnalyseService {
     SqlSessionFactory sqlSessionFactory;
 
 
-    public List<HotList> queryHotList(LiveChatData liveChatData, Integer intervalMinutes, String liveStatus){
+    public List<HotList> queryHotList(LiveInfo liveInfo, Integer intervalMinutes){
         if(intervalMinutes == null || intervalMinutes < 1){
             intervalMinutes = 1;
         }
+        //直播状态
+        String liveStatus = liveInfo.getLiveStatus();
+        //开播日期
+        String liveDate = liveInfo.getLiveDate();
         //间隔秒数
         int intervalSeconds = intervalMinutes * 60;
         QueryWrapper<HotList> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("live_date", liveChatData.getLiveDate());
+        queryWrapper.eq("live_date", liveDate);
         queryWrapper.eq("interval_seconds", intervalSeconds);
         queryWrapper.orderByAsc("id");
         List<HotList> hotListList = hotListMapper.selectList(queryWrapper);
         if(!CollectionUtils.isEmpty(hotListList)){
             return hotListList;
         }
+        LiveChatData liveChatData = new LiveChatData();
+        liveChatData.setLiveDate(liveDate);
         List<LiveChatData> liveChatAll = null;
         if(LiveInfo.LIVE_STATUS_DONE.equals(liveStatus)){
             //直播结束
@@ -69,8 +75,6 @@ public class AnalyseService {
         int startSecond = 0;
         //累计条数
         int totalCount = 0;
-        //开播日期
-        String liveDate = liveChatData.getLiveDate();
         //组装数据
         List<LiveChatData> liveChatList = new ArrayList<>();
         for (int i = 0; i < liveChatAll.size(); i++){
@@ -104,7 +108,7 @@ public class AnalyseService {
                 liveChatList.clear();
             }*/
         }
-        if(LiveInfo.LIVE_STATUS_DONE.equals(liveStatus) && !CollectionUtils.isEmpty(hotListList)){
+        if(LiveInfo.LIVE_STATUS_DONE.equals(liveStatus) && LiveInfo.DOWNLOAD_STATUS_DONE.equals(liveInfo.getDownloadStatus())){
             batchInsertHotList(hotListList);
         }
         return hotListList;

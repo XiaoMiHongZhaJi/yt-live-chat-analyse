@@ -2,6 +2,7 @@ package com.lwf.ytlivechatanalyse.controller;
 
 import com.lwf.ytlivechatanalyse.bean.HotList;
 import com.lwf.ytlivechatanalyse.bean.LiveChatData;
+import com.lwf.ytlivechatanalyse.bean.LiveInfo;
 import com.lwf.ytlivechatanalyse.service.AnalyseService;
 import com.lwf.ytlivechatanalyse.service.EmotesDataService;
 import com.lwf.ytlivechatanalyse.util.Result;
@@ -23,11 +24,11 @@ public class AnalyseController {
     EmotesDataService emotesDataService;
 
     @RequestMapping("/queryHotList")
-    public Result<HotList> queryHotList(LiveChatData liveChatData, Integer intervalMinutes, String liveStatus){
-        if(StringUtils.isBlank(liveChatData.getLiveDate())){
+    public Result<HotList> queryHotList(LiveInfo liveInfo, Integer intervalMinutes){
+        if(StringUtils.isBlank(liveInfo.getLiveDate())){
             return new Result<>();
         }
-        List<HotList> hotList = analyseService.queryHotList(liveChatData, intervalMinutes, liveStatus);
+        List<HotList> hotList = analyseService.queryHotList(liveInfo, intervalMinutes);
         return new Result<>(hotList);
     }
 

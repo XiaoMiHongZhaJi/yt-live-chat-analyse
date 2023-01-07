@@ -111,11 +111,11 @@ function getYtUrlTag(url, time){
     url = getYtUrl(url, time);
     return '<a target="_blank" href='+ url +'>'+ time +'</a>';
 }
-function initLiveDateSelector(callback, showAll, data){
+function initLiveDateSelector(callback, showAll, param){
     const $ = layui.jquery;
     const form = layui.form;
-    $.ajax({url: '/liveInfo/queryListBySelector', data: data}).then((data)=>{
-        if(!data || data.length == 0){
+    $.ajax({url: '/liveInfo/queryListBySelector', data: param}).then((selectorList)=>{
+        if(!selectorList || selectorList.length == 0){
             layer.msg("暂无弹幕数据");
             return;
         }
@@ -123,7 +123,7 @@ function initLiveDateSelector(callback, showAll, data){
         if(showAll){
             $("#liveDate").append('<option value="">全部</option>');
         }
-        $(data).each((i, liveInfo) => {
+        $(selectorList).each((i, liveInfo) => {
             const liveDate = liveInfo.liveDate;
             let title = liveDate;
             if(liveInfo.title){
@@ -136,10 +136,10 @@ function initLiveDateSelector(callback, showAll, data){
             option.data("liveInfo", liveInfo);
             $("#liveDate").append(option);
         })
-        if(data[0]){
+        if(selectorList[0]){
             form.render();
             if(callback){
-                callback(data[0]);
+                callback(selectorList[0]);
             }
         }
     }, () => {

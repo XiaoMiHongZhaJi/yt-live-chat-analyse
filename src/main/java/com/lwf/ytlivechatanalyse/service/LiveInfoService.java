@@ -55,7 +55,7 @@ public class LiveInfoService {
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.orderByDesc("live_date");
-        queryWrapper.select("live_date", "title", "url", "id", "live_status");
+        queryWrapper.select("live_date", "title", "url", "id", "live_status", "download_status");
         if(liveInfo.getSrtCount() != null && liveInfo.getSrtCount() > 0){
             queryWrapper.gt("srt_count", 0);
         }
