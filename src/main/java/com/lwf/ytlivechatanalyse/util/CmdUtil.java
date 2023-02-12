@@ -22,6 +22,29 @@ public class CmdUtil {
 
     public static String proxy;
 
+    public static String rename(String filePath, String oldName, String newName) {
+        String osName = System.getProperty("os.name");
+        if(osName.startsWith("Win")){
+            if(StringUtils.isNoneBlank(filePath)){
+                if(!filePath.endsWith("\\")){
+                    filePath += "\\";
+                }
+                oldName = filePath + oldName;
+                newName = filePath + newName;
+            }
+            return execCmd("move " + oldName + " " + newName, true, true, "GBK");
+        }else{
+            if(StringUtils.isNoneBlank(filePath)) {
+                if(!filePath.endsWith("/")){
+                    filePath += "/";
+                }
+                oldName = filePath + oldName;
+                newName = filePath + newName;
+            }
+            return execCmd("mv " + oldName + " " + newName, true, true, "UTF8");
+        }
+    }
+
     @Value("${proxy}")
     public void setProxy(String proxy) {
         CmdUtil.proxy = proxy;
@@ -59,12 +82,12 @@ public class CmdUtil {
             try {
                 process.waitFor();
             } catch (InterruptedException e){
-                logger.error(e.getMessage());
+                logger.error("执行命令出错", e);
             }
             process.destroy();
             return builder.toString();
         } catch (IOException e){
-            logger.error(e.getMessage());
+            logger.error("执行命令出错", e);
         }
         return "";
     }

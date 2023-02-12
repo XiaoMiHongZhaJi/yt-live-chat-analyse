@@ -19,7 +19,7 @@ public class SrtUtil {
         try {
             bytes = file.getBytes();
         } catch (IOException e) {
-            logger.error("srt文件读取失败");
+            logger.error("srt文件读取失败", e);
             return null;
         }
         String srt = new String(bytes);
@@ -39,7 +39,7 @@ public class SrtUtil {
                     srtData.setEndTime(split[1]);
                     srtList.add(srtData);
                 }catch (NumberFormatException e){
-                    logger.error("数字转换失败：" + number);
+                    logger.error("数字转换失败：" + number, e);
                 }
             }
         }

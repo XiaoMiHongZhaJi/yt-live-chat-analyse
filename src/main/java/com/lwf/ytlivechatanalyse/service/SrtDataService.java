@@ -49,9 +49,8 @@ public class SrtDataService {
                 try {
                     srtDataMapper.insert(srtData);
                 }catch (Exception e1){
-                    logger.error("批量插入出错，已改为单笔插入，错误数据：");
+                    logger.error("批量插入出错，已改为单笔插入，错误数据：", e1);
                     logger.error(srtData.toString());
-                    logger.error(e1.toString());
                 }
             }
         }finally {

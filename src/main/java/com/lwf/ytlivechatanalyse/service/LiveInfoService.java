@@ -108,8 +108,7 @@ public class LiveInfoService {
 
     public void addLiveInfo(LiveInfo liveInfo, boolean downLiveChat, boolean getLiveInfo) {
         String url = liveInfo.getUrl();
-        boolean youtube = url.contains("youtube");
-        if(youtube){
+        if(url.contains("youtube")){
             liveInfo.setPlatform("y");
             if(getLiveInfo){
                 //补全信息
@@ -138,7 +137,13 @@ public class LiveInfoService {
             liveInfo.setLiveStatus(LiveInfo.LIVE_STATUS_PREVIEW);
             if(StringUtils.isBlank(liveInfo.getLiveDate())) {
                 liveInfo.setLiveDate(DateUtil.getNowDate() + "_t");
+                if(url.contains("luoshushu")){
+                    liveInfo.setLiveDate(DateUtil.getNowDate() + "_l");
+                }
             }
+        }
+        if(StringUtils.isBlank(liveInfo.getTitle())){
+            liveInfo.setTitle(url.substring(url.lastIndexOf("/") + 1));
         }
         insertOrUpdate(liveInfo);
         if(downLiveChat){

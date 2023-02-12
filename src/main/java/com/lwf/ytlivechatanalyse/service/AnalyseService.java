@@ -123,14 +123,13 @@ public class AnalyseService {
             }
             sqlSession.flushStatements();
         }catch (Exception e){
-            logger.error(e.getMessage());
+            logger.error("批量插入出错", e);
             for (HotList hotList : hotListList){
                 try {
                     hotListMapper.insert(hotList);
                 }catch (Exception e1){
-                    logger.error("批量插入出错，已改为单个插入，错误数据：");
+                    logger.error("批量插入出错，已改为单个插入，错误数据：", e1);
                     logger.error(hotList.toString());
-                    logger.error(e1.getMessage());
                 }
             }
         }finally {

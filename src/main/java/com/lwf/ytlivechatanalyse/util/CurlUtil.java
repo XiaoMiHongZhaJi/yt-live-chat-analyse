@@ -18,10 +18,11 @@ public class CurlUtil {
 
     public static void main(String[] args){
 //        execCurl("http://www.baidu.com/", "get");
+        CurlUtil.proxy = "http://127.0.0.1:7890";
         Map<String, String> liveInfo = getLiveInfo("https://www.youtube.com/watch?v=e34yqJrO3RU");
         System.out.println(liveInfo);
-//        List<Map<String, String>> playlist = getPlaylist("https://www.youtube.com/playlist?list=PLi3zrmUZHiY-eH8eNJiwj-viwP3ngIkcd");
-
+        List<Map<String, String>> playlist = getPlaylist("https://www.youtube.com/playlist?list=PLi3zrmUZHiY-eH8eNJiwj-viwP3ngIkcd");
+        System.out.println(playlist);
     }
 
     public static String proxy;
@@ -46,7 +47,7 @@ public class CurlUtil {
                 String likeCount = ((JSONObject) jsonObject.get("defaultText")).get("simpleText").toString();
                 info.put("likeCount", likeCount);
             } catch (Exception e){
-                logger.error(e.getMessage());
+                logger.error("获取likeCount信息出错", e);
             }
         }
         //"playerMicroformatRenderer":{
@@ -60,19 +61,21 @@ public class CurlUtil {
                 putNotNull(info, jsonObject, "uploadDate");
                 putNotNull(info, jsonObject, "publishDate");
                 JSONObject liveBroadcastDetails = (JSONObject) jsonObject.get("liveBroadcastDetails");
-                String isLiveNow = putNotNull(info, liveBroadcastDetails, "isLiveNow");
-                String startTimestamp = putNotNull(info, liveBroadcastDetails, "startTimestamp");
-                String endTimestamp = putNotNull(info, liveBroadcastDetails, "endTimestamp");
-                info.put("liveDate", startTimestamp.split("T")[0]);
-                if("true".equals(isLiveNow)){
-                    info.put("liveStatus", LiveInfo.LIVE_STATUS_LIVEING);
-                }else if(StringUtils.isBlank(endTimestamp)){
-                    info.put("liveStatus", LiveInfo.LIVE_STATUS_PREVIEW);
-                }else{
-                    info.put("liveStatus", LiveInfo.LIVE_STATUS_DONE);
+                if(liveBroadcastDetails != null){
+                    String isLiveNow = putNotNull(info, liveBroadcastDetails, "isLiveNow");
+                    String startTimestamp = putNotNull(info, liveBroadcastDetails, "startTimestamp");
+                    String endTimestamp = putNotNull(info, liveBroadcastDetails, "endTimestamp");
+                    info.put("liveDate", startTimestamp.split("T")[0]);
+                    if("true".equals(isLiveNow)){
+                        info.put("liveStatus", LiveInfo.LIVE_STATUS_LIVEING);
+                    }else if(StringUtils.isBlank(endTimestamp)){
+                        info.put("liveStatus", LiveInfo.LIVE_STATUS_PREVIEW);
+                    }else{
+                        info.put("liveStatus", LiveInfo.LIVE_STATUS_DONE);
+                    }
                 }
             } catch (Exception e){
-                logger.info(e.getMessage());
+                logger.error("获取liveInfo信息出错", e);
             }
         }
         //"approxDurationMs": "697991",
@@ -85,25 +88,38 @@ public class CurlUtil {
                 String time = DateUtil.secondToString(Integer.parseInt(duration) / 1000);
                 info.put("videoDurationTime", time);
             }catch (Exception e){
-                logger.info(e.getMessage());
+                logger.error("获取videoDurationTime失败", e);
             }
         }
         //"commentCount": {"simpleText": "926"},
-        index = curl.indexOf("commentCount");
-        if(index > -1){
-            String commentCount = curl.substring(index + 16, index + 40);
-            try {
-                index = commentCount.indexOf("simpleText");
-                commentCount = commentCount.substring(index + 12);
-                commentCount = commentCount.split(",")[0];
-                commentCount = commentCount.replaceAll("[\\s:\"{}]", "");
-                info.put("commentCount", commentCount);
-            }catch (Exception e){
-                logger.info(e.getMessage());
-            }
-        }
+        String commentCount = getJsonValue(curl, "commentCount", 40);
+        info.put("commentCount", commentCount);
         logger.info(info.toString());
         return info;
+    }
+
+    public static String getJsonValue(String content, String columeName, int length, String key, String endWord) {
+        int index = content.indexOf(columeName);
+        if(index <= -1){
+            return "";
+        }
+        String text = content.substring(index + columeName.length(), index + length);
+        text = text.substring(text.indexOf(key));
+        text = text.substring(key.length(), text.indexOf(endWord));
+        int i = text.indexOf(":");
+        if(i > -1){
+            text = text.substring(i + 1);
+        }
+        text = text.replaceAll("[\\s\"{}]", "");
+        return text;
+    }
+
+    public static String getJsonValue(String content, String columeName, int length, String key) {
+        return getJsonValue(content, columeName, length, key, "}");
+    }
+
+    public static String getJsonValue(String content, String columeName, int length) {
+        return getJsonValue(content, columeName, length, "simpleText", "}");
     }
 
     private static String putNotNull(Map<String, String> info, JSONObject jsonObject, String key, String infoKey){
@@ -185,6 +201,20 @@ public class CurlUtil {
         JSONArray jsonArray = JSON.parseArray(json);
         return jsonArray;
     }
+
+    public static String downloadFile(String url, String file){
+        String cmd = "curl ";
+        if(StringUtils.isNotBlank(proxy)){
+            cmd += "--proxy " + proxy + " ";
+        }
+        if(StringUtils.isNotBlank(file)){
+            cmd += "-o " + file + " ";
+        }else{
+            cmd += "-O ";
+        }
+        return CmdUtil.execCmd(cmd + url, false, true, "UTF-8");
+    }
+
     public static String execCurl(String url){
         String cmd = "curl --header \"accept-language: zh-CN,zh;q=0.9\" -X GET ";
         if(StringUtils.isNotBlank(proxy)){

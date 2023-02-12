@@ -90,7 +90,7 @@ public class LiveInfoController {
         try {
             parseDate = DateUtils.parseDate(liveDate.substring(0, 10), "yyyy-MM-dd");
         }catch (Exception e){
-            logger.error("转换日期失败，" + liveDate);
+            logger.error("转换日期失败，" + liveDate, e);
         }
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(parseDate);
@@ -157,9 +157,17 @@ public class LiveInfoController {
             liveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
             liveInfo.setUpdateTime(new Date());
             liveInfoService.updateLiveInfoById(liveInfo);
-            return "已更新状态";
+            return "CHAT_DOWNLOADER并未运行。已更新状态";
         }
-        return "已停止下载";
+        try {
+            Thread.sleep(1000);
+        }catch (Exception e){
+        }
+        result = CmdUtil.execCmd("ps -ef | grep chat_downloader | grep " + liveInfo.getUrl());
+        if(StringUtils.isBlank(result)){
+            return "已结束并更新状态";
+        }
+        return "已发送指令，但未结束，可能需要重复执行<br>" + result.replace("\n", "<br>");
     }
 }
 

@@ -103,7 +103,7 @@ public class LiveChatDataService {
                 try {
                     liveChatDataMapper.insertNotExists(liveChatData);
                 }catch (Exception e1){
-                    logger.error("批量插入出错，已改为单笔插入，错误数据：");
+                    logger.error("批量插入出错，已改为单个插入，错误数据：", e1);
                     logger.error(liveChatData.toString());
                 }
             }
@@ -155,14 +155,13 @@ public class LiveChatDataService {
             }
             sqlSession.flushStatements();
         }catch (Exception e){
-            logger.error(e.getMessage());
+            logger.error("批量插入出错", e);
             for (LivingChatData livingChatData : livingChatList) {
                 try {
                     livingChatDataMapper.insert(livingChatData);
                 }catch (Exception e1){
-                    logger.error("批量插入出错，已改为单个插入，错误数据：");
+                    logger.error("批量插入出错，已改为单个插入，错误数据：", e1);
                     logger.error(livingChatData.toString());
-                    logger.error(e1.getMessage());
                 }
             }
         }finally {

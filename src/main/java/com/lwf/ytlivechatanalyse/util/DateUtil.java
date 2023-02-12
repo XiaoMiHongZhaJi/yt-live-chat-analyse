@@ -1,10 +1,16 @@
 package com.lwf.ytlivechatanalyse.util;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 
 public class DateUtil {
+
+    private static final Logger logger = LoggerFactory.getLogger(DateUtil.class);
 
     public static void main(String[] args) {
         System.out.printf(getNowDateTime());
@@ -41,5 +47,38 @@ public class DateUtil {
             result = "-" + result;
         }
         return result;
+    }
+
+    /**
+     * xx天前
+     * @return
+     */
+    public static String getDayBefore(String str){
+        Calendar calendar = Calendar.getInstance();
+        int dayIndex = str.indexOf("前");
+        if(dayIndex > -1){
+            String numString = str.substring(0, dayIndex - 1);
+            try {
+                if(str.contains("天")){
+                    int number = Integer.parseInt(numString);
+                    calendar.add(Calendar.DATE, - number);
+                }else if(str.contains("周")){
+                    int number = Integer.parseInt(numString);
+                    calendar.add(Calendar.DATE, - number * 7);
+                }else if(str.contains("个月")){
+                    numString = str.substring(0, dayIndex - 2);
+                    int number = Integer.parseInt(numString);
+                    calendar.add(Calendar.MONTH, - number);
+                }else if(str.contains("年")){
+                    int number = Integer.parseInt(numString);
+                    calendar.add(Calendar.YEAR, - number);
+                }
+            }catch (Exception e){
+                logger.error("数字转换失败", e);
+            }
+        }
+        Date date = calendar.getTime();
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        return format.format(date);
     }
 }
