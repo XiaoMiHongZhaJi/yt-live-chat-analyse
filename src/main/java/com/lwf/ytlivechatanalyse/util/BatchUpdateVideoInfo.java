@@ -93,6 +93,8 @@ public class BatchUpdateVideoInfo {
         }
         //当天更新过的不再更新
         sql += "and (update_time is null or DATE_FORMAT(SYSDATE(), '%Y-%m-%d') != DATE_FORMAT(update_time, '%Y-%m-%d')) ";
+        //更新过的不再更新
+        //sql += "and update_time is null ";
         sql += "order by publish_date, id ";
         return JDBCUtil.queryStringList(sql, params);
     }

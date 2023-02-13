@@ -51,6 +51,6 @@ public class YtDlpUtil {
             cmd.append(" ");
         }
         cmd.append(url);
-        return CmdUtil.execCmd(cmd.toString(), false, true, "UTF-8");
+        return CmdUtil.execCmd(cmd.toString(), false, true);
     }
 }

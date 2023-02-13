@@ -47,20 +47,24 @@ if not os.path.exists(save_path):
     os.mkdir(save_path)
 file_names = os.listdir(source_path)
 starttime = datetime.datetime.now()
+success = 0
 for i in range(len(file_names)):
     file_name = file_names[i]
     type = file_name.split(".")[-1]
     if type is None or type not in ["jpg", "jpeg", "png"]:
         continue
-    print("裁剪：", file_name)
+    if os.path.exists(save_path + file_name):
+        print(file_name, "已存在，跳过")
+        continue
     try:
         x = change_size(source_path + file_name)
         cv2.imwrite(save_path + file_name, x)
+        print("裁剪：", file_name, "完成")
+        success += 1
     except Exception as e:
         print(file_name, "裁剪出错，可以调高下灵敏度试试")
         print(e)
-
-print("裁剪完毕")
+print("裁剪完毕，裁剪条数：" + str(success))
 endtime = datetime.datetime.now()
 endtime = (endtime - starttime).seconds
 print("裁剪总用时：", endtime, "秒钟")

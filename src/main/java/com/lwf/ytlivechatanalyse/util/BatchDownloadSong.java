@@ -4,42 +4,76 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.*;
 
 public class BatchDownloadSong {
 
     private static final Logger logger = LoggerFactory.getLogger(BatchDownloadSong.class);
 
+    private static final String SONG_PATH = "E:\\Music\\2021直播歌曲集";
+
+    private static final String IMG_PATH = "E:\\Music\\img\\";
+
+    private static final String AUTOHR_ID = "@Chenyifaer288";
+
     public static void main(String[] args) throws Exception{
 
         CurlUtil.proxy = "http://127.0.0.1:7890";
-        getAndAddVideoList("@Chenyifaer288");
-        List<Map<String, String>> songList = getSongList("@Chenyifaer288");
+        getAndAddVideoList(AUTOHR_ID);
+        List<Map<String, String>> songList = getSongList(AUTOHR_ID);
         logger.info("获取到待下载歌曲数量：" + songList.size());
         for (Map<String, String> info : songList){
             String url = info.get("url");
             String fileName = info.get("title");
-            fileName = fileName.replace("陈一发儿－", "");
+            if(StringUtils.isBlank(fileName)){
+                fileName = url.substring(url.indexOf("v=") + 2);
+                int index = fileName.indexOf("&");
+                if(index > -1){
+                    fileName = fileName.substring(0, index);
+                }
+            }
+            fileName = fileName.replaceAll("陈一发儿|—|－|＊", "");
             String date = info.get("publish_date");
-            date = date.replace("-", ".").replace("202", "2");
-            fileName = date + "-" + fileName;
-            String result = YtDlpUtil.downMp3(url, fileName, "E:\\Music\\2023直播歌曲集");
+            if(StringUtils.isNoneBlank(date)){
+                date = date.replace("-", ".").replace("202", "2");
+                fileName = date + "-" + fileName;
+            }
+            String file = SONG_PATH + fileName;
+            File f = new File(file);
+            if(f.exists()){
+                logger.info(fileName + "已存在，不再下载");
+                updateDownloaded(url);
+                continue;
+            }
+            String result = YtDlpUtil.downMp3(url, fileName, SONG_PATH);
             if(StringUtils.isNoneBlank(result) && result.contains("Deleting original file")) {
                 updateDownloaded(url);
                 logger.info(fileName + " 下载成功");
             }
         }
-        int updateImgInfo = updateImgInfo("@Chenyifaer288");
+        int updateImgInfo = updateImgInfo(AUTOHR_ID);
         logger.info("已更新图片信息，条数：" + updateImgInfo);
-        List<Map<String, String>> imgList = getImgList("@Chenyifaer288");
+        List<Map<String, String>> imgList = getImgList(AUTOHR_ID);
         logger.info("获取到待下载图片数量：" + imgList.size());
         for (Map<String, String> info : imgList){
             String img = info.get("img");
             String publishDate = info.get("publish_date");
             String fileName = publishDate.replace("-", ".").replace("202", "2") + ".jpg";
-            String file = "E:\\Music\\img\\" + fileName;
-            String result = CurlUtil.downloadFile(img, file);
-            logger.info(result);
+            String file = IMG_PATH + fileName;
+            File f = new File(file);
+            if(f.exists()){
+                logger.info(fileName + "已存在，不再下载");
+                continue;
+            }
+            long length = CurlUtil.downloadFile(img, file);
+            if(length < 5 * 1024){
+                logger.info("下载大图失败，重新尝试小一点的图 " + img);
+                img = img.replace("maxresdefault.jpg", "hqdefault.jpg");
+                length = CurlUtil.downloadFile(img, file);
+                logger.info("下载小一点的图完成：" + length / 1024 + "KB");
+            }
+            logger.info(fileName + " 下载完成：" + length / 1024 + "KB");
         }
     }
 
@@ -53,7 +87,6 @@ public class BatchDownloadSong {
         }
         // 过滤
         sql += "and img is not null ";
-        sql += "and img like '%hqdefault.jpg' ";
         sql += "group by publish_date) order by publish_date desc";
         return JDBCUtil.queryMapList(sql, params);
     }
@@ -76,24 +109,16 @@ public class BatchDownloadSong {
             String id = map.get("id");
             String url = map.get("url"); //https://www.youtube.com/watch?v=Zok6m6Pcm_E
             String publishDate = map.get("publish_date");
-            String img = null;
-            int index = url.indexOf("?");
+            int index = url.indexOf("v=");
             if(index > -1){
-                String urlParams = url.substring(index + 1);
-                String[] split = urlParams.split("&");
-                for(String urlParam : split){
-                    int vIndex = urlParam.indexOf("v=");
-                    if(vIndex > -1){
-                        String vId = urlParam.substring(vIndex + 2);
-                        img = "https://i.ytimg.com/vi/" + vId + "/maxresdefault.jpg";
-                        break;
-                    }
+                String vId = url.substring(url.indexOf("v=") + 2);
+                index = vId.indexOf("&");
+                if(index > -1) {
+                    vId = vId.substring(0, index);
                 }
-            }
-            if(img != null){
+                String img = "https://i.ytimg.com/vi/" + vId + "/maxresdefault.jpg";
                 String updateSql = "update video_info set img = ? where id = ?";
-                int result = JDBCUtil.executeUpdate(updateSql, Arrays.asList(img, id));
-                updateCount += result;
+                updateCount += JDBCUtil.executeUpdate(updateSql, Arrays.asList(img, id));
             }
         }
         return updateCount;

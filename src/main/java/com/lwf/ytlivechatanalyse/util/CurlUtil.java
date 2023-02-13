@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.util.*;
 
 @Component
@@ -202,7 +203,7 @@ public class CurlUtil {
         return jsonArray;
     }
 
-    public static String downloadFile(String url, String file){
+    public static long downloadFile(String url, String file){
         String cmd = "curl ";
         if(StringUtils.isNotBlank(proxy)){
             cmd += "--proxy " + proxy + " ";
@@ -212,7 +213,12 @@ public class CurlUtil {
         }else{
             cmd += "-O ";
         }
-        return CmdUtil.execCmd(cmd + url, false, true, "UTF-8");
+        CmdUtil.execCmd(cmd + url, false, true, "UTF-8");
+        if(StringUtils.isNotBlank(file)){
+            File f = new File(file);
+            return f.length();
+        }
+        return 0;
     }
 
     public static String execCurl(String url){
