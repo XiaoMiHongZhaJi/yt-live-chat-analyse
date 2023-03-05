@@ -1,28 +1,7 @@
 package com.lwf.ytlivechatanalyse.bean;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
-import java.math.BigDecimal;
-
 @Data
-public class LivingChatData {
-
-    @TableId(type = IdType.AUTO)
-    private Integer id;
-    private String liveDate;
-    private String authorImage;
-    private String authorName;
-    private String authorId;
-    private String message;
-    private BigDecimal timeInSeconds;
-    private String timeText;
-    private Long timestamp;
-    private Integer emotesCount;
-
-    public String showDetail() {
-        return authorName + "：" + message;
-    }
+public class LivingChatData extends LiveChatData{
 }

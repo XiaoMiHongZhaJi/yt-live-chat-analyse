@@ -47,7 +47,7 @@ public class CmdUtil {
 
     @Value("${proxy}")
     public void setProxy(String proxy) {
-        CmdUtil.proxy = proxy;
+        this.proxy = proxy;
     }
 
     public static String execCmd(String cmd){
@@ -91,6 +91,15 @@ public class CmdUtil {
         }
         return "";
     }
+
+    public static String ps(String keyWord){
+        return execCmd("ps -ef | grep -v grep | grep " + keyWord);
+    }
+
+    public static String chatDownloaderPs(String keyWord){
+        return execCmd("ps -ef | grep -v grep | grep chat_downloader | grep " + keyWord);
+    }
+
     public static String chatDownloader(String url, String fileName){
         String cmd = "chat_downloader ";
         if(StringUtils.isNotBlank(proxy)){
@@ -112,6 +121,6 @@ public class CmdUtil {
                 cmd += " " + keyword;
             }
         }
-        return CmdUtil.execCmd(cmd, true, true);
+        return execCmd(cmd, true, true);
     }
 }

@@ -33,6 +33,9 @@ public class AnalyseService {
     LiveChatDataService liveChatDataService;
 
     @Autowired
+    LiveInfoService liveInfoService;
+
+    @Autowired
     HotListMapper hotListMapper;
 
     @Autowired
@@ -43,8 +46,6 @@ public class AnalyseService {
         if(intervalMinutes == null || intervalMinutes < 1){
             intervalMinutes = 1;
         }
-        //直播状态
-        String liveStatus = liveInfo.getLiveStatus();
         //开播日期
         String liveDate = liveInfo.getLiveDate();
         //间隔秒数
@@ -53,10 +54,16 @@ public class AnalyseService {
         queryWrapper.eq("live_date", liveDate);
         queryWrapper.eq("interval_seconds", intervalSeconds);
         queryWrapper.orderByAsc("id");
+        // 查询缓存
         List<HotList> hotListList = hotListMapper.selectList(queryWrapper);
         if(!CollectionUtils.isEmpty(hotListList)){
             return hotListList;
         }
+        liveInfo = liveInfoService.selectOne(liveInfo);
+        //直播状态
+        String liveStatus = liveInfo.getLiveStatus();
+        //开始时间戳
+        Long startTimestamp = liveInfo.getStartTimestamp();
         LiveChatData liveChatData = new LiveChatData();
         liveChatData.setLiveDate(liveDate);
         List<LiveChatData> liveChatAll = null;
@@ -75,14 +82,17 @@ public class AnalyseService {
         int startSecond = 0;
         //累计条数
         int totalCount = 0;
+        if(startTimestamp == null) {
+            startTimestamp = liveChatAll.get(0).getTimestamp();
+        }
         //组装数据
         List<LiveChatData> liveChatList = new ArrayList<>();
-        for (int i = 0; i < liveChatAll.size(); i++){
-            LiveChatData liveChat = liveChatAll.get(i);
-            BigDecimal timeInSeconds = liveChat.getTimeInSeconds();
-            if(timeInSeconds == null || timeInSeconds.compareTo(new BigDecimal(0)) < 0){
+        for (LiveChatData liveChat : liveChatAll){
+            long timestamp = liveChat.getTimestamp() - startTimestamp;
+            if(timestamp < 0){
                 continue;
             }
+            BigDecimal timeInSeconds = new BigDecimal(timestamp / 1000000);
             //弹幕发送时间
             double sendtime = Double.parseDouble(timeInSeconds.toString());
             if (sendtime >  startSecond + intervalSeconds){

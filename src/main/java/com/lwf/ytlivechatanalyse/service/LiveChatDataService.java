@@ -61,7 +61,21 @@ public class LiveChatDataService {
     }
 
     public List<LiveChatData> selectLivingList(LiveChatData liveChatData, boolean isAsc){
-        return livingChatDataMapper.selectLivingList(liveChatData, isAsc);
+        QueryWrapper<LivingChatData> queryWrapper = new QueryWrapper<>();
+        if(StringUtils.isNotBlank(liveChatData.getMessage())){
+            queryWrapper.like("message", liveChatData.getMessage());
+        }
+        if(StringUtils.isNotBlank(liveChatData.getAuthorName())){
+            queryWrapper.like("author_name", liveChatData.getAuthorName());
+        }
+        if(StringUtils.isNotBlank(liveChatData.getLiveDate())){
+            queryWrapper.like("live_date", liveChatData.getLiveDate());
+        }
+        queryWrapper.orderBy(true, isAsc, "timestamp");
+        List<LivingChatData> livingChatList = livingChatDataMapper.selectList(queryWrapper);
+        List<LiveChatData> liveChatList = new ArrayList<>();
+        liveChatList.addAll(livingChatList);
+        return liveChatList;
     }
 
     public Long selectStartTimestamp(String liveDate){
@@ -86,7 +100,7 @@ public class LiveChatDataService {
     public int selectLivingCount(String liveDate){
         //直播中，直播预告
         QueryWrapper<LivingChatData> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("live_date", liveDate);
+        queryWrapper.like("live_date", liveDate);
         return Math.toIntExact(livingChatDataMapper.selectCount(queryWrapper));
     }
 
@@ -135,39 +149,6 @@ public class LiveChatDataService {
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("live_date", liveDate);
         liveChatDataMapper.delete(queryWrapper);
-    }
-
-    public void addLivingChatList(List<LivingChatData> livingChatList) {
-        if(livingChatList.size() == 1){
-            LivingChatData livingChatData = livingChatList.get(0);
-            livingChatData.setLiveDate(DateUtil.getNowDate());
-            logger.info(livingChatData.showDetail());
-            livingChatDataMapper.insert(livingChatData);
-            return;
-        }
-        SqlSession sqlSession = null;
-        try{
-            sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH);
-            for (LivingChatData livingChatData : livingChatList){
-                livingChatData.setLiveDate(DateUtil.getNowDate());
-                logger.info(livingChatData.showDetail());
-                sqlSession.insert("com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper.insert", livingChatData);
-            }
-            sqlSession.flushStatements();
-        }catch (Exception e){
-            logger.error("批量插入出错", e);
-            for (LivingChatData livingChatData : livingChatList) {
-                try {
-                    livingChatDataMapper.insert(livingChatData);
-                }catch (Exception e1){
-                    logger.error("批量插入出错，已改为单个插入，错误数据：", e1);
-                    logger.error(livingChatData.toString());
-                }
-            }
-        }finally {
-            if(sqlSession != null)
-                sqlSession.close();
-        }
     }
 
 

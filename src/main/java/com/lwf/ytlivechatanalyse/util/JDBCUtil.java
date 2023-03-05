@@ -135,8 +135,17 @@ public class JDBCUtil {
         return 0;
     }
 
-    public static void closeConnection(Connection conn){
-        closeConnection(conn, null, null);
+    public static void closeStatement(PreparedStatement ps, ResultSet rs){
+        try {
+            if(rs != null){
+                rs.close();
+            }
+            if(ps != null){
+                ps.close();
+            }
+        } catch (Exception e) {
+            logger.error("关闭连接失败", e);
+        }
     }
 
     public static void closeConnection(Connection conn, PreparedStatement ps){

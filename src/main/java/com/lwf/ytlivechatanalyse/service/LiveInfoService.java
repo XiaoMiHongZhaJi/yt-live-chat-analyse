@@ -39,10 +39,7 @@ public class LiveInfoService {
 
     public void insertOrUpdate(LiveInfo liveInfo) {
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("url", liveInfo.getUrl());
-        if(liveInfo.getPlatform().equals("t")){
-            queryWrapper.eq("live_date", liveInfo.getLiveDate());
-        }
+        queryWrapper.like("live_date", liveInfo.getLiveDate());
         Long count = liveInfoMapper.selectCount(queryWrapper);
         if (count > 0){
             liveInfoMapper.update(liveInfo, queryWrapper);
@@ -79,7 +76,8 @@ public class LiveInfoService {
         }else {
             if (StringUtils.isNotBlank(liveInfo.getLiveDate())) {
                 queryWrapper.eq("live_date", liveInfo.getLiveDate());
-            } else if (StringUtils.isNotBlank(liveInfo.getUrl())) {
+            }
+            if (StringUtils.isNotBlank(liveInfo.getUrl())) {
                 queryWrapper.eq("url", liveInfo.getUrl());
             }
         }
@@ -128,6 +126,12 @@ public class LiveInfoService {
                 if(StringUtils.isBlank(liveInfo.getLiveDate())){
                     liveInfo.setLiveDate(info.get("liveDate"));
                 }
+                if(liveInfo.getStartTimestamp() == null){
+                    String startTimestamp = info.get("startTimestamp");
+                    if(StringUtils.isNotBlank(startTimestamp)){
+                        liveInfo.setStartTimestamp(DateUtil.getTimestamp(startTimestamp) * 1000);
+                    }
+                }
             }
             if(StringUtils.isBlank(liveInfo.getLiveDate())){
                 liveInfo.setLiveDate(DateUtil.getNowDate());
@@ -158,13 +162,19 @@ public class LiveInfoService {
         if(StringUtils.isBlank(url) || id == null || id == 0){
             return ;
         }
-        boolean youtube = url.contains("youtube");
         //状态更新为下载中
         LiveInfo updateLiveInfo = new LiveInfo();
         updateLiveInfo.setId(id);
         updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DOWNLOADING);
         updateLiveInfoById(updateLiveInfo);
-        if(!youtube){
+        // 检查是否已经在下载
+        String ps = CmdUtil.chatDownloaderPs(url);
+        if(StringUtils.isNotBlank(ps)){
+            logger.info("url 已在下载。当前时间：" + DateUtil.getNowDateTime());
+            return ;
+        }
+        if(!url.contains("youtube")){
+            // twitch
             new Thread(() -> {
                 String fileName = DateUtil.getNowDateTime() + "_t_living.json";
                 CmdUtil.chatDownloader(url, fileName);

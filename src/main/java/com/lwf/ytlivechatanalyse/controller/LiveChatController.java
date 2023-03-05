@@ -53,14 +53,4 @@ public class LiveChatController {
         List<EmotesData> emotesData = emotesDataService.selectAll();
         return emotesData;
     }
-
-    @RequestMapping("/addLiveChatList")
-    @CrossOrigin
-    public void addLivingChatList(@RequestBody Map<String,List<LivingChatData>> map){
-        List<LivingChatData> livingChatList = map.get("livingChatList");
-        if(CollectionUtils.isEmpty(livingChatList)){
-            return;
-        }
-        liveChatDataService.addLivingChatList(livingChatList);
-    }
 }

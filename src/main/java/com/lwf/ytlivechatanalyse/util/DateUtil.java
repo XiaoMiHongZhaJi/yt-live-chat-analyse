@@ -4,16 +4,40 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class DateUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(DateUtil.class);
 
     public static void main(String[] args) {
-        System.out.printf(getNowDateTime());
+        System.out.printf(getTimestamp("2021-11-18T05:51:37+00:00") + "");
+    }
+
+    /**
+     * 时间转时间戳
+     * @param dateTime
+     * @return
+     */
+    public static long getTimestamp(String dateTime){
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        try {
+            int index = dateTime.indexOf("+");
+            if(index > -1){
+                format.setTimeZone(TimeZone.getTimeZone("GMT" + dateTime.substring(index)));
+            }
+            dateTime = dateTime.replace("T", " ");
+            Date date = format.parse(dateTime);
+            long time = date.getTime();
+            return time;
+        } catch (ParseException e) {
+            logger.error("时间转换失败", e);
+        }
+        return 0;
     }
 
     public static String getNowDate(){

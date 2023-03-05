@@ -410,26 +410,27 @@ def run(propagate_interrupt=False, **kwargs):
                         # 录像
                         if time_in_seconds > 0:
                             start_timestamp = timestamp - time_in_seconds * 1000000
-                    elif "头号发吹,小米轰炸姬".find(name) > -1:
+                        # 更新数据库
+                        cursor.execute("update live_info set start_timestamp = " + str(start_timestamp) + ", live_status = '1' where id = '" + str(id) + "'")
+                        db.commit()
+                    elif "头号发吹,小米轰炸姬".find(name) > -1 and messages[:2] == "开了" or messages[:2] == "来了":
+                        # 手动开播
+                        start_timestamp = timestamp
+                        # 更新数据库（只更新一次）
+                        cursor.execute("update live_info set start_timestamp = " + str(start_timestamp) + ", live_status = '1' where start_timestamp is null and id = '" + str(id) + "'")
+                        db.commit()
+                    else:
                         # 查询是否开播
                         cursor.execute("select start_timestamp from live_info where url = '" + url + "' order by live_date desc limit 1")
                         result = cursor.fetchone()
                         start_timestamp = result[0]
-                        if start_timestamp is None and messages[:2] == "开了" or messages[:2] == "来了":
-                            # 开播
-                            start_timestamp = timestamp
-                            cursor.execute("update live_info set start_timestamp = " + str(start_timestamp) +
-                                           ", live_status = '1' where id = '" + str(id) + "'")
-                            db.commit()
 
                 # SQL 插入语句
                 sql = "insert into live_chat_data"
                 if time_in_seconds is None:
                     sql = "insert into living_chat_data"
                     if is_first:
-                        cursor.execute("delete from living_chat_data " +
-                                       " where live_date = '" + liveDate +
-                                       "' and timestamp >= " + str(timestamp))
+                        cursor.execute("delete from living_chat_data " + " where live_date = '" + liveDate + "' and timestamp >= " + str(timestamp))
                         db.commit()
                         is_first = False
                 sql += "(live_date, author_image, author_name, author_id, message, time_in_seconds, time_text, timestamp, emotes_count) "
