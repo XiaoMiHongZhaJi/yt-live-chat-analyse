@@ -29,6 +29,8 @@ public class DateUtil {
             int index = dateTime.indexOf("+");
             if(index > -1){
                 format.setTimeZone(TimeZone.getTimeZone("GMT" + dateTime.substring(index)));
+            }else {
+                format.setTimeZone(TimeZone.getTimeZone("GMT+8"));
             }
             dateTime = dateTime.replace("T", " ");
             Date date = format.parse(dateTime);

@@ -39,12 +39,20 @@ public class LiveInfoService {
 
     public void insertOrUpdate(LiveInfo liveInfo) {
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
-        queryWrapper.like("live_date", liveInfo.getLiveDate());
-        Long count = liveInfoMapper.selectCount(queryWrapper);
-        if (count > 0){
-            liveInfoMapper.update(liveInfo, queryWrapper);
-        }else {
+        String liveDate = liveInfo.getLiveDate();
+        int index = liveDate.indexOf("_");
+        if(index > -1){
+            liveDate = liveDate.substring(0, index);
+        }
+        queryWrapper.like("live_date", liveDate);
+        List<LiveInfo> liveInfoList = liveInfoMapper.selectList(queryWrapper);
+        if (liveInfoList.size() == 0){
             liveInfoMapper.insert(liveInfo);
+        }else{
+            liveInfo.setId(liveInfoList.get(0).getId());
+            if("y".equals(liveInfo.getPlatform())){
+                liveInfoMapper.updateById(liveInfo);
+            }
         }
     }
 
@@ -126,7 +134,7 @@ public class LiveInfoService {
                 if(StringUtils.isBlank(liveInfo.getLiveDate())){
                     liveInfo.setLiveDate(info.get("liveDate"));
                 }
-                if(liveInfo.getStartTimestamp() == null){
+                if(liveInfo.getStartTimestamp() == null && LiveInfo.LIVE_STATUS_LIVEING.equals(liveInfo.getLiveStatus())){
                     String startTimestamp = info.get("startTimestamp");
                     if(StringUtils.isNotBlank(startTimestamp)){
                         liveInfo.setStartTimestamp(DateUtil.getTimestamp(startTimestamp) * 1000);
@@ -173,7 +181,7 @@ public class LiveInfoService {
             logger.info("url 已在下载。当前时间：" + DateUtil.getNowDateTime());
             return ;
         }
-        if(!url.contains("youtube")){
+        if("t".equals(liveInfo.getPlatform())){
             // twitch
             new Thread(() -> {
                 String fileName = DateUtil.getNowDateTime() + "_t_living.json";

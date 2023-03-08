@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+
 @Component
 public class YtDlpUtil {
     private static final Logger logger = LoggerFactory.getLogger(YtDlpUtil.class);
@@ -46,6 +48,10 @@ public class YtDlpUtil {
             cmd.append(" ");
         }
         if(StringUtils.isNotBlank(filePath)){
+            File path = new File(filePath);
+            if(!path.exists()){
+                path.mkdirs();
+            }
             cmd.append("--paths ");
             cmd.append(filePath);
             cmd.append(" ");

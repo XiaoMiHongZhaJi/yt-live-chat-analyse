@@ -20,10 +20,10 @@ public class CurlUtil {
     public static void main(String[] args){
 //        execCurl("http://www.baidu.com/", "get");
         CurlUtil.proxy = "http://127.0.0.1:7890";
-        Map<String, String> liveInfo = getLiveInfo("https://www.youtube.com/watch?v=e34yqJrO3RU");
+        Map<String, String> liveInfo = getLiveInfo("https://www.youtube.com/watch?v=_J0adje8pw4");
         System.out.println(liveInfo);
-        List<Map<String, String>> playlist = getPlaylist("https://www.youtube.com/playlist?list=PLi3zrmUZHiY-eH8eNJiwj-viwP3ngIkcd");
-        System.out.println(playlist);
+//        List<Map<String, String>> playlist = getPlaylist("https://www.youtube.com/playlist?list=PLi3zrmUZHiY-eH8eNJiwj-viwP3ngIkcd");
+//        System.out.println(playlist);
     }
 
     public static String proxy;
@@ -203,19 +203,26 @@ public class CurlUtil {
         return jsonArray;
     }
 
-    public static long downloadFile(String url, String file){
+    public static long downloadFile(String url, String fileName, String filePath){
         String cmd = "curl ";
         if(StringUtils.isNotBlank(proxy)){
             cmd += "--proxy " + proxy + " ";
         }
-        if(StringUtils.isNotBlank(file)){
-            cmd += "-o " + file + " ";
+        if(StringUtils.isNotBlank(fileName)){
+            if(StringUtils.isNotBlank(filePath)){
+                File path = new File(filePath);
+                if(!path.exists()){
+                    path.mkdirs();
+                }
+                fileName = filePath + fileName;
+            }
+            cmd += "-o " + fileName + " ";
         }else{
             cmd += "-O ";
         }
         CmdUtil.execCmd(cmd + url, false, true, "UTF-8");
-        if(StringUtils.isNotBlank(file)){
-            File f = new File(file);
+        if(StringUtils.isNotBlank(fileName)){
+            File f = new File(fileName);
             return f.length();
         }
         return 0;

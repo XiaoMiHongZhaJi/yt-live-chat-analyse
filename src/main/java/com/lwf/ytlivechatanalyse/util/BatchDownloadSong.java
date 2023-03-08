@@ -11,7 +11,7 @@ public class BatchDownloadSong {
 
     private static final Logger logger = LoggerFactory.getLogger(BatchDownloadSong.class);
 
-    private static final String SONG_PATH = "E:\\Music\\2021直播歌曲集";
+    private static final String SONG_PATH = "E:\\Music\\2023直播歌曲集\\";
 
     private static final String IMG_PATH = "E:\\Music\\img\\";
 
@@ -20,6 +20,7 @@ public class BatchDownloadSong {
     public static void main(String[] args) throws Exception{
 
         CurlUtil.proxy = "http://127.0.0.1:7890";
+        YtDlpUtil.proxy = "http://127.0.0.1:7890";
         getAndAddVideoList(AUTOHR_ID);
         List<Map<String, String>> songList = getSongList(AUTOHR_ID);
         logger.info("获取到待下载歌曲数量：" + songList.size());
@@ -46,10 +47,13 @@ public class BatchDownloadSong {
                 updateDownloaded(url);
                 continue;
             }
+            logger.info("准备下载：" + fileName);
             String result = YtDlpUtil.downMp3(url, fileName, SONG_PATH);
             if(StringUtils.isNoneBlank(result) && result.contains("Deleting original file")) {
                 updateDownloaded(url);
                 logger.info(fileName + " 下载成功");
+            }else{
+                logger.error(fileName + " 下载失败");
             }
         }
         int updateImgInfo = updateImgInfo(AUTOHR_ID);
@@ -66,14 +70,18 @@ public class BatchDownloadSong {
                 logger.info(fileName + "已存在，不再下载");
                 continue;
             }
-            long length = CurlUtil.downloadFile(img, file);
-            if(length < 5 * 1024){
+            double length = CurlUtil.downloadFile(img, fileName, IMG_PATH) / 1024;
+            if(length < 5){
                 logger.info("下载大图失败，重新尝试小一点的图 " + img);
                 img = img.replace("maxresdefault.jpg", "hqdefault.jpg");
-                length = CurlUtil.downloadFile(img, file);
-                logger.info("下载小一点的图完成：" + length / 1024 + "KB");
+                length = CurlUtil.downloadFile(img, fileName, IMG_PATH) / 1024;
+                if(length < 5){
+                    logger.warn("下载图片失败：" + length + "KB");
+                    continue;
+                }
+                logger.info("下载小一点的图完成");
             }
-            logger.info(fileName + " 下载完成：" + length / 1024 + "KB");
+            logger.info(fileName + " 下载完成：" + length + "KB");
         }
     }
 
@@ -87,6 +95,8 @@ public class BatchDownloadSong {
         }
         // 过滤
         sql += "and img is not null ";
+        // 2023年
+        sql += "and publish_date like '2023%' ";
         sql += "group by publish_date) order by publish_date desc";
         return JDBCUtil.queryMapList(sql, params);
     }
@@ -130,7 +140,7 @@ public class BatchDownloadSong {
         for (Map<String, String> info : videoList){
             addCount += addVideoInfo(info);
         }
-        logger.info("获取到VideoList条数：" + videoList.size() + "，新增条数：" + addCount);
+        logger.info("获取到VideoList条数：" + videoList.size() + "，数据库新增条数：" + addCount);
     }
 
     private static void updateDownloaded(String url){
@@ -145,9 +155,11 @@ public class BatchDownloadSong {
             sql += "and author_id = ? ";
             params.add(authorId);
         }
-        // 下载过的
+        // 排除下载过的
         sql += "and down_song_status != '1' ";
-        sql += "order by publish_date desc";
+        // 2023年
+        sql += "and publish_date like '2023%' ";
+        sql += "order by publish_date";
         return JDBCUtil.queryMapList(sql, params);
     }
 
