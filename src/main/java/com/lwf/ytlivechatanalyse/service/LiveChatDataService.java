@@ -60,7 +60,7 @@ public class LiveChatDataService {
         return liveChatDataMapper.selectList(queryWrapper);
     }
 
-    public List<LiveChatData> selectLivingList(LiveChatData liveChatData, boolean isAsc){
+    public List<LivingChatData> selectLivingList(LiveChatData liveChatData, boolean isAsc){
         QueryWrapper<LivingChatData> queryWrapper = new QueryWrapper<>();
         if(StringUtils.isNotBlank(liveChatData.getMessage())){
             queryWrapper.like("message", liveChatData.getMessage());
@@ -73,9 +73,7 @@ public class LiveChatDataService {
         }
         queryWrapper.orderBy(true, isAsc, "timestamp");
         List<LivingChatData> livingChatList = livingChatDataMapper.selectList(queryWrapper);
-        List<LiveChatData> liveChatList = new ArrayList<>();
-        liveChatList.addAll(livingChatList);
-        return liveChatList;
+        return livingChatList;
     }
 
     public Long selectStartTimestamp(String liveDate){

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.lwf.ytlivechatanalyse.bean.HotList;
 import com.lwf.ytlivechatanalyse.bean.LiveChatData;
 import com.lwf.ytlivechatanalyse.bean.LiveInfo;
+import com.lwf.ytlivechatanalyse.bean.LivingChatData;
 import com.lwf.ytlivechatanalyse.dao.HotListMapper;
 import com.lwf.ytlivechatanalyse.util.Constant;
 import com.lwf.ytlivechatanalyse.util.DateUtil;
@@ -73,8 +74,9 @@ public class AnalyseService {
         }
         if(CollectionUtils.isEmpty(liveChatAll)){
             liveStatus = LiveInfo.LIVE_STATUS_LIVEING;
-            liveChatAll = liveChatDataService.selectLivingList(liveChatData, true);
-            if(CollectionUtils.isEmpty(liveChatAll)){
+            List<LivingChatData> livingChatData = liveChatDataService.selectLivingList(liveChatData, true);
+            if(CollectionUtils.isEmpty(livingChatData)){
+                liveChatAll.addAll(livingChatData);
                 return hotListList;
             }
         }

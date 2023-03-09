@@ -35,7 +35,7 @@ public class LiveChatController {
     LiveInfoService liveInfoService;
 
     @RequestMapping("/queryList")
-    public Result<LiveChatData> queryList(LiveChatData liveChatData, String liveStatus, int limit, int page){
+    public Result queryList(LiveChatData liveChatData, String liveStatus, int limit, int page){
         limit = limit > Constant.MAX_PAGE_SIZE ? Constant.MAX_PAGE_SIZE : limit;
         if(liveStatus == null || LiveInfo.LIVE_STATUS_DONE.equals(liveStatus)){
             PageHelper.startPage(page, limit);
