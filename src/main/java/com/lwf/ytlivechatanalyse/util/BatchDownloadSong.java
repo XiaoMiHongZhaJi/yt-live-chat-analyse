@@ -36,7 +36,7 @@ public class BatchDownloadSong {
             }
             fileName = fileName.replaceAll("陈一发儿|—|－|＊", "");
             String date = info.get("publish_date");
-            if(StringUtils.isNoneBlank(date)){
+            if(StringUtils.isNotBlank(date)){
                 date = date.replace("-", ".").replace("202", "2");
                 fileName = date + "-" + fileName;
             }
@@ -49,7 +49,7 @@ public class BatchDownloadSong {
             }
             logger.info("准备下载：" + fileName);
             String result = YtDlpUtil.downMp3(url, fileName, SONG_PATH);
-            if(StringUtils.isNoneBlank(result) && result.contains("Deleting original file")) {
+            if(StringUtils.isNotBlank(result) && result.contains("Deleting original file")) {
                 updateDownloaded(url);
                 logger.info(fileName + " 下载成功");
             }else{
@@ -205,7 +205,7 @@ public class BatchDownloadSong {
 
                 String publishedTime = CurlUtil.getJsonValue(content, "publishedTimeText", 50);
                 info.put("publishedTime", publishedTime);
-                if(StringUtils.isNoneBlank(publishedTime)){
+                if(StringUtils.isNotBlank(publishedTime)){
                     String publishDate = DateUtil.getDayBefore(publishedTime);
                     info.put("publishDate", publishDate);
                 }
@@ -214,7 +214,7 @@ public class BatchDownloadSong {
                 info.put("lengthText", lengthText);
 
                 String viewCount = CurlUtil.getJsonValue(content, "viewCountText", 50, "simpleText", "次观看");
-                if(StringUtils.isNoneBlank(viewCount)){
+                if(StringUtils.isNotBlank(viewCount)){
                     viewCount = viewCount.replace(",","");
                 }
                 info.put("viewCount", viewCount);

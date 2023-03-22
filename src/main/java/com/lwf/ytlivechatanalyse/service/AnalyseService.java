@@ -67,18 +67,18 @@ public class AnalyseService {
         Long startTimestamp = liveInfo.getStartTimestamp();
         LiveChatData liveChatData = new LiveChatData();
         liveChatData.setLiveDate(liveDate);
-        List<LiveChatData> liveChatAll = null;
+        List<LiveChatData> liveChatAll = new ArrayList<>();
         if(LiveInfo.LIVE_STATUS_DONE.equals(liveStatus)){
             //直播结束
             liveChatAll = liveChatDataService.selectList(liveChatData, true);
         }
         if(CollectionUtils.isEmpty(liveChatAll)){
-            liveStatus = LiveInfo.LIVE_STATUS_LIVEING;
+            liveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_NONE);
             List<LivingChatData> livingChatData = liveChatDataService.selectLivingList(liveChatData, true);
             if(CollectionUtils.isEmpty(livingChatData)){
-                liveChatAll.addAll(livingChatData);
                 return hotListList;
             }
+            liveChatAll.addAll(livingChatData);
         }
         //开始秒数，第一条弹幕的发送时间
         int startSecond = 0;

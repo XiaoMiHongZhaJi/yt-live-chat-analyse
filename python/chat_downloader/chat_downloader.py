@@ -149,6 +149,8 @@ class ChatDownloader():
         :param output: Path of the output file, defaults to None (print to
             standard output)
         :type output: str, optional
+        :param live_date: date of live
+        :type live_date: str, optional
         :param overwrite: If True, overwrite output file. Otherwise, append
             to the end of the file. Defaults to True. In both cases, the file
             (and directories) is created if it does not exist.
@@ -347,20 +349,18 @@ def run(propagate_interrupt=False, **kwargs):
 
     downloader = ChatDownloader(**init_params)
 
-    url = chat_params.get("url")
-    liveDate = chat_params.get("live_date")
+    live_date = chat_params.get("live_date")
     host = "localhost"
     user = "root"
-    password = "root"
+    password = "2f4f12a39b25baae"
     database = "yt_live_chat_analyse"
+    if live_date is None:
+        live_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
     # 打开数据库连接
     db = pymysql.connect(user=user, password=password, host=host, database=database)
     # 使用cursor()方法获取操作游标
     cursor = db.cursor()
-    cursor.execute("insert into live_info (url, platform) " +
-                   "select '" + url + "','" + ("y" if url.find("youtube") > -1 else "t") + "' from dual" +
-                   " where not exists (select 1 from live_info where url = '" + url + "')")
-    db.commit()
+    delete_old = True
     try:
         chat = downloader.get_chat(**chat_params)
 
@@ -370,19 +370,6 @@ def run(propagate_interrupt=False, **kwargs):
         else:
             def callback(item):
                 chat.print_formatted(item)
-
-        cursor.execute("select start_timestamp, live_status, title, live_date, id from live_info where url = '" + url + "' order by live_date desc limit 1")
-        # 获取所有记录列表
-        result = cursor.fetchone()
-        start_timestamp = result[0]
-        title = result[2] if result[2] is not None else chat.title
-        id = result[4]
-        if liveDate is None:
-            liveDate = result[3] if result[3] is not None else time.strftime('%Y-%m-%d', time.localtime(time.time()))
-        cursor.execute("update live_info set live_date = '" + liveDate + "', title = '" + title + "' where id = '" + str(id) + "'")
-        db.commit()
-
-        is_first = True
         for message in chat:
             try:
                 author = message.get("author")
@@ -396,46 +383,27 @@ def run(propagate_interrupt=False, **kwargs):
                 emotes_count = 0
                 if emotes is not None:
                     emotes_count = len(emotes)
-                    for emote in emotes:
-                        emoteName = emote.get("name").replace(':', '')
-                        cursor.execute("select 1 from emotes_data where name = '" + emoteName + "'")
-                        if cursor.fetchone() is None:
-                            cursor.execute("insert into emotes_data(emotes_id, images, is_custom_emoji, name) " +
-                                           "values ('" + emote.get("id") + "','" +
-                                           (emote.get("images")[0].get("url") if emote.get("images") is not None else "") + "'," +
-                                           ("1,'" if emote.get("is_custom_emoji") else "0,'") +
-                                           emoteName + "')")
-                if start_timestamp is None:
-                    if time_in_seconds is not None:
-                        # 录像
-                        if time_in_seconds > 0:
-                            start_timestamp = timestamp - time_in_seconds * 1000000
-                        # 更新数据库
-                        cursor.execute("update live_info set start_timestamp = " + str(start_timestamp) + ", live_status = '1' where id = '" + str(id) + "'")
-                        db.commit()
-                    elif "头号发吹,小米轰炸姬".find(name) > -1 and messages[:2] == "开了" or messages[:2] == "来了":
-                        # 手动开播
-                        start_timestamp = timestamp
-                        # 更新数据库（只更新一次）
-                        cursor.execute("update live_info set start_timestamp = " + str(start_timestamp) + ", live_status = '1' where start_timestamp is null and id = '" + str(id) + "'")
-                        db.commit()
-                    else:
-                        # 查询是否开播
-                        cursor.execute("select start_timestamp from live_info where url = '" + url + "' order by live_date desc limit 1")
-                        result = cursor.fetchone()
-                        start_timestamp = result[0]
-
+                    # 插入emotes_data表，后期emotes数据全了之后可以注释掉
+                    # for emote in emotes:
+                    #     emoteName = emote.get("name").replace(':', '')
+                    #     cursor.execute("select 1 from emotes_data where name = '" + emoteName + "'")
+                    #     if cursor.fetchone() is None:
+                    #         cursor.execute("insert into emotes_data(emotes_id, images, is_custom_emoji, name) " +
+                    #                        "values ('" + emote.get("id") + "','" +
+                    #                        (emote.get("images")[0].get("url") if emote.get("images") is not None else "") + "'," +
+                    #                        ("1,'" if emote.get("is_custom_emoji") else "0,'") +
+                    #                        emoteName + "')")
                 # SQL 插入语句
                 sql = "insert into live_chat_data"
                 if time_in_seconds is None:
                     sql = "insert into living_chat_data"
-                    if is_first:
-                        cursor.execute("delete from living_chat_data " + " where live_date = '" + liveDate + "' and timestamp >= " + str(timestamp))
+                    if delete_old:
+                        cursor.execute("delete from living_chat_data " + " where live_date = '" + live_date + "' and timestamp >= " + str(timestamp))
                         db.commit()
-                        is_first = False
+                        delete_old = False
                 sql += "(live_date, author_image, author_name, author_id, message, time_in_seconds, time_text, timestamp, emotes_count) "
                 sql += "values ('"
-                sql += liveDate + "','"
+                sql += live_date + "','"
                 if author.get("images") is not None:
                     sql += author.get("images")[0].get("url")
                 sql += "','"
@@ -448,16 +416,6 @@ def run(propagate_interrupt=False, **kwargs):
                 sql += messages.replace("'", "\\'") + "',"
                 if time_in_seconds is not None:
                     sql += str(time_in_seconds) + ",'"
-                    sql += str(time_text) + "',"
-                elif start_timestamp is not None:
-                    startSeconds = (timestamp - start_timestamp) / 1000000
-                    sql += str(startSeconds) + ",'"
-                    minute, seconds = divmod(startSeconds, 60)
-                    hour, minute = divmod(minute, 60)
-                    if hour > 0:
-                        time_text = "%d:%02d:%02d" % (hour, minute, seconds)
-                    else:
-                        time_text = "%d:%02d" % (minute, seconds)
                     sql += str(time_text) + "',"
                 else:
                     sql += "null,null,"

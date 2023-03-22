@@ -176,16 +176,17 @@ public class LiveInfoService {
         updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DOWNLOADING);
         updateLiveInfoById(updateLiveInfo);
         // 检查是否已经在下载
-        String ps = CmdUtil.chatDownloaderPs(url);
-        if(StringUtils.isNotBlank(ps)){
-            logger.info("url 已在下载。当前时间：" + DateUtil.getNowDateTime());
+        String result = CmdUtil.chatDownloaderPs(url);
+        logger.info("-----输出结果：" + result);
+        if(result.contains("发现进程信息")){
+            logger.info(url + " 已在下载。当前时间：" + DateUtil.getNowDateTime());
             return ;
         }
         if("t".equals(liveInfo.getPlatform())){
             // twitch
             new Thread(() -> {
                 String fileName = DateUtil.getNowDateTime() + "_t_living.json";
-                CmdUtil.chatDownloader(url, fileName);
+                CmdUtil.chatDownloader(url, liveDate, fileName);
                 updateLiveInfo.setLivingChatCount(liveChatDataService.selectLivingCount(liveInfo.getLiveDate()));
                 updateLiveInfo.setLiveStatus(LiveInfo.LIVE_STATUS_DONE);
                 updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
@@ -196,7 +197,7 @@ public class LiveInfoService {
             //直播已结束，录像弹幕
             liveChatDataService.deleteByLiveDate(liveDate);
             new Thread(() -> {
-                CmdUtil.chatDownloader(url, liveDate + ".json");
+                CmdUtil.chatDownloader(url, liveDate, liveDate + ".json");
                 updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
                 updateLiveInfo.setLiveChatCount(liveChatDataService.selectCount(liveInfo.getLiveDate()));
                 updateLiveInfoById(updateLiveInfo);
@@ -207,7 +208,7 @@ public class LiveInfoService {
             new Thread(() ->{
                 for (int i = 0; i < Constant.DOWNLOAD_FAILURE_RETRY_COUNT; i++) {
                     String fileName = DateUtil.getNowDateTime() + "_living.json";
-                    CmdUtil.chatDownloader(url, fileName);
+                    CmdUtil.chatDownloader(url, liveDate, fileName);
                     //命令行结束，判断直播是否结束
                     Map<String, String> newInfo = CurlUtil.getLiveInfo(url);
                     String newLiveStatus = newInfo.get("liveStatus");

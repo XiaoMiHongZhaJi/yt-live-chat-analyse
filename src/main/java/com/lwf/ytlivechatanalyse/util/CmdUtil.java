@@ -25,7 +25,7 @@ public class CmdUtil {
     public static String rename(String filePath, String oldName, String newName) {
         String osName = System.getProperty("os.name");
         if(osName.startsWith("Win")){
-            if(StringUtils.isNoneBlank(filePath)){
+            if(StringUtils.isNotBlank(filePath)){
                 if(!filePath.endsWith("\\")){
                     filePath += "\\";
                 }
@@ -34,7 +34,7 @@ public class CmdUtil {
             }
             return execCmd("move " + oldName + " " + newName, true, true, "GBK");
         }else{
-            if(StringUtils.isNoneBlank(filePath)) {
+            if(StringUtils.isNotBlank(filePath)) {
                 if(!filePath.endsWith("/")){
                     filePath += "/";
                 }
@@ -93,17 +93,22 @@ public class CmdUtil {
     }
 
     public static String ps(String keyWord){
-        return execCmd("ps -ef | grep -v grep | grep " + keyWord);
+        String result = execCmd("pskw " + keyWord);
+        return result.trim();
     }
 
     public static String chatDownloaderPs(String keyWord){
-        return execCmd("ps -ef | grep -v grep | grep chat_downloader | grep " + keyWord);
+        String result = execCmd("pskw chat_downloader " + keyWord);
+        return result.trim();
     }
 
-    public static String chatDownloader(String url, String fileName){
+    public static String chatDownloader(String url, String liveDate, String fileName){
         String cmd = "chat_downloader ";
         if(StringUtils.isNotBlank(proxy)){
             cmd += "--proxy " + proxy + " ";
+        }
+        if(StringUtils.isNotBlank(liveDate)){
+            cmd += "--live_date " + liveDate + " ";
         }
         if(StringUtils.isNotBlank(fileName)){
             cmd += "--output output/" + fileName + " ";

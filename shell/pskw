@@ -1,14 +1,16 @@
 #!/bin/sh
-#快捷结束进程 用法：kill9 关键字1 关键字2 关键字3
+
+#快速查找进程 用法：pskw 关键字1 关键字2 关键字3
 
 if [ -z "$1" ]; then
 
 	echo "进程名称不能为空"
+
 	exit
 
 fi
 
-name=$(ps -ef | grep "$1" | grep -v "kill9")
+name=$(ps -ef | grep "$1" | grep -v "pskw")
 
 
 if [ "$2" ]; then
@@ -28,14 +30,12 @@ name=$(echo "$name" | grep -v "grep")
 
 if [ -z "${name}" ]; then
 
-    echo "未发现$1 $2 $3"
+  echo "未发现 $1 $2 $3"
 
 else
 
-	pid=$(echo "$name" | awk '{print $2}')
-    kill -9 ${pid}
-    echo "发现进程信息："
+  echo "发现进程信息："
+
 	echo "$name"
-	echo "已结束pid：${pid}"
 
 fi
