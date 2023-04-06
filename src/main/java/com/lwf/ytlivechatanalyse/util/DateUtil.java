@@ -15,7 +15,7 @@ public class DateUtil {
     private static final Logger logger = LoggerFactory.getLogger(DateUtil.class);
 
     public static void main(String[] args) {
-        System.out.printf(getTimestamp("2021-11-18T05:51:37+00:00") + "");
+        logger.info(getTimestamp("2023-03-27_23:54:40") + "");
     }
 
     /**
@@ -26,13 +26,18 @@ public class DateUtil {
     public static long getTimestamp(String dateTime){
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         try {
-            int index = dateTime.indexOf("+");
-            if(index > -1){
-                format.setTimeZone(TimeZone.getTimeZone("GMT" + dateTime.substring(index)));
-            }else {
-                format.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+            char[] chars = dateTime.toCharArray();
+            if(chars.length > 19){
+                if(chars[19] == '+'){
+                    format.setTimeZone(TimeZone.getTimeZone("GMT" + String.valueOf(chars, 19, chars.length > 21 ? 2 : 1)));
+                }else {
+                    format.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+                }
             }
-            dateTime = dateTime.replace("T", " ");
+            chars[10] = ' ';
+            chars[13] = ':';
+            chars[16] = ':';
+            dateTime = String.valueOf(chars, 0, 19);
             Date date = format.parse(dateTime);
             long time = date.getTime();
             return time;

@@ -29,8 +29,8 @@ public class CurlUtil {
     public static String proxy;
 
     @Value("${proxy}")
-    public void setConfig1(String proxy) {
-        CurlUtil.proxy = proxy;
+    public void setProxy(String proxy) {
+        this.proxy = proxy;
     }
 
     public static Map<String, String> getLiveInfo(String url){

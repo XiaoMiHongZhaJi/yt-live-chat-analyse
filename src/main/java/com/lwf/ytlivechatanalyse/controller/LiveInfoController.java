@@ -13,11 +13,16 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -49,6 +54,33 @@ public class LiveInfoController {
             }else if(filename.endsWith("json")){
                 liveChatDataService.importJsonFile(file, liveInfo.getLiveDate());
             }
+        }
+    }
+
+    @RequestMapping("/downloadBullet")
+    public ResponseEntity<InputStreamResource> downloadBullet(String liveDate, String startTime, String fileType){
+        if(StringUtils.isBlank(liveDate) || liveDate.length() < 10){
+            logger.error("liveDate不能为空", liveDate, startTime, fileType);
+            return null;
+        }
+        File file = liveInfoService.getBulletXml(liveDate, startTime);
+        if("ass".equals(fileType)){
+            file = liveInfoService.converBulletAss(file);
+        }
+        if(file == null){
+            logger.error("弹幕文件生成失败", liveDate, startTime, fileType);
+            return null;
+        }
+        try {
+            InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
+            ResponseEntity.BodyBuilder builder = ResponseEntity.ok();
+            builder.contentType(MediaType.APPLICATION_OCTET_STREAM);
+            builder.header("Content-disposition", "attachment; filename=" + file.getName());
+            ResponseEntity<InputStreamResource> response = builder.body(resource);
+            return response;
+        }catch(Exception e){
+            logger.error("下载弹幕文件失败", e);
+            return null;
         }
     }
 
