@@ -6,7 +6,7 @@ USE yt_live_chat_analyse;
 CREATE TABLE yt_live_chat_analyse.emotes_data (
   id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
   emotes_id VARCHAR(60) DEFAULT NULL COMMENT '颜文字id',
-  images VARCHAR(100) DEFAULT NULL COMMENT '颜文字图片',
+  images VARCHAR(120) DEFAULT NULL COMMENT '颜文字图片',
   is_custom_emoji TINYINT(1) DEFAULT NULL COMMENT '是否yt自定义表情',
   name VARCHAR(60) DEFAULT NULL COMMENT '颜文字名称',
   PRIMARY KEY (id)
