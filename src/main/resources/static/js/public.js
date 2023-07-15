@@ -3,7 +3,7 @@ layui.use(['jquery'], function(){
     const $ = layui.jquery;
     emoteDict = layui.data("emoteDict");
     if(!emoteDict["STORAGE_OK"]){
-        $.ajax({url: '/liveChat/queryEmotes'}).then((data) => {
+        $.ajax({url: '../liveChat/queryEmotes'}).then((data) => {
             $(data).each((i,emote)=>{
                 emoteDict[emote.name] = emote;
                 layui.data("emoteDict",{
@@ -30,13 +30,13 @@ function getEmoteMssage(message){
             const emote = emoteDict[key];
             if(emote){
                 const emotesId = emote.emotesId;
-                if(emote.isCustomEmoji || emotesId == "?"){
-                    realMessage += '<img class="emote" src="'+ emote.images +'">';
+                if(emote.isCustomEmoji){
+                    realMessage += '<img alt="" class="emote" src="'+ emote.images +'">';
                 }else{
                     realMessage += emotesId;
                 }
-            }else{
-                realMessage += key;
+            }else if(key.trim()){
+                realMessage += "[" + key + "]";
             }
             remain = remain.substring(remain.indexOf(":") + 1);
         }
@@ -50,8 +50,8 @@ function getEmoteMssage(message){
             const emote = emoteDict[split];
             if(emote){
                 realMessage += '<img class="emote" src="'+ emote.images +'">';
-            }else {
-                realMessage += split;
+            }else if(split.trim()){
+                realMessage += "[" + split + "]";
             }
         })
         return realMessage;
@@ -114,7 +114,7 @@ function getYtUrlTag(url, time){
 function initLiveDateSelector(callback, showAll, param){
     const $ = layui.jquery;
     const form = layui.form;
-    $.ajax({url: '/liveInfo/queryListBySelector', data: param}).then((selectorList)=>{
+    $.ajax({url: '../liveInfo/queryListBySelector', data: param}).then((selectorList)=>{
         if(!selectorList || selectorList.length == 0){
             layer.msg("暂无弹幕数据");
             return;

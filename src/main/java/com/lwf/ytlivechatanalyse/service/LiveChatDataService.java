@@ -12,6 +12,7 @@ import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
 import com.lwf.ytlivechatanalyse.util.Constant;
 import com.lwf.ytlivechatanalyse.util.DateUtil;
 import com.lwf.ytlivechatanalyse.util.JsonUtil;
+import com.lwf.ytlivechatanalyse.util.WrapperUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
@@ -23,10 +24,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 @Service
 public class LiveChatDataService {
@@ -47,14 +50,17 @@ public class LiveChatDataService {
 
     public List<LiveChatData> selectList(LiveChatData liveChatData, boolean isAsc){
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
-        if(StringUtils.isNotBlank(liveChatData.getMessage())){
-            queryWrapper.like("message", liveChatData.getMessage());
+        String keywords = liveChatData.getMessage();
+        if(StringUtils.isNotBlank(keywords)){
+            WrapperUtil.keyWordsLike(queryWrapper, keywords, "message");
         }
-        if(StringUtils.isNotBlank(liveChatData.getAuthorName())){
-            queryWrapper.like("author_name", liveChatData.getAuthorName());
+        String authorName = liveChatData.getAuthorName();
+        if(StringUtils.isNotBlank(authorName)){
+            WrapperUtil.keyWordsLike(queryWrapper, authorName, "author_name");
         }
-        if(StringUtils.isNotBlank(liveChatData.getLiveDate())){
-            queryWrapper.like("live_date", liveChatData.getLiveDate());
+        String liveDate = liveChatData.getLiveDate();
+        if(StringUtils.isNotBlank(liveDate)){
+            queryWrapper.like("live_date", liveDate);
         }
         queryWrapper.orderBy(true, isAsc, "timestamp");
         return liveChatDataMapper.selectList(queryWrapper);
@@ -62,36 +68,39 @@ public class LiveChatDataService {
 
     public List<LivingChatData> selectLivingList(LiveChatData liveChatData, boolean isAsc){
         QueryWrapper<LivingChatData> queryWrapper = new QueryWrapper<>();
-        if(StringUtils.isNotBlank(liveChatData.getMessage())){
-            queryWrapper.like("message", liveChatData.getMessage());
+        String keywords = liveChatData.getMessage();
+        if(StringUtils.isNotBlank(keywords)){
+            WrapperUtil.keyWordsLike(queryWrapper, keywords, "message");
         }
-        if(StringUtils.isNotBlank(liveChatData.getAuthorName())){
-            queryWrapper.like("author_name", liveChatData.getAuthorName());
+        String authorName = liveChatData.getAuthorName();
+        if(StringUtils.isNotBlank(authorName)){
+            WrapperUtil.keyWordsLike(queryWrapper, authorName, "author_name");
         }
-        if(StringUtils.isNotBlank(liveChatData.getLiveDate())){
-            queryWrapper.like("live_date", liveChatData.getLiveDate());
+        String liveDate = liveChatData.getLiveDate();
+        if(StringUtils.isNotBlank(liveDate)){
+            queryWrapper.like("live_date", liveDate);
         }
         queryWrapper.orderBy(true, isAsc, "timestamp");
-        List<LivingChatData> livingChatList = livingChatDataMapper.selectList(queryWrapper);
-        return livingChatList;
+        return livingChatDataMapper.selectList(queryWrapper);
     }
 
     public Long selectStartTimestamp(String liveDate){
-        Long selectStartTimestamp = liveChatDataMapper.selectStartTimestamp(liveDate);
-        if(selectStartTimestamp == null || selectStartTimestamp == 0){
-            selectStartTimestamp = liveChatDataMapper.selectStartTimestampByMessage(liveDate);
+        LiveChatData liveChatData = liveChatDataMapper.selectStartMessage(liveDate);
+        if(liveChatData == null){
+            return null;
         }
-        return selectStartTimestamp;
-    }
-
-    public Integer updateTimestamp(String liveDate,Long timestamp){
-        return liveChatDataMapper.updateTimestamp(liveDate, timestamp);
+        Long timestamp = liveChatData.getTimestamp();
+        BigDecimal timeInSeconds = liveChatData.getTimeInSeconds();
+        if(timestamp == null || timestamp == 0L || timeInSeconds == null){
+            return null;
+        }
+        return timestamp - (long)(timeInSeconds.doubleValue() * 1000000);
     }
 
     public int selectCount(String liveDate){
         //录像
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("live_date", liveDate);
+        queryWrapper.like("live_date", liveDate);
         return Math.toIntExact(liveChatDataMapper.selectCount(queryWrapper));
     }
 
@@ -103,44 +112,37 @@ public class LiveChatDataService {
     }
 
     public void insertBatch(List<LiveChatData> batchList){
-        SqlSession sqlSession = null;
-        try{
-            sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH);
-            for (LiveChatData liveChatData : batchList){
+        try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
+            for (LiveChatData liveChatData : batchList) {
                 sqlSession.insert("com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper.insertNotExists", liveChatData);
             }
-            sqlSession.flushStatements();
-        }catch (Exception e){
-            for (LiveChatData liveChatData : batchList){
+            sqlSession.commit();
+        } catch (Exception e) {
+            for (LiveChatData liveChatData : batchList) {
                 try {
                     liveChatDataMapper.insertNotExists(liveChatData);
-                }catch (Exception e1){
+                } catch (Exception e1) {
                     logger.error("批量插入出错，已改为单个插入，错误数据：", e1);
                     logger.error(liveChatData.toString());
                 }
             }
-        }finally {
-            if(sqlSession != null)
-                sqlSession.close();
         }
     }
 
     public String getJsonString(LiveChatData liveChatData){
         List<LiveChatData> liveChatAll = selectList(liveChatData, true);
         List<Map<String,Object>> tempList = new ArrayList<>();
-        for (int i = 0; i < liveChatAll.size(); i++){
-            Map<String,Object> temp = new HashMap<>();
-            LiveChatData liveChat = liveChatAll.get(i);
-            temp.put("authorImage",liveChat.getAuthorImage());
-            temp.put("authorName",liveChat.getAuthorName());
-            temp.put("emotesCount",liveChat.getEmotesCount());
-            temp.put("message",liveChat.getMessage());
-            temp.put("timeText",liveChat.getTimeText());
-            temp.put("timeInSeconds",liveChat.getTimeInSeconds());
+        for (LiveChatData liveChat : liveChatAll) {
+            Map<String, Object> temp = new HashMap<>();
+            temp.put("authorImage", liveChat.getAuthorImage());
+            temp.put("authorName", liveChat.getAuthorName());
+            temp.put("emotesCount", liveChat.getEmotesCount());
+            temp.put("message", liveChat.getMessage());
+            temp.put("timeText", liveChat.getTimeText());
+            temp.put("timeInSeconds", liveChat.getTimeInSeconds());
             tempList.add(temp);
         }
-        String jsonString = JSON.toJSONString(tempList);
-        return jsonString;
+        return JSON.toJSONString(tempList);
     }
 
     public void deleteByLiveDate(String liveDate){
@@ -151,10 +153,7 @@ public class LiveChatDataService {
 
 
     /**
-     * 从json文件导入弹幕数据（暂时不需要了）
-     * @param file
-     * @param liveDate
-     * @return
+     * 从json文件导入弹幕数据
      */
     public String importJsonFile(MultipartFile file, String liveDate) {
         long startTime = System.currentTimeMillis();   //获取开始时间
@@ -196,24 +195,8 @@ public class LiveChatDataService {
             this.insertBatch(batchList);
             batchList.clear();
         }
-        if(((JSONObject)jsonArray.get(0)).get("time_in_seconds") == null){
-            //用于直播中下载弹幕Json文件的情况，此时Json数据中没有timeInSeconds字段，会报错
-            Long startTimestamp = this.selectStartTimestamp(liveDate);
-            if(startTimestamp != null && startTimestamp > 0){
-                this.updateTimestamp(liveDate,startTimestamp);
-            }
-        }
         int count = selectCount(liveDate);
-        StringBuilder result = new StringBuilder();
-        result.append(liveDate);
-        result.append(" json数据总条数：");
-        result.append(jsonArray.size());
-        result.append("。导入后条数：");
-        result.append(count);
-        result.append(" 。用时：");
         long time = System.currentTimeMillis() - startTime; //获取结束时间
-        result.append(time / 1000);
-        result.append("秒");
-        return result.toString();
+        return String.format("%s json数据总条数：%d。导入条数：%d。用时：%d秒", liveDate, jsonArray.size(), count, time / 1000);
     }
 }

@@ -192,4 +192,4 @@ def main(cli_args=None):
         set_log_level(args.logging)
 
     # Run with these arguments
-    run(**args.__dict__)
+    return run(**args.__dict__)

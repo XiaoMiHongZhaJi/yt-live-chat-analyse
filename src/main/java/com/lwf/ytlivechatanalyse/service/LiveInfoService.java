@@ -2,9 +2,13 @@ package com.lwf.ytlivechatanalyse.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.lwf.ytlivechatanalyse.bean.LiveChatData;
 import com.lwf.ytlivechatanalyse.bean.LiveInfo;
+import com.lwf.ytlivechatanalyse.bean.LiveInfoLog;
+import com.lwf.ytlivechatanalyse.bean.LivingChatData;
 import com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper;
+import com.lwf.ytlivechatanalyse.dao.LiveInfoLogMapper;
 import com.lwf.ytlivechatanalyse.dao.LiveInfoMapper;
 import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
 import com.lwf.ytlivechatanalyse.util.*;
@@ -16,9 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class LiveInfoService {
@@ -27,6 +29,9 @@ public class LiveInfoService {
 
     @Autowired
     LiveInfoMapper liveInfoMapper;
+
+    @Autowired
+    LiveInfoLogMapper liveInfoLogMapper;
 
     @Autowired
     LiveChatDataMapper liveChatDataMapper;
@@ -89,6 +94,7 @@ public class LiveInfoService {
                 queryWrapper.eq("url", liveInfo.getUrl());
             }
         }
+        queryWrapper.last("limit 1");
         return liveInfoMapper.selectOne(queryWrapper);
     }
 
@@ -119,6 +125,7 @@ public class LiveInfoService {
             if(getLiveInfo){
                 //补全信息
                 Map<String, String> info = CurlUtil.getLiveInfo(liveInfo.getUrl());
+                addLiveInfoLog(url, info);
                 if(StringUtils.isNotBlank(info.get("viewCount"))){
                     liveInfo.setViewCount(Integer.valueOf(info.get("viewCount")));
                 }
@@ -137,7 +144,7 @@ public class LiveInfoService {
                 if(liveInfo.getStartTimestamp() == null && LiveInfo.LIVE_STATUS_LIVEING.equals(liveInfo.getLiveStatus())){
                     String startTimestamp = info.get("startTimestamp");
                     if(StringUtils.isNotBlank(startTimestamp)){
-                        liveInfo.setStartTimestamp(DateUtil.getTimestamp(startTimestamp) * 1000);
+                        liveInfo.setStartTimestamp(Long.valueOf(startTimestamp));
                     }
                 }
             }
@@ -176,10 +183,8 @@ public class LiveInfoService {
         updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DOWNLOADING);
         updateLiveInfoById(updateLiveInfo);
         // 检查是否已经在下载
-        String result = CmdUtil.chatDownloaderPs(url);
-        logger.info("-----输出结果：" + result);
-        if(result.contains("发现进程信息")){
-            logger.info(url + " 已在下载。当前时间：" + DateUtil.getNowDateTime());
+        if("y".equals(liveInfo.getPlatform()) && LiveInfo.DOWNLOAD_STATUS_DOWNLOADING.equals(liveInfo.getDownloadStatus())){
+            logger.info("{} 已在下载。当前时间：{}", url, DateUtil.getNowDateTime());
             return ;
         }
         if("t".equals(liveInfo.getPlatform())){
@@ -191,17 +196,30 @@ public class LiveInfoService {
                 updateLiveInfo.setLiveStatus(LiveInfo.LIVE_STATUS_DONE);
                 updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
                 updateLiveInfoById(updateLiveInfo);
-                logger.info("twitch 直播已结束，下载弹幕信息完成。当前时间：" + DateUtil.getNowDateTime());
+                logger.info("twitch 直播已结束，下载弹幕信息完成。当前时间：{}", DateUtil.getNowDateTime());
             }).start();
         }else if(LiveInfo.LIVE_STATUS_DONE.equals(liveInfo.getLiveStatus())){
             //直播已结束，录像弹幕
-            liveChatDataService.deleteByLiveDate(liveDate);
             new Thread(() -> {
                 CmdUtil.chatDownloader(url, liveDate, liveDate + ".json");
+                int count = liveChatDataService.selectCount(liveInfo.getLiveDate());
+                if(count == 0){
+                    logger.error("{} 下载弹幕信息失败，条数为0，url：{}", liveDate, url);
+                    updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_FILURE);
+                    updateLiveInfoById(updateLiveInfo);
+                    return;
+                }
+                updateLiveInfo.setLiveChatCount(count);
+                logger.info("{} 下载弹幕信息完成，条数：{}", liveDate, count);
+                Integer asyncCount = liveChatDataMapper.asyncLivingChatData(liveDate);
+                logger.info("{} 同步弹幕信息完成，同步条数：{}", liveDate, asyncCount);
+                updateLiveInfo.setLivingChatCount(liveChatDataService.selectCount(liveInfo.getLiveDate()));
+                Long startTimestamp = liveChatDataService.selectStartTimestamp(liveDate);
+                if(startTimestamp != null){
+                    updateLiveInfo.setStartTimestamp(startTimestamp);
+                }
                 updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
-                updateLiveInfo.setLiveChatCount(liveChatDataService.selectCount(liveInfo.getLiveDate()));
                 updateLiveInfoById(updateLiveInfo);
-                logger.info("youtube 下载弹幕信息完成。当前时间：" + DateUtil.getNowDateTime());
             }).start();
         }else{
             //直播中或预告状态
@@ -214,6 +232,7 @@ public class LiveInfoService {
                     String newLiveStatus = newInfo.get("liveStatus");
                     updateLiveInfo.setLiveStatus(newLiveStatus);
                     updateLiveInfo.setLivingChatCount(liveChatDataService.selectLivingCount(liveInfo.getLiveDate()));
+                    addLiveInfoLog(url, newInfo);
                     if(StringUtils.isBlank(newLiveStatus)){
                         logger.error("youtube 获取直播信息失败。当前时间：" + DateUtil.getNowDateTime());
                         updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_NONE);
@@ -223,6 +242,7 @@ public class LiveInfoService {
                         //直播结束，更新状态
                         updateLiveInfo.setViewCount(Integer.valueOf(newInfo.get("viewCount")));
                         updateLiveInfo.setLikeCount(newInfo.get("likeCount"));
+                        updateLiveInfo.setDurationTime(newInfo.get("videoDurationTime"));
                         updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
                         updateLiveInfoById(updateLiveInfo);
                         logger.info("youtube 直播已结束，下载弹幕信息完成。当前时间：" + DateUtil.getNowDateTime());
@@ -238,12 +258,73 @@ public class LiveInfoService {
                     }
                 }
             }).start();
+            new Thread(()->{
+                try {
+                    Thread.sleep(60 * 1000);
+                    LiveInfoLog latestLog = queryLatestLog(url, null);
+                    if(latestLog != null){
+                        Long lastUpdateTimestamp = latestLog.getUpdateTimestamp();
+                        Long nowTimestamp = DateUtil.getNowTimestamp();
+                        long second = (nowTimestamp - lastUpdateTimestamp) / 1000000;
+                        if(second <= 58l){
+                            logger.info("已有InfoLog正在运行，最近更新时间：{}", latestLog.getUpdateTime());
+                            return;
+                        }
+                    }
+                    while (Calendar.getInstance(TimeZone.getTimeZone("GMT+8")).get(Calendar.HOUR_OF_DAY) != 3){
+                        Map<String, String> newInfo = CurlUtil.getLiveInfo(url);
+                        Thread.sleep(60 * 1000);
+                        addLiveInfoLog(url, newInfo);
+                        if("2".equals(newInfo.get("liveStatus"))){
+                            break;
+                        }
+                    }
+                }catch(Exception e){
+                    logger.error("更新LiveInfoLog出错：", e);
+                }
+            }).start();
         }
     }
 
+    public LiveInfoLog queryLatestLog(String url, String liveDate){
+        QueryWrapper<LiveInfoLog> queryWrapper = new QueryWrapper<>();
+        if(StringUtils.isBlank(url)){
+            queryWrapper.eq("live_date", liveDate);
+        }else{
+            queryWrapper.eq("url", url);
+        }
+        queryWrapper.orderByDesc("id");
+        queryWrapper.last("limit 1");
+        LiveInfoLog liveInfoLog = liveInfoLogMapper.selectOne(queryWrapper);
+        return liveInfoLog;
+    }
+
+    public void addLiveInfoLog(String url, Map<String, String> info){
+        String liveDate = info.get("liveDate");
+        LiveInfoLog liveInfoLog = new LiveInfoLog();
+        liveInfoLog.setUrl(url);
+        liveInfoLog.setTitle(info.get("title"));
+        liveInfoLog.setLiveDate(liveDate);
+        liveInfoLog.setLiveStatus(info.get("liveStatus"));
+        liveInfoLog.setLikeCount(info.get("likeCount"));
+        String viewCount = info.get("viewCount");
+        if(StringUtils.isNumeric(viewCount)){
+            liveInfoLog.setViewCount(Integer.parseInt(viewCount));
+        }
+        String livingViewCount = info.get("livingViewCount");
+        if(StringUtils.isNumeric(livingViewCount)){
+            liveInfoLog.setLivingViewCount(Integer.parseInt(livingViewCount));
+        }
+        liveInfoLog.setLivingChatCount(liveChatDataService.selectLivingCount(liveDate));
+        liveInfoLog.setPlatform(url.contains("youtube") ? "y" : "t");
+        liveInfoLog.setUpdateTimestamp(DateUtil.getNowTimestamp());
+        liveInfoLog.setUpdateTime(new Date());
+        liveInfoLogMapper.insert(liveInfoLog);
+    }
+
     public File getBulletXml(String liveDate, String startTime) {
-        logger.info("开始生成弹幕xml文件：", liveDate, startTime);
-        long startTimestamp = 0;
+        logger.info("开始生成弹幕xml文件：{}{}", liveDate, startTime);
+        Long startTimestamp = null;
         if(StringUtils.isBlank(startTime)){
             LiveInfo liveInfo = new LiveInfo();
             liveInfo.setLiveDate(liveDate);
@@ -251,7 +332,7 @@ public class LiveInfoService {
             if(liveInfo != null){
                 startTimestamp = liveInfo.getStartTimestamp();
             }
-            logger.info("获取到开播信息中的startTimestamp：", startTimestamp);
+            logger.info("获取到开播信息中的startTimestamp：{}", startTimestamp);
         }else if(startTime.startsWith("1") && StringUtils.isNumeric(startTime)){
             //时间戳
             startTimestamp = Long.parseLong(startTime);
@@ -262,8 +343,8 @@ public class LiveInfoService {
             }
         }else if(startTime.startsWith("202")){
             //时间日期
-            startTimestamp = DateUtil.getTimestamp(startTime) * 1000;
-            logger.info("获取到转换的startTimestamp：", startTimestamp);
+            startTimestamp = DateUtil.getTimestamp(startTime);
+            logger.info("获取到转换的startTimestamp：{}", startTimestamp);
         }else{
             throw new RuntimeException("输入的时间有误");
         }
@@ -271,8 +352,14 @@ public class LiveInfoService {
         LiveChatData liveChatData = new LiveChatData();
         liveChatData.setLiveDate(liveDate);
         List<LiveChatData> chatList = liveChatDataService.selectList(liveChatData, true);
-        File xmlFile = BulletUtil.getXmlFile(chatList, startTimestamp);
-        return xmlFile;
+        if(CollectionUtils.isEmpty(chatList)){
+            List<LivingChatData> livingChatData = liveChatDataService.selectLivingList(liveChatData, true);
+            chatList.addAll(livingChatData);
+        }
+        if(CollectionUtils.isEmpty(chatList)){
+            throw new RuntimeException("输入的日期无弹幕数据");
+        }
+        return BulletUtil.getXmlFile(chatList, startTimestamp, "bullet", 0, 0);
     }
 
     public File converBulletAss(File file) {

@@ -16,7 +16,6 @@ from .sites import get_all_sites
 
 from .formatting.format import ItemFormatter
 from .utils.core import (
-    safe_print,
     get_default_args,
     update_dict_without_overwrite
 )
@@ -47,7 +46,7 @@ from .errors import (
 )
 
 
-class ChatDownloader():
+class ChatDownloader:
     """Class used to create sessions and download chats."""
 
     def __init__(self,
@@ -60,7 +59,7 @@ class ChatDownloader():
 
         :param headers: Headers to use for subsequent requests, defaults to None
         :type headers: dict, optional
-        :param cookies: Path of cookies file, defaults to None
+        :param cookies: Path of cookies files, defaults to None
         :type cookies: str, optional
         :param proxy: Use the specified HTTP/HTTPS/SOCKS proxy. To enable SOCKS
             proxy, specify a proper scheme. For example socks5://127.0.0.1:1080/.
@@ -351,16 +350,21 @@ def run(propagate_interrupt=False, **kwargs):
 
     live_date = chat_params.get("live_date")
     host = "localhost"
+    port = 3306
     user = "root"
-    password = "2f4f12a39b25baae"
+    password = "root"
     database = "yt_live_chat_analyse"
     if live_date is None:
         live_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
     # 打开数据库连接
-    db = pymysql.connect(user=user, password=password, host=host, database=database)
-    # 使用cursor()方法获取操作游标
-    cursor = db.cursor()
-    delete_old = True
+    try:
+        db = pymysql.connect(user=user, port=port, password=password, host=host, database=database)
+        # 使用cursor()方法获取操作游标
+        cursor = db.cursor()
+    except:
+        db = None
+        cursor = None
+        log('warning', '数据库连接失败')
     try:
         chat = downloader.get_chat(**chat_params)
 
@@ -371,62 +375,8 @@ def run(propagate_interrupt=False, **kwargs):
             def callback(item):
                 chat.print_formatted(item)
         for message in chat:
-            try:
-                author = message.get("author")
-                display_name = author.get("display_name")
-                name = author.get("name").replace("'", "\\'")
-                messages = message.get("message")
-                time_in_seconds = message.get("time_in_seconds")
-                time_text = message.get("time_text")
-                timestamp = message.get("timestamp")
-                emotes = message.get("emotes")
-                emotes_count = 0
-                if emotes is not None:
-                    emotes_count = len(emotes)
-                    # 插入emotes_data表，后期emotes数据全了之后可以注释掉
-                    # for emote in emotes:
-                    #     emoteName = emote.get("name").replace(':', '')
-                    #     cursor.execute("select 1 from emotes_data where name = '" + emoteName + "'")
-                    #     if cursor.fetchone() is None:
-                    #         cursor.execute("insert into emotes_data(emotes_id, images, is_custom_emoji, name) " +
-                    #                        "values ('" + emote.get("id") + "','" +
-                    #                        (emote.get("images")[0].get("url") if emote.get("images") is not None else "") + "'," +
-                    #                        ("1,'" if emote.get("is_custom_emoji") else "0,'") +
-                    #                        emoteName + "')")
-                # SQL 插入语句
-                sql = "insert into live_chat_data"
-                if time_in_seconds is None:
-                    sql = "insert into living_chat_data"
-                    if delete_old:
-                        cursor.execute("delete from living_chat_data " + " where live_date = '" + live_date + "' and timestamp >= " + str(timestamp))
-                        db.commit()
-                        delete_old = False
-                sql += "(live_date, author_image, author_name, author_id, message, time_in_seconds, time_text, timestamp, emotes_count) "
-                sql += "values ('"
-                sql += live_date + "','"
-                if author.get("images") is not None:
-                    sql += author.get("images")[0].get("url")
-                sql += "','"
-                if display_name is not None:
-                    sql += display_name.replace("'", "\\'")
-                else:
-                    sql += name
-                sql += "','"
-                sql += author.get("id") + "','"
-                sql += messages.replace("'", "\\'") + "',"
-                if time_in_seconds is not None:
-                    sql += str(time_in_seconds) + ",'"
-                    sql += str(time_text) + "',"
-                else:
-                    sql += "null,null,"
-                sql += str(timestamp) + ","
-                sql += str(emotes_count) + ")"
-                # 执行sql语句
-                cursor.execute(sql)
-                # 提交到数据库执行
-                db.commit()
-            except Exception as e:
-                print(e)
+            if db is not None:
+                insert_db(db, cursor, live_date, message)
             callback(message)
 
         log('info', 'Finished retrieving chat messages.')
@@ -453,8 +403,93 @@ def run(propagate_interrupt=False, **kwargs):
             raise e
         else:
             log('error', 'Keyboard Interrupt')
+    else:  # No exceptions raised
+        return
 
     finally:
+        if db is not None:
+            # 关闭数据库连接
+            cursor.close()
+            db.close()
         downloader.close()
-        # 关闭数据库连接
-        db.close()
+
+    return 1
+
+
+delete_old = True
+def insert_db(db, cursor, live_date, message):
+    global delete_old
+    try:
+        author = message.get("author")
+        display_name = author.get("display_name")
+        name = author.get("name")
+        message_text = message.get("message")
+        time_in_seconds = message.get("time_in_seconds")
+        time_text = message.get("time_text")
+        timestamp = message.get("timestamp")
+        money = message.get("money")
+        emotes = message.get("emotes")
+        emotes_count = 0
+        if emotes is not None:
+            emotes_count = len(emotes)
+            # 插入emotes_data表。后期emotes数据全了之后可以注释掉
+            # for emote in emotes:
+            #     emote_name = emote.get("name").replace(':', '')
+            #     cursor.execute("select 1 from emotes_data where name = '" + emote_name + "'")
+            #     if cursor.fetchone() is None:
+            #         emote_sql = "insert into emotes_data(emotes_id, images, is_custom_emoji, name) values ('"
+            #         emote_sql += emote.get("id") + "','"
+            #         emote_sql += (emote.get("images")[0].get("url") if emote.get("images") is not None else "") + "',"
+            #         emote_sql += "1,'" if emote.get("is_custom_emoji") else "0,'"
+            #         emote_sql += emote_name + "')"
+            #         cursor.execute(emote_sql)
+        # SQL 插入语句
+        sql = "insert into live_chat_data"
+        if time_in_seconds is None:
+            sql = "insert into living_chat_data"
+            if delete_old:
+                cursor.execute("delete from living_chat_data " + " where live_date = '" + live_date + "' and timestamp >= " + str(timestamp))
+                db.commit()
+                delete_old = False
+        sql += "(live_date, author_image, author_name, author_id, message, sc_info, sc_amount, time_in_seconds, time_text, timestamp, emotes_count) "
+        sql += "values ('"
+        sql += live_date + "',"
+        if author.get("images") is not None:
+            sql += "'" + author.get("images")[0].get("url") + "','"
+        else:
+            sql += "null,'"
+        if display_name is not None:
+            sql += display_name.replace("'", "\\'")
+        else:
+            sql += name.replace("'", "\\'")
+        sql += "','" + author.get("id") + "',"
+        if message_text is not None:
+            sql += "'" + message_text.replace("'", "\\'") + "',"
+        else:
+            sql += "null,"
+        if money is not None:
+            color = message.get("header_background_colour")
+            if color is None:
+                color = message.get("background_colour")
+            if color is None:
+                color = ''
+            sql += "'" + money.get("text").replace(" ", " ") + " " + color + "','"
+            sql += money.get("currency") + " " + str(money.get("amount")) + "',"
+        else:
+            sql += "null,null,"
+        if time_in_seconds is not None:
+            sql += str(time_in_seconds) + ",'"
+            sql += str(time_text) + "',"
+        else:
+            sql += "null,null,"
+        sql += str(timestamp) + ","
+        if emotes_count > 0:
+            sql += str(emotes_count) + ")"
+        else:
+            sql += "null)"
+        # 执行sql语句
+        cursor.execute(sql)
+        # 提交到数据库执行
+        db.commit()
+    except Exception as e:
+        log('error', e)

@@ -8,8 +8,8 @@
     <link rel="stylesheet" href="../css/public.css">
     <script src="../modules/layui/layui.js"></script>
     <script src="../js/public.js"></script>
-    <script src="/pages/dialog/hotListDetail.js"></script>
-    <script src="/pages/dialog/liveDetail.js"></script>
+    <script src="dialog/hotListDetail.js"></script>
+    <script src="dialog/liveDetail.js"></script>
     </head>
 <body>
 <ul class="layui-nav layui-bg-cyan" lay-filter="demo">
@@ -41,14 +41,14 @@
                             </select>
                         </div>
                     </div>
-                    <!--<div class="layui-inline">
+                    <div class="layui-inline">
                         <label class="layui-form-label">关键字</label>
                         <div class="layui-input-inline">
                             <label>
-                                <input type="text" name="message" class="layui-input" placeholder="请输入内容">
+                                <input type="text" name="keyword" class="layui-input" placeholder="请输入内容">
                             </label>
                         </div>
-                    </div>-->
+                    </div>
                     <div class="layui-inline">
                         <button type="submit" id="submit" class="layui-btn"  lay-submit lay-filter="data-search-btn"><i class="layui-icon"></i>统计</button>
                     </div>
@@ -90,7 +90,7 @@
 </div>
 <script>
     layui.config({
-        base: '/modules/'
+        base: '../modules/'
     }).extend({
         echarts: 'echarts'
     }).use(['form', 'table', 'echarts', 'element'], function (){
@@ -101,11 +101,14 @@
         let liveInfo = null;
         let echartsDensity = null;
         let echartsCompare = null;
+        let echartsData0 = null;
+        let echartsData1 = null;
+        let echartsData2 = null;
         initLiveDateSelector((info)=>{
             liveInfo = info;
             table.reload('table-list', {
                 loading: true,
-                url: '/analyse/queryHotList',
+                url: '../analyse/queryHotList',
                 where: {
                     liveDate: info.liveDate,
                     liveStatus: info.liveStatus,
@@ -128,11 +131,11 @@
                     const startSecond = d.startSecond;
                     const url = liveInfo.url;
                     if (url && url.indexOf("youtube") > -1 && startSecond != null){
-                    return '<a target="_blank" href="'+ getYtUrl(url, startSecond) +'" data-startTime="'+ startTime +'">'+ startTime + " ~ " + endTime +'</a>';
-                }
-                return startTime + " ~ " + endTime;
+                        return '<a target="_blank" href="'+ getYtUrl(url, startSecond) +'" data-startTime="'+ startTime +'">'+ startTime + " ~ " + endTime +'</a>';
+                    }
+                    return startTime + " ~ " + endTime;
                 }},
-                {field: 'count', width: 105, title: '弹幕条数', sort: true, align: "right", templet: (d) => {
+                {field: 'count', width: 105, title: '弹幕条数', sort: true, align: "right", event: "detail", templet: (d) => {
                     let content;
                     const count = d.count;
                     if(count >= 500){
@@ -177,8 +180,9 @@
             ]],
             loading: false,
             done: function(res){
+                echartsData0 = res.data;
                 $("#submit").removeClass("layui-btn-disabled");
-                if(!res.data || res.data.length == 0){
+                if(!echartsData0 || echartsData0.length == 0){
                     layer.msg("该日期暂无弹幕数据或未开播，请选择其他日期");
                     echartsDensity.hideLoading();
                     return false;
@@ -186,10 +190,13 @@
                 if(!echartsDensity){
                     initEcharts();
                 }
-                refershDensity(res.data);
-                refershCompare(res.data);
+                refershDensity(echartsData0);
+                refershCompare(echartsData0);
             }
         });
+        table.on('detail', function (obj) {
+            console.log(obj);
+        })
         // 监听搜索操作
         form.on('submit(data-search-btn)', function (data){
             if($("#submit").hasClass("layui-btn-disabled")){
@@ -221,24 +228,36 @@
             echartsDensity = echarts.init($("#echarts-density")[0]);
             echartsDensity.showLoading({text: "数据正在加载中", textColor: "#666"});
             echartsDensity.on('click',(params) => {
-                const liveDate = $("#liveDate").val();
+                const liveDate = liveInfo.liveDate;
                 const url = liveInfo.url;
                 const startTime = params.name;
                 const intervalMinutes = $("#intervalMinutes").val()
                 const tr = $('.layui-table a[data-startTime="' + startTime + '"]').closest("tr");
-                showHotListDetailDialog(liveDate, startTime, intervalMinutes, url, tr);
+                const dataIndex = params.dataIndex;
+                const startTimestamp = echartsData0[dataIndex].startTimestamp;
+                showHotListDetailDialog(liveDate, startTimestamp, intervalMinutes, url, tr);
             })
 
             $("#echarts-compare").removeClass("layui-hide");
             echartsCompare = echarts.init($("#echarts-compare")[0]);
             echartsCompare.showLoading({text: "数据正在加载中", textColor: "#666"});
             echartsCompare.on('click',(params) => {
-                const liveDate = $("#liveDate").val();
+                console.log(params)
+                const liveDate = params.seriesName;
+                const seriesIndex = params.seriesIndex;
+                let echartsData = echartsData0;
+                if(seriesIndex == 1){
+                    echartsData = echartsData1;
+                }else if(seriesIndex == 2){
+                    echartsData = echartsData2;
+                }
                 const url = liveInfo.url;
                 const startTime = params.name;
                 const intervalMinutes = $("#intervalMinutes").val()
                 const tr = $('.layui-table a[data-startTime="' + startTime + '"]').closest("tr");
-                showHotListDetailDialog(liveDate, startTime, intervalMinutes, url, tr);
+                const dataIndex = params.dataIndex;
+                const startTimestamp = echartsData[dataIndex].startTimestamp;
+                showHotListDetailDialog(liveDate, startTimestamp, intervalMinutes, url, tr);
             })
             // echarts 窗口缩放自适应
             window.onresize = function (){
@@ -282,9 +301,10 @@
             const totalcounts = hotListData.map((item) => {
                 return item.totalCount;
             });
+            const liveDate = liveInfo.liveDate;
             const optionDensity = {
                 title: {
-                    text: liveInfo.liveDate + "_" + liveInfo.title,
+                    text: liveDate + "_" + liveInfo.title,
                     left: "2.5%",
                     textStyle: {
                         margenLeft: 15,
@@ -293,32 +313,34 @@
                         color: 'gray'
                     }
                 },
-                legend: {data: ['本期累计条数'], top: 25},
+                legend: {data: [liveDate], top: 25},
                 tooltip: {trigger: 'axis'},
                 grid: {left: '3%', right: '4%', bottom: '3%', containLabel: true},
                 toolbox: {feature: {saveAsImage: {}}, top: 25},
                 xAxis: {type: 'category', boundaryGap: false, data: startTimes},
                 yAxis: {type: 'value'},
                 series: [
-                    {name: '本期累计条数', type: 'line', data: totalcounts, smooth: true}
+                    {name: liveDate, type: 'line', data: totalcounts, smooth: true}
                 ]
             };
             echartsCompare.setOption(optionDensity);
             echartsCompare.hideLoading();
             //上期
-            $.ajax({url: '/liveInfo/queryLastLiveInfo', data: {liveDate: liveInfo.liveDate}}).then((lastLiveDate) => {
+            $.ajax({url: '../liveInfo/queryLastLiveInfo', data: {liveDate: liveDate}}).then((lastLiveDate) => {
                 if(!lastLiveDate){
                     return ;
                 }
                 $.ajax({
-                    url: '/analyse/queryHotList',
+                    url: '../analyse/queryHotList',
                     data: {
                         liveDate: lastLiveDate,
+                        keyword: $('input[name="keyword"]').val(),
                         liveStatus: "2",
                         downloadStatus: "2",
                         intervalMinutes: $("#intervalMinutes").val()
                     }
                 }).then((lastData) => {
+                    echartsData1 = lastData.data;
                     if(lastData.length > hotListData.length){
                         lastData = lastData.slice(0, hotListData.length - 1);
                     }
@@ -330,19 +352,21 @@
                     optionDensity.legend.data.push(lastLiveDate);
                     echartsCompare.setOption(optionDensity);
                     //上上期
-                    $.ajax({url: '/liveInfo/queryLastLiveInfo', data: {liveDate: lastLiveDate}}).then((lastLiveDate) => {
+                    $.ajax({url: '../liveInfo/queryLastLiveInfo', data: {liveDate: lastLiveDate}}).then((lastLiveDate) => {
                         if(!lastLiveDate){
                             return ;
                         }
                         $.ajax({
-                            url: '/analyse/queryHotList',
+                            url: '../analyse/queryHotList',
                             data: {
                                 liveDate: lastLiveDate,
+                                keyword: $('input[name="keyword"]').val(),
                                 liveStatus: "2",
                                 downloadStatus: "2",
                                 intervalMinutes: $("#intervalMinutes").val()
                             }
                         }).then((lastData) => {
+                            echartsData2 = lastData.data;
                             if(lastData.length > hotListData.length){
                                 lastData = lastData.slice(0, hotListData.length - 1);
                             }

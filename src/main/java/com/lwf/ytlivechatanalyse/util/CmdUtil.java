@@ -16,15 +16,13 @@ public class CmdUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(CmdUtil.class);
     public static void main(String[] args){
-        String ping = "ping 127.0.0.1";
-        logger.info(execCmd(ping));
+        logger.info(kill("chat_downloader"));
     }
 
     public static String proxy;
 
     public static String rename(String filePath, String oldName, String newName) {
-        String osName = System.getProperty("os.name");
-        if(osName.startsWith("Win")){
+        if(isWin()){
             if(StringUtils.isNotBlank(filePath)){
                 if(!filePath.endsWith("\\")){
                     filePath += "\\";
@@ -50,13 +48,17 @@ public class CmdUtil {
         this.proxy = proxy;
     }
 
+    private static boolean isWin(){
+        String osName = System.getProperty("os.name");
+        return osName.startsWith("Win");
+    }
+
     public static String execCmd(String cmd){
         return execCmd(cmd, true, true);
     }
 
     public static String execCmd(String cmd, boolean print, boolean result){
-        String osName = System.getProperty("os.name");
-        if(osName.startsWith("Win")){
+        if(isWin()){
             return execCmd(cmd, print, result, "GBK");
         }else{
             return execCmd(cmd, print, result, "UTF8");
@@ -93,11 +95,27 @@ public class CmdUtil {
     }
 
     public static String ps(String keyWord){
+        if(isWin()){
+            String allPs = execCmd("tasklist", false, true);
+            if(StringUtils.isNotBlank(allPs)){
+                int index = allPs.indexOf(keyWord);
+                if(index > 0){
+                    int start = allPs.lastIndexOf("\n", index);
+                    int end = allPs.indexOf("\n", index);
+                    String psInfo = allPs.substring(start, end - 1);
+                    return "发现进程信息：" + psInfo;
+                }
+            }
+            return "未发现：" + keyWord;
+        }
         String result = execCmd("pskw " + keyWord);
         return result.trim();
     }
 
     public static String chatDownloaderPs(String keyWord){
+        if(isWin()){
+            return ps("chat_downloader");
+        }
         String result = execCmd("pskw chat_downloader " + keyWord);
         return result.trim();
     }
@@ -119,6 +137,10 @@ public class CmdUtil {
     public static String kill(String... keywords){
         if(keywords == null || keywords.length == 0 || StringUtils.isBlank(keywords[0])){
             return "";
+        }
+        if(isWin()){
+            String result = execCmd("taskkill /f /im " + keywords[0] + ".exe");
+            return result;
         }
         String cmd = "kill9";
         for(String keyword : keywords){

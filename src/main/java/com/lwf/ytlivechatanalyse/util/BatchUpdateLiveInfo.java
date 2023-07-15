@@ -15,7 +15,7 @@ public class BatchUpdateLiveInfo {
 
         List<String> urlList = getUrlList();
         logger.info("获取到待更新url数量：" + urlList.size());
-        CurlUtil.proxy = "http://127.0.0.1:7890";
+        CurlUtil.proxy = "http://192.168.100.30:7890";
         for (String url : urlList){
             Map<String, String> liveInfo = CurlUtil.getLiveInfo(url);
             updateLiveInfo(url, liveInfo);
@@ -29,17 +29,7 @@ public class BatchUpdateLiveInfo {
         String title = liveInfo.get("title");
         String likeCount = liveInfo.get("likeCount");
         String viewCount = liveInfo.get("viewCount");
-        String startTimestamp = liveInfo.get("startTimestamp");
-        String endTimestamp = liveInfo.get("endTimestamp");
-        String durationTime = null;
-        try {
-            Date startTime = format.parse(startTimestamp);
-            Date endTime = format.parse(endTimestamp);
-            long time = endTime.getTime() - startTime.getTime();
-            durationTime = DateUtil.secondToString((int)time / 1000);
-        }catch (Exception e){
-            logger.error("日期格式化失败", e);
-        }
+        String durationTime = liveInfo.get("videoDurationTime");
         StringBuffer sql = new StringBuffer("update live_info set ");
         List<String> params = new ArrayList<>();
         if(StringUtils.isNotBlank(title)){

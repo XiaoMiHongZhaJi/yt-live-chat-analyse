@@ -24,17 +24,17 @@ public class AnalyseController {
     EmotesDataService emotesDataService;
 
     @RequestMapping("/queryHotList")
-    public Result<HotList> queryHotList(LiveInfo liveInfo, Integer intervalMinutes){
+    public Result<HotList> queryHotList(LiveInfo liveInfo, Integer intervalMinutes, String keyword){
         if(StringUtils.isBlank(liveInfo.getLiveDate())){
             return new Result<>();
         }
-        List<HotList> hotList = analyseService.queryHotList(liveInfo, intervalMinutes);
+        List<HotList> hotList = analyseService.queryHotList(liveInfo, intervalMinutes, keyword);
         return new Result<>(hotList);
     }
 
     @RequestMapping("/queryHotListDetail")
-    public Result<LiveChatData> queryHotListDetail(String liveDate, String startTime, Integer intervalMinutes){
-        List<LiveChatData> chatInfoKList = analyseService.queryHotListDetail(liveDate, startTime, intervalMinutes);
+    public Result queryHotListDetail(String liveDate, Long startTimestamp, Integer intervalMinutes){
+        List chatInfoKList = analyseService.queryHotListDetail(liveDate, startTimestamp, intervalMinutes);
         return new Result<>(chatInfoKList);
     }
 

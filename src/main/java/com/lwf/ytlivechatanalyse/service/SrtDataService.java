@@ -42,7 +42,7 @@ public class SrtDataService {
                 srtData.setLiveDate(liveDate);
                 sqlSession.insert("com.lwf.ytlivechatanalyse.dao.SrtDataMapper.insert", srtData);
             }
-            sqlSession.flushStatements();
+            sqlSession.commit();
         }catch (Exception e){
             for (SrtData srtData : srtList){
                 srtData.setLiveDate(liveDate);

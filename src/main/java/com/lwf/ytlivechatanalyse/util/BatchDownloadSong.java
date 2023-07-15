@@ -19,11 +19,13 @@ public class BatchDownloadSong {
 
     public static void main(String[] args) throws Exception{
 
-        CurlUtil.proxy = "http://127.0.0.1:7890";
-        YtDlpUtil.proxy = "http://127.0.0.1:7890";
+        CurlUtil.proxy = "http://192.168.100.30:7890";
+        YtDlpUtil.proxy = "http://192.168.100.30:7890";
         getAndAddVideoList(AUTOHR_ID);
         List<Map<String, String>> songList = getSongList(AUTOHR_ID);
-        logger.info("获取到待下载歌曲数量：" + songList.size());
+        int count = songList.size();
+        logger.info("获取到待下载歌曲数量：" + count);
+        int i = 1;
         for (Map<String, String> info : songList){
             String url = info.get("url");
             String fileName = info.get("title");
@@ -47,7 +49,7 @@ public class BatchDownloadSong {
                 updateDownloaded(url);
                 continue;
             }
-            logger.info("准备下载：" + fileName);
+            logger.info(String.format("准备下载：%s，%s/%s", fileName, i ++, count));
             String result = YtDlpUtil.downMp3(url, fileName, SONG_PATH);
             if(StringUtils.isNotBlank(result) && result.contains("Deleting original file")) {
                 updateDownloaded(url);
@@ -59,11 +61,18 @@ public class BatchDownloadSong {
         int updateImgInfo = updateImgInfo(AUTOHR_ID);
         logger.info("已更新图片信息，条数：" + updateImgInfo);
         List<Map<String, String>> imgList = getImgList(AUTOHR_ID);
-        logger.info("获取到待下载图片数量：" + imgList.size());
+        count = imgList.size();
+        logger.info("获取到待下载图片数量：" + count);
+        i = 1;
         for (Map<String, String> info : imgList){
             String img = info.get("img");
             String publishDate = info.get("publish_date");
-            String fileName = publishDate.replace("-", ".").replace("202", "2") + ".jpg";
+            String title = info.get("title");
+            publishDate = publishDate.replace("-", ".");
+            publishDate = publishDate.replace("202", "2");
+            publishDate = publishDate.replace("201", "1");
+            title = title.replaceAll("陈一发儿|—|－|＊", "");
+            String fileName = String.format("%s-%s.jpg", publishDate, title);
             String file = IMG_PATH + fileName;
             File f = new File(file);
             if(f.exists()){
@@ -72,22 +81,26 @@ public class BatchDownloadSong {
             }
             double length = CurlUtil.downloadFile(img, fileName, IMG_PATH) / 1024;
             if(length < 5){
-                logger.info("下载大图失败，重新尝试小一点的图 " + img);
                 img = img.replace("maxresdefault.jpg", "hqdefault.jpg");
+                logger.info("下载大图失败，重新尝试小一点的图： " + img);
                 length = CurlUtil.downloadFile(img, fileName, IMG_PATH) / 1024;
                 if(length < 5){
-                    logger.warn("下载图片失败：" + length + "KB");
+                    logger.warn("下载图片失败：" + length + "KB，2秒钟后重试");
+                    Thread.sleep(2000);
+                    length = CurlUtil.downloadFile(img, fileName, IMG_PATH) / 1024;
+                    if(length < 5){
+                        logger.error("重试仍然失败：" + img);
+                    }
                     continue;
                 }
                 logger.info("下载小一点的图完成");
             }
-            logger.info(fileName + " 下载完成：" + length + "KB");
+            logger.info("{}/{} {} 下载完成：{}KB", i ++, count, fileName, length);
         }
     }
 
     private static List<Map<String, String>> getImgList(String authorId) {
-        String sql = "select publish_date, img from video_info where id in (";
-        sql += "select max(id) from video_info where 1 = 1 ";
+        String sql = "select publish_date, img, title from video_info where 1 = 1 ";
         List<String> params = new ArrayList<>();
         if(StringUtils.isNotBlank(authorId)){
             sql += "and author_id = ? ";
@@ -96,23 +109,23 @@ public class BatchDownloadSong {
         // 过滤
         sql += "and img is not null ";
         // 2023年
-        sql += "and publish_date like '2023%' ";
-        sql += "group by publish_date) order by publish_date desc";
+        sql += "and publish_date > '2023-05' ";
+        sql += "order by publish_date desc";
         return JDBCUtil.queryMapList(sql, params);
     }
 
     private static int updateImgInfo(String authorId) {
-        String sql = "select id, publish_date, url from video_info where id in (";
-        sql += "select max(id) from video_info where 1 = 1 ";
+        String sql = "select id, publish_date, url from video_info where 1 = 1 ";
         List<String> params = new ArrayList<>();
         if(StringUtils.isNotBlank(authorId)){
             sql += "and author_id = ? ";
             params.add(authorId);
         }
         // 过滤
-//        sql += "and img is null ";
+        sql += "and img is null ";
+//        sql += "and publish_date < '2021-10-09' ";
         sql += "and url is not null ";
-        sql += "group by publish_date) order by publish_date";
+        sql += "order by publish_date";
         int updateCount = 0;
         List<Map<String, String>> list = JDBCUtil.queryMapList(sql, params);
         for(Map<String, String> map : list){
@@ -159,6 +172,7 @@ public class BatchDownloadSong {
         sql += "and down_song_status != '1' ";
         // 2023年
         sql += "and publish_date like '2023%' ";
+        sql += "and publish_date > '2023-04' ";
         sql += "order by publish_date";
         return JDBCUtil.queryMapList(sql, params);
     }

@@ -5,11 +5,11 @@ function showLiveDetailDialog(liveInfo, showEdit){
     const $ = layui.jquery;
     const form = layui.form;
     let height = null;
-    $.ajax({url: '/liveInfo/queryLiveInfo', data: {id: liveInfo.id}}).then((data) => {
+    $.ajax({url: '../liveInfo/queryLiveInfo', data: {id: liveInfo.id}}).then((data) => {
         if(showEdit || data.timeline){
             height = Math.min(650, size[1]) + 'px';
         }
-        showDialog("/pages/dialog/liveDetail.html", {
+        showDialog("dialog/liveDetail.html", {
             title: "开播详情",
             area: [null, height],
             success: function(layero){

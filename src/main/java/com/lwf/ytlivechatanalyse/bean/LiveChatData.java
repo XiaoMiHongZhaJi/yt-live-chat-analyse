@@ -17,6 +17,8 @@ public class LiveChatData {
     private String authorName;
     private String authorId;
     private String message;
+    private String scInfo;
+    private String scAmount;
     private BigDecimal timeInSeconds;
     private String timeText;
     private Long timestamp;

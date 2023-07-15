@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="../css/public.css">
     <script src="../modules/layui/layui.js"></script>
     <script src="../js/public.js"></script>
-    <script src="/pages/dialog/liveDetail.js"></script>
+    <script src="dialog/liveDetail.js"></script>
 </head>
 <body>
 <ul class="layui-nav layui-bg-cyan" lay-filter="demo">
@@ -16,7 +16,6 @@
     <li class="layui-nav-item"><a href="analyse.html">弹幕统计</a></li>
     <li class="layui-nav-item"><a href="srtInfo.html">字幕数据</a></li>
     <li class="layui-nav-item"><a href="liveInfo.html">数据管理</a></li>
-    </li>
 </ul>
 <div class="layuimini-container layuimini-page-anim">
     <div class="layuimini-main" style="min-height: 690px;">
@@ -33,13 +32,13 @@
                     <div class="layui-inline">
                         <label class="layui-form-label">关键字</label>
                         <div class="layui-input-inline">
-                            <input type="text" name="message" class="layui-input" placeholder="请输入内容">
+                            <input type="text" name="message" autocomplete="off" class="layui-input" placeholder="请输入内容">
                         </div>
                     </div>
                     <div class="layui-inline ">
                         <label class="layui-form-label">用户名</label>
                         <div class="layui-input-inline">
-                            <input type="text" name="authorName" class="layui-input" placeholder="请输入内容">
+                            <input type="text" name="authorName" autocomplete="off" class="layui-input" placeholder="请输入内容">
                         </div>
                     </div>
                     <div class="layui-inline layui-hide">
@@ -53,6 +52,9 @@
                     </div>
                     <div class="layui-inline">
                         <button id="showDetail" class="layui-btn layui-btn-primary"><i class="layui-icon"></i>详情</button>
+                    </div>
+                    <div class="layui-inline">
+                        <button id="downloadBullet" class="layui-btn layui-btn-primary"><i class="layui-icon"></i>下载弹幕</button>
                     </div>
                 </div>
             </form>
@@ -72,14 +74,24 @@
             {field: 'liveDate', width: 120, title: '日期', sort: true, hide: true},
             {field: 'authorName', width: 180, title: '用户名',templet: (d)=>{
                 if(d.authorImage){
-                    return '<div><img class="header" src="'+ d.authorImage +'=s32-c-k-c0x00ffffff-no-rj">'+ d.authorName +'</div>'
+                    return '<div><img alt="" class="header" src="'+ d.authorImage +'=s32-c-k-c0x00ffffff-no-rj">'+ d.authorName +'<span style="opacity:0">：</span></div>'
                 }
                 return d.authorName;
             }},
             {field: 'message', minWidth: 180, title: '消息',templet: (d)=>{
-                const message = d.message;
-                if(message && d.emotesCount){
-                    return getEmoteMssage(message)
+                let message = d.message || '';
+                if(d.emotesCount){
+                    message = getEmoteMssage(message);
+                }
+                const scInfo = d.scInfo
+                if(scInfo){
+                    const index = scInfo.indexOf("#");
+                    if(index > -1){
+                        const color = scInfo.substring(index, index + 7);
+                        if(d.scAmount){
+                            message = '<span style="color: '+ color +'">('+ d.scAmount +') '+ message +'</span>';
+                        }
+                    }
                 }
                 return message;
             }},
@@ -92,7 +104,7 @@
                     }
                     return timeText;
                 }
-                return new Date(d.timestamp / 1000).toTimeString().substr(0, 8);
+                return new Date(d.timestamp / 1000).toLocaleTimeString();
             }},
         ]];
         table.render({
@@ -156,6 +168,10 @@
             showLiveDetailDialog(liveInfo);
             return false;
         })
+        $("#downloadBullet").click(() => {
+            window.open("/liveInfo/downloadBullet?fileType=ass&liveDate=" + liveInfo.liveDate, '_self');
+            return false;
+        })
         form.on('switch(refersh-checkbox)',(res) => {
             const checked = $(res.elem).prop("checked");
             if(checked){
@@ -168,7 +184,7 @@
             liveInfo = info;
             table.reload('liveChatData', {
                 loading: true,
-                url: '/liveChat/queryList',
+                url: '../liveChat/queryList',
                 where: {
                     liveDate: info.liveDate,
                     liveStatus: info.liveStatus

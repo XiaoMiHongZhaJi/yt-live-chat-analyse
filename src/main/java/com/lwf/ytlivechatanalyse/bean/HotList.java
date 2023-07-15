@@ -16,6 +16,7 @@ public class HotList {
     private Integer count;//条数
     private Integer totalCount;//累计条数
     private Integer startSecond;//开始秒数
+    private Long startTimestamp;//开始时间戳
     private String startTime;//开始时间
     private String endTime;//结束时间
     @TableField(typeHandler = FastjsonTypeHandler.class)

@@ -53,5 +53,5 @@ public class Constant {
     /**
      * 下载弹幕异常退出时重试次数
      */
-    public static final int DOWNLOAD_FAILURE_RETRY_COUNT = 5;
+    public static final int DOWNLOAD_FAILURE_RETRY_COUNT = 2;
 }

@@ -31,6 +31,8 @@ CREATE TABLE yt_live_chat_analyse.live_chat_data (
   author_name VARCHAR(60) DEFAULT NULL COMMENT '用户名',
   author_id VARCHAR(30) DEFAULT NULL COMMENT '用户id',
   message VARCHAR(600) DEFAULT NULL COMMENT '消息',
+  sc_info VARCHAR(30) DEFAULT NULL comment 'super_chat 信息',
+  sc_amount VARCHAR(30) DEFAULT NULL comment 'super_chat 数量',
   time_in_seconds DECIMAL(11,3) DEFAULT NULL COMMENT '发送秒数',
   time_text VARCHAR(30) DEFAULT NULL COMMENT '发送时刻',
   TIMESTAMP BIGINT(20) DEFAULT NULL COMMENT '发送时间戳',
@@ -46,6 +48,8 @@ CREATE TABLE yt_live_chat_analyse.living_chat_data (
   author_name VARCHAR(60) DEFAULT NULL COMMENT '用户名',
   author_id VARCHAR(30) DEFAULT NULL COMMENT '用户id',
   message VARCHAR(600) DEFAULT NULL COMMENT '消息',
+  sc_info VARCHAR(30) DEFAULT NULL comment 'super_chat 信息',
+  sc_amount VARCHAR(30) DEFAULT NULL comment 'super_chat 数量',
   time_in_seconds DECIMAL(11,3) DEFAULT NULL COMMENT '发送秒数',
   time_text VARCHAR(30) DEFAULT NULL COMMENT '发送时刻',
   TIMESTAMP BIGINT(20) DEFAULT NULL COMMENT '发送时间戳',
@@ -60,6 +64,7 @@ CREATE TABLE yt_live_chat_analyse.hot_list (
   interval_seconds INT(11) DEFAULT NULL COMMENT '间隔时间',
   count INT(11) DEFAULT NULL COMMENT '条数',
   total_count INT(11) DEFAULT NULL COMMENT '累计条数',
+  start_timestamp BIGINT(20) DEFAULT NULL COMMENT '开始时间戳',
   start_second INT(11) DEFAULT NULL COMMENT '开始秒数',
   start_time VARCHAR(30) DEFAULT NULL COMMENT '开始时间',
   end_time VARCHAR(30) DEFAULT NULL COMMENT '结束时间',
@@ -88,6 +93,23 @@ CREATE TABLE yt_live_chat_analyse.live_info (
     update_time datetime null comment '更新时间',
     PRIMARY KEY (id)
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+
+#直播信息日志表
+CREATE TABLE `live_info_log` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
+  `live_date` varchar(30) DEFAULT NULL COMMENT '开播日期',
+  `url` varchar(200) DEFAULT NULL COMMENT '开播地址',
+  `title` varchar(200) DEFAULT NULL COMMENT '标题',
+  `view_count` int(11) DEFAULT NULL COMMENT '观看人数',
+  `living_view_count` int(11) DEFAULT NULL,
+  `like_count` varchar(10) DEFAULT NULL COMMENT '点赞人数',
+  `living_chat_count` int(11) DEFAULT NULL COMMENT '直播弹幕数',
+  `platform` varchar(1) DEFAULT NULL COMMENT '开播平台，y：YouTube，t：twitch',
+  `update_timestamp` bigint(20) DEFAULT NULL COMMENT '开播时间戳，默认取第一个“开了”、“来了”的时间',
+  `live_status` varchar(1) DEFAULT '0' COMMENT '开播状态，0：直播预告，1：直播中，2：直播结束，4：已删除',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE video_info (
   id int(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',

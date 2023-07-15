@@ -34,6 +34,33 @@ public class JDBCUtil {
         return connection;
     }
 
+
+    /**
+     * 查询单个字段
+     * @param sql
+     * @param params
+     * @return
+     */
+    public static String queryString(String sql){
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        String result = null;
+        try {
+            conn = JDBCUtil.getConnection();
+            ps = conn.prepareStatement(sql);
+            rs = ps.executeQuery();
+            if(rs.next()){
+                result = rs.getString(1);
+            }
+        }catch (Exception e){
+            logger.error("sql执行失败", e);
+        }finally {
+            JDBCUtil.closeConnection(conn, ps, rs);
+        }
+        return result;
+    }
+
     /**
      * 查询多个字段
      * @param sql
@@ -103,6 +130,25 @@ public class JDBCUtil {
             closeConnection(conn, ps, rs);
         }
         return list;
+    }
+
+    /**
+     * 更新
+     * @param sql
+     */
+    public static int executeUpdate(String sql) throws SQLException {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getConnection();
+            ps = conn.prepareStatement(sql);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("更新失败，sql：{}", sql, e);
+            throw e;
+        } finally {
+            closeConnection(conn, ps);
+        }
     }
 
     /**

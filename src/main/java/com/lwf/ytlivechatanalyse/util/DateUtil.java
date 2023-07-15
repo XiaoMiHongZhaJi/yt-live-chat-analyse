@@ -15,13 +15,14 @@ public class DateUtil {
     private static final Logger logger = LoggerFactory.getLogger(DateUtil.class);
 
     public static void main(String[] args) {
-        logger.info(getTimestamp("2023-03-27_23:54:40") + "");
+        System.out.println(getNowTimestamp());
+        System.out.println(getTimestamp("2023-05-24 20:39:45"));
+        //1684759162000000
+        //1684759168000000
     }
 
     /**
      * 时间转时间戳
-     * @param dateTime
-     * @return
      */
     public static long getTimestamp(String dateTime){
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -39,8 +40,7 @@ public class DateUtil {
             chars[16] = ':';
             dateTime = String.valueOf(chars, 0, 19);
             Date date = format.parse(dateTime);
-            long time = date.getTime();
-            return time;
+            return date.getTime() * 1000;
         } catch (ParseException e) {
             logger.error("时间转换失败", e);
         }
@@ -48,15 +48,15 @@ public class DateUtil {
     }
 
     public static String getNowDate(){
-        return DateFormatUtils.format(Calendar.getInstance(), "yyyy-MM-dd");
+        return DateFormatUtils.format(Calendar.getInstance(), "yyyy-MM-dd", TimeZone.getTimeZone("GMT+8"));
     }
 
     public static String getNowTime(){
-        return DateFormatUtils.format(Calendar.getInstance(), "HH:mm:ss");
+        return DateFormatUtils.format(Calendar.getInstance(), "HH:mm:ss", TimeZone.getTimeZone("GMT+8"));
     }
 
     public static String getNowDateTime(){
-        return DateFormatUtils.format(Calendar.getInstance(), "yyyy-MM-dd_HH-mm-ss");
+        return DateFormatUtils.format(Calendar.getInstance(), "yyyy-MM-dd_HH-mm-ss", TimeZone.getTimeZone("GMT+8"));
     }
     /**
      * xxx秒转x时x分x秒
@@ -111,5 +111,22 @@ public class DateUtil {
         Date date = calendar.getTime();
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         return format.format(date);
+    }
+
+    public static String getDateTime(Long timestamp) {
+        String value = String.valueOf(timestamp);
+        int length = value.length();
+        if(length == 10){
+            return DateFormatUtils.format(timestamp * 1000, "yyyy-MM-dd_HH-mm-ss", TimeZone.getTimeZone("GMT+8"));
+        }else if(length == 13){
+            return DateFormatUtils.format(timestamp, "yyyy-MM-dd_HH-mm-ss", TimeZone.getTimeZone("GMT+8"));
+        }else if(length > 13){
+            return DateFormatUtils.format(Long.parseLong(value.substring(0, 13)), "yyyy-MM-dd_HH-mm-ss", TimeZone.getTimeZone("GMT+8"));
+        }
+        return null;
+    }
+
+    public static Long getNowTimestamp() {
+        return new Date().getTime() * 1000;
     }
 }

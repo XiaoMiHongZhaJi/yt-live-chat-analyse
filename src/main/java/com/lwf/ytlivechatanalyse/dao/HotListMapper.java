@@ -14,11 +14,11 @@ public interface HotListMapper extends BaseMapper<HotList> {
 
     @Select("select id,live_date,author_image,author_name,message,time_in_seconds,time_text,timestamp,emotes_count " +
             "  from live_chat_data where live_date = #{liveDate} " +
-            "   and time_in_seconds >= #{startSecond} and time_in_seconds < #{endSecond} ")
-    List<LiveChatData> selectLiveHotListDeail(String liveDate, Integer startSecond, Integer endSecond);
+            "   and TIMESTAMP >= #{startTimestamp} and TIMESTAMP < #{endTimestamp} ")
+    List<LiveChatData> selectLiveHotListDeail(String liveDate, Long startTimestamp, Long endTimestamp);
 
     @Select("select id,live_date,author_image,author_name,message,time_in_seconds,time_text,timestamp,emotes_count " +
             "  from living_chat_data where live_date = #{liveDate} " +
-            "   and time_in_seconds >= #{startSecond} and time_in_seconds < #{endSecond}")
-    List<LiveChatData> selectLivingHotListDeail(String liveDate, Integer startSecond, Integer endSecond);
+            "   and TIMESTAMP >= #{startTimestamp} and TIMESTAMP < #{endTimestamp}")
+    List<LiveChatData> selectLivingHotListDeail(String liveDate, Long startTimestamp, Long endTimestamp);
 }

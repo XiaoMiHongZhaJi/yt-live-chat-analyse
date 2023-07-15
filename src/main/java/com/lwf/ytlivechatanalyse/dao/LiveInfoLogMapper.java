@@ -1,0 +1,9 @@
+package com.lwf.ytlivechatanalyse.dao;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.lwf.ytlivechatanalyse.bean.LiveInfoLog;
+import org.apache.ibatis.annotations.Mapper;
+
+@Mapper
+public interface LiveInfoLogMapper extends BaseMapper<LiveInfoLog> {
+}

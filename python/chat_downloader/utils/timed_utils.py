@@ -63,9 +63,18 @@ except ImportError:
 
     def posix_timed_input(timeout, prompt, newline):
         echo(prompt)
-        if newline:
-            echo(LF)
-        raise TimeoutOccurred
+        sel = selectors.DefaultSelector()
+        sel.register(sys.stdin, selectors.EVENT_READ)
+        events = sel.select(timeout)
+
+        if events:
+            key, _ = events[0]
+            return key.fileobj.readline().rstrip(LF)
+        else:
+            if newline:
+                echo(LF)
+            termios.tcflush(sys.stdin, termios.TCIFLUSH)
+            raise TimeoutOccurred
 
     _timed_input = posix_timed_input
 

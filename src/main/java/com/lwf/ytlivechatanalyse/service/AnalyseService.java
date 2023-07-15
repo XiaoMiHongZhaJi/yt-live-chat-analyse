@@ -1,11 +1,10 @@
 package com.lwf.ytlivechatanalyse.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.lwf.ytlivechatanalyse.bean.HotList;
-import com.lwf.ytlivechatanalyse.bean.LiveChatData;
-import com.lwf.ytlivechatanalyse.bean.LiveInfo;
-import com.lwf.ytlivechatanalyse.bean.LivingChatData;
+import com.lwf.ytlivechatanalyse.bean.*;
 import com.lwf.ytlivechatanalyse.dao.HotListMapper;
+import com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper;
+import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
 import com.lwf.ytlivechatanalyse.util.Constant;
 import com.lwf.ytlivechatanalyse.util.DateUtil;
 import com.lwf.ytlivechatanalyse.util.MessageUtil;
@@ -40,10 +39,16 @@ public class AnalyseService {
     HotListMapper hotListMapper;
 
     @Autowired
+    LiveChatDataMapper liveChatDataMapper;
+
+    @Autowired
+    LivingChatDataMapper livingChatDataMapper;
+
+    @Autowired
     SqlSessionFactory sqlSessionFactory;
 
 
-    public List<HotList> queryHotList(LiveInfo liveInfo, Integer intervalMinutes){
+    public List<HotList> queryHotList(LiveInfo liveInfo, Integer intervalMinutes, String keyword){
         if(intervalMinutes == null || intervalMinutes < 1){
             intervalMinutes = 1;
         }
@@ -51,27 +56,30 @@ public class AnalyseService {
         String liveDate = liveInfo.getLiveDate();
         //间隔秒数
         int intervalSeconds = intervalMinutes * 60;
-        QueryWrapper<HotList> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("live_date", liveDate);
-        queryWrapper.eq("interval_seconds", intervalSeconds);
-        queryWrapper.orderByAsc("id");
-        // 查询缓存
-        List<HotList> hotListList = hotListMapper.selectList(queryWrapper);
-        if(!CollectionUtils.isEmpty(hotListList)){
-            return hotListList;
+        List<HotList> hotListList = new ArrayList<>();
+        if(StringUtils.isBlank(keyword)){
+            QueryWrapper<HotList> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("live_date", liveDate);
+            queryWrapper.eq("interval_seconds", intervalSeconds);
+            queryWrapper.orderByAsc("id");
+            // 查询缓存
+            hotListList = hotListMapper.selectList(queryWrapper);
+            if(!CollectionUtils.isEmpty(hotListList)){
+                return hotListList;
+            }
         }
         liveInfo = liveInfoService.selectOne(liveInfo);
+        if(liveInfo == null){
+            return hotListList;
+        }
         //直播状态
         String liveStatus = liveInfo.getLiveStatus();
         //开始时间戳
         Long startTimestamp = liveInfo.getStartTimestamp();
         LiveChatData liveChatData = new LiveChatData();
         liveChatData.setLiveDate(liveDate);
-        List<LiveChatData> liveChatAll = new ArrayList<>();
-        if(LiveInfo.LIVE_STATUS_DONE.equals(liveStatus)){
-            //直播结束
-            liveChatAll = liveChatDataService.selectList(liveChatData, true);
-        }
+        liveChatData.setMessage(keyword);
+        List<LiveChatData> liveChatAll = liveChatDataService.selectList(liveChatData, true);
         if(CollectionUtils.isEmpty(liveChatAll)){
             liveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_NONE);
             List<LivingChatData> livingChatData = liveChatDataService.selectLivingList(liveChatData, true);
@@ -97,11 +105,14 @@ public class AnalyseService {
             BigDecimal timeInSeconds = new BigDecimal(timestamp / 1000000);
             //弹幕发送时间
             double sendtime = Double.parseDouble(timeInSeconds.toString());
-            if (sendtime >  startSecond + intervalSeconds){
+            while (sendtime >  startSecond + intervalSeconds){
                 //超出时间段
                 HotList hotList = getHotList(startSecond, intervalSeconds, liveChatList);
                 totalCount += liveChatList.size();
                 hotList.setTotalCount(totalCount);
+                if(liveChatList.size() > 0){
+                    hotList.setStartTimestamp(liveChatList.get(0).getTimestamp());
+                }
                 hotList.setIntervalSeconds(intervalSeconds);
                 hotList.setLiveDate(liveDate);
                 hotListList.add(hotList);
@@ -109,44 +120,31 @@ public class AnalyseService {
                 startSecond += intervalSeconds;
             }
             liveChatList.add(liveChat);
-            /*if(i == liveChatAll.size() - 1){
-                //最后一个区间
-                HotList hotList = getHotList(startSecond, intervalSeconds, liveChatList);
-                totalCount += liveChatList.size();
-                hotList.setTotalCount(totalCount);
-                hotList.setIntervalSeconds(intervalSeconds);
-                hotList.setLiveDate(liveDate);
-                hotListList.add(hotList);
-                liveChatList.clear();
-            }*/
         }
-        if(LiveInfo.LIVE_STATUS_DONE.equals(liveStatus) && LiveInfo.DOWNLOAD_STATUS_DONE.equals(liveInfo.getDownloadStatus())){
+        if(StringUtils.isBlank(keyword) &&
+                LiveInfo.LIVE_STATUS_DONE.equals(liveStatus) &&
+                LiveInfo.DOWNLOAD_STATUS_DONE.equals(liveInfo.getDownloadStatus())){
             batchInsertHotList(hotListList);
         }
         return hotListList;
     }
 
     private void batchInsertHotList(List<HotList> hotListList) {
-        SqlSession sqlSession = null;
-        try{
-            sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH);
-            for (HotList hotList : hotListList){
+        try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
+            for (HotList hotList : hotListList) {
                 sqlSession.insert("com.lwf.ytlivechatanalyse.dao.HotListMapper.insert", hotList);
             }
-            sqlSession.flushStatements();
-        }catch (Exception e){
+            sqlSession.commit();
+        } catch (Exception e) {
             logger.error("批量插入出错", e);
-            for (HotList hotList : hotListList){
+            for (HotList hotList : hotListList) {
                 try {
                     hotListMapper.insert(hotList);
-                }catch (Exception e1){
+                } catch (Exception e1) {
                     logger.error("批量插入出错，已改为单个插入，错误数据：", e1);
                     logger.error(hotList.toString());
                 }
             }
-        }finally {
-            if(sqlSession != null)
-                sqlSession.close();
         }
     }
 
@@ -166,6 +164,9 @@ public class AnalyseService {
         //去重复
         for (LiveChatData liveChatData : liveChatList){
             String message = liveChatData.getMessage();
+            if (StringUtils.isBlank(message)){
+                continue;
+            }
             boolean isSpecWord = false;
             for (Map.Entry<String,String> entry : Constant.ANALYSE_MERGE_WORD.entrySet()){
                 String key = entry.getKey();
@@ -182,9 +183,6 @@ public class AnalyseService {
             Integer emotesCount = liveChatData.getEmotesCount();
             if(emotesCount == null || emotesCount == 0){
                 message = message.replaceAll(" |啊|阿|吧|\\pP|\\pS","");
-            }
-            if (StringUtils.isBlank(message)){
-                continue;
             }
             LiveChatData data = messagesMap.get(message);
             if(data == null){
@@ -265,23 +263,24 @@ public class AnalyseService {
         return hotList;
     }
 
-    public List<LiveChatData> queryHotListDetail(String liveDate, String startTime, Integer intervalMinutes){
-        String[] split = startTime.split(":");
-        int startSecond = 0;
-        if(split.length == 3){
-            startSecond = Integer.parseInt(split[0]) * 3600 + Integer.parseInt(split[1]) * 60 + Integer.parseInt(split[2]);
-        }else if(split.length == 2){
-            startSecond = Integer.parseInt(split[0]) * 60 + Integer.parseInt(split[1]);
-        }else{
-            startSecond = Integer.parseInt(split[0]);
-        }
-        int endSecond = startSecond + intervalMinutes * 60;
-        List<LiveChatData> liveChatAll = hotListMapper.selectLiveHotListDeail(liveDate, startSecond, endSecond);;
+    public List queryHotListDetail(String liveDate, Long startTimestamp, Integer intervalMinutes){
+        Long endTimestamp = startTimestamp + intervalMinutes * 60 * 1000000;
+        QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
+        queryWrapper.like("live_date", liveDate);
+        queryWrapper.ge("timestamp", startTimestamp);
+        queryWrapper.lt("timestamp", endTimestamp);
+        queryWrapper.orderByAsc("timestamp");
+        List liveChatAll = liveChatDataMapper.selectList(queryWrapper);
         LiveInfo queryInfo = new LiveInfo();
         queryInfo.setLiveDate(liveDate);
         if(CollectionUtils.isEmpty(liveChatAll)){
             //直播中
-            liveChatAll = hotListMapper.selectLivingHotListDeail(liveDate, startSecond, endSecond);
+            QueryWrapper<LivingChatData> queryWrapperLiving = new QueryWrapper<>();
+            queryWrapperLiving.like("live_date", liveDate);
+            queryWrapperLiving.ge("timestamp", startTimestamp);
+            queryWrapperLiving.lt("timestamp", endTimestamp);
+            queryWrapperLiving.orderByAsc("timestamp");
+            liveChatAll = livingChatDataMapper.selectList(queryWrapperLiving);
         }
         return liveChatAll;
     }

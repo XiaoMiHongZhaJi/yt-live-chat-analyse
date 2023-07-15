@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -49,9 +50,7 @@ public class LiveInfoController {
         //从文件导入
         if(file != null){
             String filename = file.getOriginalFilename();
-            if(filename.endsWith(".xml")){
-
-            }else if(filename.endsWith("json")){
+            if(filename != null && filename.endsWith("json")){
                 liveChatDataService.importJsonFile(file, liveInfo.getLiveDate());
             }
         }
@@ -60,28 +59,27 @@ public class LiveInfoController {
     @RequestMapping("/downloadBullet")
     public ResponseEntity<InputStreamResource> downloadBullet(String liveDate, String startTime, String fileType){
         if(StringUtils.isBlank(liveDate) || liveDate.length() < 10){
-            logger.error("liveDate不能为空", liveDate, startTime, fileType);
+            logger.error("liveDate错误{}，{}，{}", liveDate, startTime, fileType);
             return null;
         }
         File file = liveInfoService.getBulletXml(liveDate, startTime);
+        if(file == null){
+            logger.error("弹幕文件生成失败{}，{}，{}", liveDate, startTime, fileType);
+            return null;
+        }
         if("ass".equals(fileType)){
             file = liveInfoService.converBulletAss(file);
         }
-        if(file == null){
-            logger.error("弹幕文件生成失败", liveDate, startTime, fileType);
-            return null;
-        }
         try {
-            InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
+            InputStreamResource resource = new InputStreamResource(Files.newInputStream(file.toPath()));
             ResponseEntity.BodyBuilder builder = ResponseEntity.ok();
             builder.contentType(MediaType.APPLICATION_OCTET_STREAM);
             builder.header("Content-disposition", "attachment; filename=" + file.getName());
-            ResponseEntity<InputStreamResource> response = builder.body(resource);
-            return response;
+            return builder.body(resource);
         }catch(Exception e){
             logger.error("下载弹幕文件失败", e);
-            return null;
         }
+        return null;
     }
 
     @RequestMapping("/queryListBySelector")
@@ -111,7 +109,7 @@ public class LiveInfoController {
 
     @RequestMapping("/queryList")
     public Result<LiveInfo> queryList(int page, int limit){
-        limit = limit > Constant.MAX_PAGE_SIZE ? Constant.MAX_PAGE_SIZE : limit;
+        limit = Math.min(limit, Constant.MAX_PAGE_SIZE);
         PageHelper.startPage(page, limit);
         return new Result<>(new PageInfo<>(liveInfoService.selectList()));
     }
@@ -127,8 +125,7 @@ public class LiveInfoController {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(parseDate);
         calendar.add(Calendar.DATE, -7);
-        String lastLiveDate = DateFormatUtils.format(calendar, "yyyy-MM-dd");
-        return lastLiveDate;
+        return DateFormatUtils.format(calendar, "yyyy-MM-dd");
     }
 
     @RequestMapping("/queryLiveInfo")
@@ -151,8 +148,7 @@ public class LiveInfoController {
 
     @RequestMapping("/getLiveInfo")
     public Map<String,String> getLiveInfo(String url){
-        Map<String, String> info = CurlUtil.getLiveInfo(url);
-        return info;
+        return CurlUtil.getLiveInfo(url);
     }
 
     @RequestMapping("/downloadChatData")
@@ -172,7 +168,7 @@ public class LiveInfoController {
             throw new RuntimeException("文件不能为空");
         }
         String filename = file.getOriginalFilename();
-        if(filename.endsWith(".srt")){
+        if(filename != null && filename.endsWith(".srt")){
             Long count = srtDataService.importSrt(liveDate, file);
             LiveInfo liveInfo = new LiveInfo();
             liveInfo.setLiveDate(liveDate);
@@ -184,22 +180,14 @@ public class LiveInfoController {
     @RequestMapping("/stopDownload")
     public String stopDownload(LiveInfo liveInfo){
         String result = CmdUtil.kill("chat_downloader", liveInfo.getUrl());
-        if(result.contains("未发现")){
+        if(StringUtils.isBlank(result) || result.contains("未发现")){
             // 这种情况说明 chat_downloader 并未运行，只需要更新数据库状态即可
             liveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
             liveInfo.setUpdateTime(new Date());
             liveInfoService.updateLiveInfoById(liveInfo);
             return "CHAT_DOWNLOADER并未运行。已更新状态";
         }
-        try {
-            Thread.sleep(1000);
-        }catch (Exception e){
-        }
-        result = CmdUtil.execCmd("ps -ef | grep chat_downloader | grep " + liveInfo.getUrl());
-        if(StringUtils.isBlank(result)){
-            return "已结束并更新状态";
-        }
-        return "已发送指令，但未结束，可能需要重复执行<br>" + result.replace("\n", "<br>");
+        return "已结束并更新状态";
     }
 }
 

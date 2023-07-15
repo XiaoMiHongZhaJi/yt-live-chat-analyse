@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.lwf.ytlivechatanalyse.bean.LiveInfo;
 import org.apache.commons.lang3.StringUtils;
+import org.aspectj.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,8 +20,8 @@ public class CurlUtil {
 
     public static void main(String[] args){
 //        execCurl("http://www.baidu.com/", "get");
-        CurlUtil.proxy = "http://127.0.0.1:7890";
-        Map<String, String> liveInfo = getLiveInfo("https://www.youtube.com/watch?v=_J0adje8pw4");
+        CurlUtil.proxy = "http://192.168.0.6:7890";
+        Map<String, String> liveInfo = getLiveInfo("https://www.youtube.com/watch?v=mLAPkMZQGA8");
         System.out.println(liveInfo);
 //        List<Map<String, String>> playlist = getPlaylist("https://www.youtube.com/playlist?list=PLi3zrmUZHiY-eH8eNJiwj-viwP3ngIkcd");
 //        System.out.println(playlist);
@@ -30,11 +31,17 @@ public class CurlUtil {
 
     @Value("${proxy}")
     public void setProxy(String proxy) {
-        this.proxy = proxy;
+        CurlUtil.proxy = proxy;
     }
 
     public static Map<String, String> getLiveInfo(String url){
         String curl = execCurl(url);
+//        String curl = "";
+//        try {
+//            curl = FileUtil.readAsString(new File("D:\\Documents\\IdeaProjects\\yt-live-chat-analyse\\test\\arm_curl.html"));
+//        }catch (Exception e){
+//            e.printStackTrace();
+//        }
         Map<String, String> info = new HashMap<>();
         if(StringUtils.isEmpty(curl)){
             return info;
@@ -64,15 +71,18 @@ public class CurlUtil {
                 JSONObject liveBroadcastDetails = (JSONObject) jsonObject.get("liveBroadcastDetails");
                 if(liveBroadcastDetails != null){
                     String isLiveNow = putNotNull(info, liveBroadcastDetails, "isLiveNow");
-                    String startTimestamp = putNotNull(info, liveBroadcastDetails, "startTimestamp");
-                    String endTimestamp = putNotNull(info, liveBroadcastDetails, "endTimestamp");
-                    info.put("liveDate", startTimestamp.split("T")[0]);
+                    String startTime = putNotNull(info, liveBroadcastDetails, "startTimestamp", "startTime");
+                    String endTime = putNotNull(info, liveBroadcastDetails, "endTimestamp", "endTime");
+                    info.put("liveDate", startTime.split("T")[0]);
                     if("true".equals(isLiveNow)){
                         info.put("liveStatus", LiveInfo.LIVE_STATUS_LIVEING);
-                    }else if(StringUtils.isBlank(endTimestamp)){
+                    }else if(StringUtils.isBlank(endTime)){
                         info.put("liveStatus", LiveInfo.LIVE_STATUS_PREVIEW);
                     }else{
                         info.put("liveStatus", LiveInfo.LIVE_STATUS_DONE);
+                    }
+                    if(StringUtils.isNotBlank(startTime)){
+                        info.put("startTimestamp", String.valueOf(DateUtil.getTimestamp(startTime)));
                     }
                 }
             } catch (Exception e){
@@ -83,13 +93,23 @@ public class CurlUtil {
         index = curl.indexOf("approxDurationMs");
         if(index > -1){
             String duration = curl.substring(index + 17, index + 30);
-            try {
-                duration = duration.split(",")[0];
-                duration = duration.replaceAll("[\\s:\"]", "");
+            duration = duration.split(",")[0];
+            duration = duration.replaceAll("[\\s:\"]", "");
+            if(StringUtils.isNumeric(duration)){
                 String time = DateUtil.secondToString(Integer.parseInt(duration) / 1000);
                 info.put("videoDurationTime", time);
-            }catch (Exception e){
-                logger.error("获取videoDurationTime失败", e);
+            }
+        }
+        //"videoViewCountRenderer": {"viewCount": {"runs": [{"text": "1,983"}, {"text": " 人正在观看"}]},"isLive": true} 直播中
+        //"videoViewCountRenderer":{"viewCount":{"simpleText":"26,517次观看"}," 直播结束
+        //"videoViewCountRenderer":{"viewCount":{"simpleText":"23,960 views"}
+        index = curl.indexOf("videoViewCountRenderer");
+        if(index > -1){
+            String livingViewCount = curl.substring(index + 47, index + 70);
+            livingViewCount = livingViewCount.substring(livingViewCount.indexOf("text") + 4, livingViewCount.indexOf("}"));
+            livingViewCount = livingViewCount.replaceAll("[\\s:\",]", "");
+            if(StringUtils.isNumeric(livingViewCount)){
+                info.put("livingViewCount", livingViewCount);
             }
         }
         //"commentCount": {"simpleText": "926"},
@@ -216,7 +236,7 @@ public class CurlUtil {
                 }
                 fileName = filePath + fileName;
             }
-            cmd += "-o " + fileName + " ";
+            cmd += "-o \"" + fileName + "\" ";
         }else{
             cmd += "-O ";
         }

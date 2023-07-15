@@ -13,4 +13,5 @@ public class EmotesData {
     private String images;
     private Boolean isCustomEmoji;
     private String name;
+    private Boolean inUse;
 }

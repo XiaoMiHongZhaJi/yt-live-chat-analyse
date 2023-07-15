@@ -22,14 +22,17 @@ public class BatchUpdateVideoInfo {
 
     public static void main(String[] args) throws Exception{
 
-        List<String> urlList = getUrlList("@Chenyifaer288");
-        logger.info("获取到待更新url数量：" + urlList.size());
-        CurlUtil.proxy = "http://127.0.0.1:7890";
+        List<String> urlList = getUrlList();
+        int count = urlList.size();
+        logger.info("获取到待更新url数量：" + count);
+        CurlUtil.proxy = "http://192.168.100.30:7890";
+        int i = 0;
         for (String url : urlList){
             Map<String, String> liveInfo = CurlUtil.getLiveInfo(url);
             updateVideoInfo(url, liveInfo);
-            logger.info("已更新 " + liveInfo.get("publishDate") + liveInfo.get("title"));
-            Thread.sleep(1 * 1000 + (int)(Math.random() * 3 * 1000));
+            i ++;
+            logger.info("{}/{} 已更新 {} {}", i, count, liveInfo.get("publishDate"), liveInfo.get("title"));
+            Thread.sleep(1000 + (int)(Math.random() * 3 * 1000));
         }
     }
 
@@ -40,7 +43,7 @@ public class BatchUpdateVideoInfo {
         String durationTime = liveInfo.get("videoDurationTime");
         String publishDate = liveInfo.get("publishDate");
         String commentCount = liveInfo.get("commentCount");
-        StringBuffer sql = new StringBuffer("update video_info set ");
+        StringBuilder sql = new StringBuilder("update video_info set ");
         List<String> params = new ArrayList<>();
         if(StringUtils.isNotBlank(publishDate)){
             sql.append("publish_date = ?, ");
@@ -72,8 +75,8 @@ public class BatchUpdateVideoInfo {
         JDBCUtil.executeUpdate(sql.toString(), params);
     }
 
-    private static List<String> getUrlList(String authorId) {
-        return getUrlList(authorId, null, null);
+    private static List<String> getUrlList() {
+        return getUrlList("@Chenyifaer288", null, null);
     }
 
     public static List<String> getUrlList(String authorId, String start, String end){

@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="../css/public.css">
     <script src="../modules/layui/layui.js"></script>
     <script src="../js/public.js"></script>
-    <script src="/pages/dialog/liveDetail.js"></script>
+    <script src="dialog/liveDetail.js"></script>
     <style>
         .tableBar a{
            margin: 2px;
@@ -34,7 +34,7 @@
                     <div class="layui-inline">
                         <label class="layui-form-label">开播地址</label>
                         <div class="layui-input-inline">
-                            <input type="text" name="url" lay-verify="required" autocomplete="off" class="layui-input" placeholder="url，必填">
+                            <input type="text" name="url" autocomplete="off" class="layui-input" placeholder="url，必填">
                         </div>
                     </div>
                     <div class="layui-inline">
@@ -108,9 +108,6 @@
             <img src="/img/loading.gif" class="icon loading layui-hide" style="height: 16px;margin-bottom: 8px;">
         </a>
         <input type="file" name="file" class="importSrtBtn" style="display: none;">
-        <!--<a lay-event="delete" title="删除弹幕数据">
-            <svg t="1653156981229" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7726" width="16" height="16"><path d="M861.184 192.512q30.72 0 50.688 10.24t31.744 25.6 16.384 33.28 4.608 33.28q0 7.168-0.512 11.264t-0.512 7.168l0 6.144-67.584 0 0 537.6q0 20.48-8.192 39.424t-23.552 33.28-37.376 23.04-50.688 8.704l-456.704 0q-26.624 0-50.176-8.192t-40.448-23.04-26.624-35.84-9.728-47.616l0-527.36-63.488 0q-1.024-1.024-1.024-5.12-1.024-5.12-1.024-31.744 0-13.312 6.144-29.696t18.432-30.208 31.744-23.04 46.08-9.216l91.136 0 0-62.464q0-26.624 18.432-45.568t45.056-18.944l320.512 0q35.84 0 49.664 18.944t13.824 45.568l0 63.488q21.504 1.024 46.08 1.024l47.104 0zM384 192.512l320.512 0 0-64.512-320.512 0 0 64.512zM352.256 840.704q32.768 0 32.768-41.984l0-475.136-63.488 0 0 475.136q0 21.504 6.656 31.744t24.064 10.24zM545.792 839.68q17.408 0 23.552-9.728t6.144-31.232l0-475.136-63.488 0 0 475.136q0 40.96 33.792 40.96zM738.304 837.632q18.432 0 24.576-9.728t6.144-31.232l0-473.088-64.512 0 0 473.088q0 40.96 33.792 40.96z" p-id="7727" fill="#515151"></path></svg>
-        </a>-->
     </div>
 </script>
 <script>
@@ -150,7 +147,7 @@
                 {title: '操作', width: 100, toolbar: '#currentTableBar', align: 'center'}
             ]],
             loading: true,
-            url: '/liveInfo/queryList',
+            url: '../liveInfo/queryList',
             page: true,
             limits: [10, 15, 35, 50, 100],
             limit: 10,
@@ -161,7 +158,7 @@
                     const data = list[i];
                     const tr = $(".layui-table tr[data-index=" + i + "]");
                     updateStatus(tr, data);
-                    if(data.downloadStatus == "1"){
+                    if(data.downloadStatus == "1" && downloadingIdList.indexOf(data.id) == -1){
                         //正在导入弹幕数据，实时更新
                         downloadingIdList.push(data.id);
                     }
@@ -170,7 +167,7 @@
                     setDownloadingInterval();
                 }
                 //绑定事件
-                $(".importSrtBtn").change((e) => {
+                $(".importSrtBtn").unbind("change").change((e) => {
                     const el = e.target;
                     const liveDate = $(el).data("liveDate");
                     const file = el.files[0];
@@ -181,7 +178,7 @@
                     $(el).prev().find(".icon").addClass("layui-hide");
                     $(el).prev().find(".loading").removeClass("layui-hide");
                     $.ajax({
-                        url: '/liveInfo/importSrt',
+                        url: '../liveInfo/importSrt',
                         data: form,
                         processData: false,
                         contentType: false,
@@ -209,7 +206,7 @@
                     })
                 }else if(data.downloadStatus == "1"){
                     $.ajax({
-                        url: '/liveInfo/stopDownload',
+                        url: '../liveInfo/stopDownload',
                         data: {
                             id: data.id,
                             url: data.url
@@ -236,7 +233,7 @@
                         liveStatus: "4"
                     };
                     $.ajax({
-                        url: '/liveInfo/updateLiveInfo',
+                        url: '../liveInfo/updateLiveInfo',
                         data: delInfo,
                         method: 'post'
                     }).then(() => {
@@ -260,10 +257,16 @@
             liveInfo.title = $.trim(liveInfo.title);
             liveInfo.downLiveChat = $("input[name='downLiveChat']").prop("checked");
             liveInfo.getLiveInfo = $("input[name='getLiveInfo']").prop("checked");
+            // const file = $("#file").files[0];
+            // let form = new FormData();
+            // form.append("file", file);
+            // form.append("liveInfo", liveInfo);
             $.ajax({
-                url: '/liveInfo/addLiveInfo',
+                url: '../liveInfo/addLiveInfo',
                 data: liveInfo,
-                method: 'post'
+                method: 'post',
+                // processData: false,
+                // contentType: false
             }).then((result) => {
                 layer.msg("新增成功");
                 table.reload('liveInfo');
@@ -278,8 +281,8 @@
             elem: '#liveDate'
         });
         function getChatCount(data){
-            var content = '<span class="chatCount" data-id='+ data.id;
-            if(data.platform == "t"){
+            const content = '<span class="chatCount" data-id=' + data.id;
+            if(data.platform == "t" || data.downloadStatus == "1"){
                 return  content + '>'+ formatNum(data.livingChatCount) +'</span>';
             }
             if(data.liveChatCount){
@@ -322,23 +325,22 @@
             }
             interval = setInterval(()=>{
                 $.ajax({
-                    url: '/liveInfo/queryListById',
+                    url: '../liveInfo/queryListById',
                     data: {ids: downloadingIdList.join(",")},
                     method: 'post'
                 }).then((result) => {
-                    let tr;
-                    let hasDownloading = false;
+                    downloadingIdList = [];
                     for(let i = 0; i < result.length; i++){
                         const data = result[i];
-                        tr = $(".chatCount[data-id="+ data.id +"]").closest("tr");
+                        const tr = $(".chatCount[data-id="+ data.id +"]").closest("tr");
                         updateStatus(tr, data);
                         if(data.downloadStatus == "1"){
                             //正在导入弹幕数据
-                            hasDownloading = true;
+                            downloadingIdList.push(data.id);
                             tr.find(".chatCount").html(getChatCount(data));
                         }
                     }
-                    if(!hasDownloading){
+                    if(downloadingIdList.length == 0){
                         clearInterval(interval);
                     }
                 }, () => {
@@ -350,7 +352,7 @@
             updateStatus(tr, {downloadStatus: "1"});
             data["updateTime"] = undefined;
             $.ajax({
-                url: '/liveInfo/downloadChatData',
+                url: '../liveInfo/downloadChatData',
                 data: data,
                 method: 'post'
             }).then(() => {
