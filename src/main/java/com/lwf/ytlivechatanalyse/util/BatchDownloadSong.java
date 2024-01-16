@@ -19,8 +19,8 @@ public class BatchDownloadSong {
 
     public static void main(String[] args) throws Exception{
 
-        CurlUtil.proxy = "http://192.168.100.30:7890";
-        YtDlpUtil.proxy = "http://192.168.100.30:7890";
+        CurlUtil.proxy = "http://127.0.0.1:7890";
+        YtDlpUtil.proxy = "http://127.0.0.1:7890";
         getAndAddVideoList(AUTOHR_ID);
         List<Map<String, String>> songList = getSongList(AUTOHR_ID);
         int count = songList.size();
@@ -79,7 +79,7 @@ public class BatchDownloadSong {
                 logger.info(fileName + "已存在，不再下载");
                 continue;
             }
-            double length = CurlUtil.downloadFile(img, fileName, IMG_PATH) / 1024;
+            double length = (double) CurlUtil.downloadFile(img, fileName, IMG_PATH) / 1024;
             if(length < 5){
                 img = img.replace("maxresdefault.jpg", "hqdefault.jpg");
                 logger.info("下载大图失败，重新尝试小一点的图： " + img);
@@ -151,6 +151,20 @@ public class BatchDownloadSong {
         List<Map<String, String>> videoList = getVideoList(authorId);
         int addCount = 0;
         for (Map<String, String> info : videoList){
+            String publishDate = info.get("publishDate");
+            if(StringUtils.length(publishDate) == 10) {
+                Date date = DateUtil.parseDate(publishDate);
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(date);
+                int week = calendar.get(Calendar.DAY_OF_WEEK);
+                if(week == 1 || week == 3 || week == 5){
+                    logger.info("{}是周{}，自动提前一天", publishDate, week - 1);
+                    calendar.add(Calendar.DATE, -1);
+                    date = calendar.getTime();
+                    publishDate = DateUtil.getDateString(date);
+                    info.put("publishDate", publishDate);
+                }
+            }
             addCount += addVideoInfo(info);
         }
         logger.info("获取到VideoList条数：" + videoList.size() + "，数据库新增条数：" + addCount);
@@ -170,8 +184,8 @@ public class BatchDownloadSong {
         }
         // 排除下载过的
         sql += "and down_song_status != '1' ";
-        // 2023年
-        sql += "and publish_date like '2023%' ";
+        // 2024年
+        sql += "and publish_date like '2024%' ";
         sql += "and publish_date > '2023-04' ";
         sql += "order by publish_date";
         return JDBCUtil.queryMapList(sql, params);

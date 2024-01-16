@@ -3,17 +3,13 @@ package com.lwf.ytlivechatanalyse.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
-import com.lwf.ytlivechatanalyse.bean.LiveChatData;
-import com.lwf.ytlivechatanalyse.bean.LiveInfo;
-import com.lwf.ytlivechatanalyse.bean.LiveInfoLog;
-import com.lwf.ytlivechatanalyse.bean.LivingChatData;
+import com.lwf.ytlivechatanalyse.bean.*;
 import com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper;
 import com.lwf.ytlivechatanalyse.dao.LiveInfoLogMapper;
 import com.lwf.ytlivechatanalyse.dao.LiveInfoMapper;
 import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
 import com.lwf.ytlivechatanalyse.util.*;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -322,8 +318,7 @@ public class LiveInfoService {
         liveInfoLogMapper.insert(liveInfoLog);
     }
 
-    public File getBulletXml(String liveDate, String startTime) {
-        logger.info("开始生成弹幕xml文件：{}{}", liveDate, startTime);
+    public Result getBulletFile(String liveDate, String startTime, BulletConfig config) {
         Long startTimestamp = null;
         if(StringUtils.isBlank(startTime)){
             LiveInfo liveInfo = new LiveInfo();
@@ -335,18 +330,19 @@ public class LiveInfoService {
             logger.info("获取到开播信息中的startTimestamp：{}", startTimestamp);
         }else if(startTime.startsWith("1") && StringUtils.isNumeric(startTime)){
             //时间戳
+            startTime = String.format("%-16d", startTime).replace(" ", "0");
             startTimestamp = Long.parseLong(startTime);
-            if(startTime.length() == 10){
-                startTimestamp = startTimestamp * 1000000;
-            }else if(startTime.length() == 13){
-                startTimestamp = startTimestamp * 1000;
-            }
         }else if(startTime.startsWith("202")){
-            //时间日期
+            //日期时间
             startTimestamp = DateUtil.getTimestamp(startTime);
             logger.info("获取到转换的startTimestamp：{}", startTimestamp);
+        }else if(startTime.startsWith("20:") && startTime.length() <= 8){
+            //时间
+            startTimestamp = DateUtil.getTimestamp(liveDate + startTime);
+            logger.info("获取到转换的startTimestamp：{}", startTimestamp);
         }else{
-            throw new RuntimeException("输入的时间有误");
+            logger.warn("输入的开播时间有误：{} {}", liveDate, startTime);
+            return new Result(500, "输入的开播时间有误");
         }
         logger.info("开始获取弹幕数据");
         LiveChatData liveChatData = new LiveChatData();
@@ -357,12 +353,10 @@ public class LiveInfoService {
             chatList.addAll(livingChatData);
         }
         if(CollectionUtils.isEmpty(chatList)){
-            throw new RuntimeException("输入的日期无弹幕数据");
+            logger.warn("所选日期无弹幕数据：{} {}", liveDate, startTime);
+            return new Result(500, "所选日期无弹幕数据");
         }
-        return BulletUtil.getXmlFile(chatList, startTimestamp, "bullet", 0, 0);
-    }
-
-    public File converBulletAss(File file) {
-        return BulletUtil.converBulletAss(file);
+        logger.info("开始生成弹幕ass文件：{} {}", liveDate, startTime);
+        return BulletAssUtil.getAssFile(chatList, startTimestamp, config);
     }
 }

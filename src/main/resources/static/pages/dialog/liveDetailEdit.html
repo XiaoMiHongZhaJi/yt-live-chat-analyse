@@ -19,43 +19,47 @@
             <div class="layui-form-item">
                 <label class="layui-form-label">开播日期</label>
                 <div class="layui-input-block live-detail-div">
-                    <span class="detail" data-name="liveDate"></span>
+                    <input type="hidden" name="id">
+                    <input type="text" name="liveDate" class="layui-input">
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label required">URL</label>
                 <div class="layui-input-block live-detail-div">
-                    <span class="detail" data-name="url"></span>
+                    <input type="text" name="url" class="layui-input" style="width: 65%;display: inline-block;" placeholder="请输入URL">
+                    <button type="button" class="layui-btn layui-btn-primary layui-border-green getInfo" style="float: right;margin-right: 10%;">
+                        获取最新数据
+                    </button>
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label">标题</label>
                 <div class="layui-input-block live-detail-div">
-                    <span class="detail" data-name="title"></span>
+                    <input type="text" name="title" class="layui-input" style="width: 90%;" placeholder="请输入标题">
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label">播放数</label>
                 <div class="layui-input-block live-detail-div">
-                    <span class="detail" data-name="viewCount"></span>
+                    <input type="text" name="viewCount" class="layui-input" placeholder="请输入播放数">
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label">点赞数</label>
                 <div class="layui-input-block live-detail-div">
-                    <span class="detail" data-name="likeCount"></span>
+                    <input type="text" name="likeCount" class="layui-input" placeholder="请输入点赞数">
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label">弹幕数</label>
                 <div class="layui-input-block live-detail-div">
-                    <span class="detail" data-name="chatCount"></span>
+                    <input type="text" name="chatCount" class="layui-input" placeholder="请输入弹幕数">
                 </div>
             </div>
             <div class="layui-form-item layui-form-text">
                 <label class="layui-form-label">时间线</label>
                 <div class="layui-input-block live-detail-div">
-                    <span class="detail" data-name="timeline"></span>
+                    <textarea type="text" name="timeline" class="layui-textarea" style="width: 90%;height: 160px;overflow:auto;" placeholder="请输入时间线信息"></textarea>
                 </div>
             </div>
         </div>

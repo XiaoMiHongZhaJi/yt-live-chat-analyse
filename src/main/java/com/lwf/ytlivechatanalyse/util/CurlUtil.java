@@ -20,8 +20,8 @@ public class CurlUtil {
 
     public static void main(String[] args){
 //        execCurl("http://www.baidu.com/", "get");
-        CurlUtil.proxy = "http://192.168.0.6:7890";
-        Map<String, String> liveInfo = getLiveInfo("https://www.youtube.com/watch?v=mLAPkMZQGA8");
+        CurlUtil.proxy = "http://127.0.0.1:7890";
+        Map<String, String> liveInfo = getLiveInfo("https://www.youtube.com/watch?v=KlGA3S6YZn8\n");
         System.out.println(liveInfo);
 //        List<Map<String, String>> playlist = getPlaylist("https://www.youtube.com/playlist?list=PLi3zrmUZHiY-eH8eNJiwj-viwP3ngIkcd");
 //        System.out.println(playlist);
@@ -46,13 +46,12 @@ public class CurlUtil {
         if(StringUtils.isEmpty(curl)){
             return info;
         }
-        //"topLevelButtons":[{"toggleButtonRenderer":{
-        int index = curl.indexOf("toggleButtonRenderer");
+        //{"iconName":"LIKE","title":"17",
+        int index = curl.indexOf("\"LIKE\",\"title\"");
         if(index > -1){
-            String curlJson = curl.substring(index + 22);
             try {
-                JSONObject jsonObject = getJsonObject(curlJson);
-                String likeCount = ((JSONObject) jsonObject.get("defaultText")).get("simpleText").toString();
+                String like = curl.substring(index + 14, index + 30);
+                String likeCount = like.substring(like.indexOf(":\"") + 2, like.indexOf("\","));
                 info.put("likeCount", likeCount);
             } catch (Exception e){
                 logger.error("获取likeCount信息出错", e);
@@ -68,6 +67,7 @@ public class CurlUtil {
                 putNotNull(info, jsonObject, "viewCount");
                 putNotNull(info, jsonObject, "uploadDate");
                 putNotNull(info, jsonObject, "publishDate");
+                info.put("publishDate", info.get("publishDate").substring(0, 10));
                 JSONObject liveBroadcastDetails = (JSONObject) jsonObject.get("liveBroadcastDetails");
                 if(liveBroadcastDetails != null){
                     String isLiveNow = putNotNull(info, liveBroadcastDetails, "isLiveNow");

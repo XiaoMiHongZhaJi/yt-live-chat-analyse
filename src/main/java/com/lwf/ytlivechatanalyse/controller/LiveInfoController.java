@@ -2,6 +2,7 @@ package com.lwf.ytlivechatanalyse.controller;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.lwf.ytlivechatanalyse.bean.BulletConfig;
 import com.lwf.ytlivechatanalyse.bean.LiveInfo;
 import com.lwf.ytlivechatanalyse.service.LiveChatDataService;
 import com.lwf.ytlivechatanalyse.service.LiveInfoService;
@@ -13,17 +14,14 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.nio.file.Files;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -45,7 +43,12 @@ public class LiveInfoController {
     SrtDataService srtDataService;
 
     @PostMapping("/addLiveInfo")
-    public void addLiveInfo(LiveInfo liveInfo, boolean downLiveChat, boolean getLiveInfo, MultipartFile file){
+    public Result addLiveInfo(HttpServletRequest request, HttpServletResponse response, LiveInfo liveInfo, boolean downLiveChat, boolean getLiveInfo, MultipartFile file){
+        if(!AuthUtil.auth(request)){
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
+            return new Result<>(500, "认证失败");
+        }
         liveInfoService.addLiveInfo(liveInfo, downLiveChat, getLiveInfo);
         //从文件导入
         if(file != null){
@@ -54,32 +57,21 @@ public class LiveInfoController {
                 liveChatDataService.importJsonFile(file, liveInfo.getLiveDate());
             }
         }
+        return new Result<>(200, "新增成功");
     }
 
     @RequestMapping("/downloadBullet")
-    public ResponseEntity<InputStreamResource> downloadBullet(String liveDate, String startTime, String fileType){
+    public Result downloadBullet(HttpServletRequest request, HttpServletResponse response, String liveDate, String startTime, BulletConfig config){
+        if(!AuthUtil.auth(request)){
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
+            return new Result<>(500, "认证失败");
+        }
         if(StringUtils.isBlank(liveDate) || liveDate.length() < 10){
-            logger.error("liveDate错误{}，{}，{}", liveDate, startTime, fileType);
-            return null;
+            logger.error("liveDate错误{}，{}，{}", liveDate, startTime, config);
+            return new Result(500, "输入的liveDate有误，正确的格式为：2023-01-01");
         }
-        File file = liveInfoService.getBulletXml(liveDate, startTime);
-        if(file == null){
-            logger.error("弹幕文件生成失败{}，{}，{}", liveDate, startTime, fileType);
-            return null;
-        }
-        if("ass".equals(fileType)){
-            file = liveInfoService.converBulletAss(file);
-        }
-        try {
-            InputStreamResource resource = new InputStreamResource(Files.newInputStream(file.toPath()));
-            ResponseEntity.BodyBuilder builder = ResponseEntity.ok();
-            builder.contentType(MediaType.APPLICATION_OCTET_STREAM);
-            builder.header("Content-disposition", "attachment; filename=" + file.getName());
-            return builder.body(resource);
-        }catch(Exception e){
-            logger.error("下载弹幕文件失败", e);
-        }
-        return null;
+        return liveInfoService.getBulletFile(liveDate, startTime, config);
     }
 
     @RequestMapping("/queryListBySelector")
@@ -108,13 +100,18 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/queryList")
-    public Result<LiveInfo> queryList(int page, int limit){
+    public Result<LiveInfo> queryList(HttpServletRequest request, HttpServletResponse response, int page, int limit){
+        if(!AuthUtil.auth(request)){
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
+            return new Result<>(500, "认证失败");
+        }
         limit = Math.min(limit, Constant.MAX_PAGE_SIZE);
         PageHelper.startPage(page, limit);
         return new Result<>(new PageInfo<>(liveInfoService.selectList()));
     }
 
-    @RequestMapping("/queryLastLiveInfo")
+    @RequestMapping("/queryPrevLiveInfo")
     public String queryLastLiveDate(String liveDate){
         Date parseDate = new Date();
         try {
@@ -152,8 +149,14 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/downloadChatData")
-    public void downloadChatData(LiveInfo liveInfo){
+    public Result downloadChatData(HttpServletRequest request, HttpServletResponse response, LiveInfo liveInfo){
+        if(!AuthUtil.auth(request)){
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
+            return new Result<>(500, "认证失败");
+        }
         liveInfoService.downloadChatData(liveInfo);
+        return new Result<>(200, "下载完成");
     }
 
     @RequestMapping("/selectCount")
@@ -162,32 +165,44 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/importSrt")
-    public void importSrt(String liveDate, MultipartFile file){
+    public Result importSrt(HttpServletRequest request, HttpServletResponse response, String liveDate, MultipartFile file){
+        if(!AuthUtil.auth(request)){
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
+            return new Result<>(500, "认证失败");
+        }
         //从文件导入
         if(file == null){
-            throw new RuntimeException("文件不能为空");
+            return new Result<>(500, "文件不能为空");
         }
         String filename = file.getOriginalFilename();
-        if(filename != null && filename.endsWith(".srt")){
-            Long count = srtDataService.importSrt(liveDate, file);
-            LiveInfo liveInfo = new LiveInfo();
-            liveInfo.setLiveDate(liveDate);
-            liveInfo.setSrtCount(count.intValue());
-            liveInfoService.updateLiveInfoByDate(liveInfo);
+        if(filename == null || !filename.endsWith(".srt")){
+            return new Result<>(500, "只能导入srt文件");
         }
+        Long count = srtDataService.importSrt(liveDate, file);
+        LiveInfo liveInfo = new LiveInfo();
+        liveInfo.setLiveDate(liveDate);
+        liveInfo.setSrtCount(count.intValue());
+        liveInfoService.updateLiveInfoByDate(liveInfo);
+        return new Result<>(200, "导入完成，当前字幕条数：" + count);
     }
 
     @RequestMapping("/stopDownload")
-    public String stopDownload(LiveInfo liveInfo){
+    public Result stopDownload(HttpServletRequest request, HttpServletResponse response, LiveInfo liveInfo){
+        if(!AuthUtil.auth(request)){
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
+            return new Result<>(500, "认证失败");
+        }
         String result = CmdUtil.kill("chat_downloader", liveInfo.getUrl());
         if(StringUtils.isBlank(result) || result.contains("未发现")){
             // 这种情况说明 chat_downloader 并未运行，只需要更新数据库状态即可
             liveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
             liveInfo.setUpdateTime(new Date());
             liveInfoService.updateLiveInfoById(liveInfo);
-            return "CHAT_DOWNLOADER并未运行。已更新状态";
+            return new Result<>(200, "未在下载，已更新状态");
         }
-        return "已结束并更新状态";
+        return new Result<>(200, "已结束并更新状态");
     }
 }
 

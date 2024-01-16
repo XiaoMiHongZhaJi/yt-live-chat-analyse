@@ -2,7 +2,6 @@ package com.lwf.ytlivechatanalyse.util;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.lwf.ytlivechatanalyse.bean.EmotesData;
 import com.lwf.ytlivechatanalyse.bean.LiveChatData;
 import com.lwf.ytlivechatanalyse.service.EmotesDataService;
@@ -11,7 +10,6 @@ import org.aspectj.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
@@ -25,9 +23,9 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class BulletUtil {
+public class BulletXmlUtil {
 
-    private static final Logger logger = LoggerFactory.getLogger(BulletUtil.class);
+    private static final Logger logger = LoggerFactory.getLogger(BulletXmlUtil.class);
 
     private static final String TYPE_SCROLL = "1"; //滚动弹幕
     private static final String TYPE_BOTTOM = "4"; //底部弹幕
@@ -42,20 +40,13 @@ public class BulletUtil {
 
     private static final Map<String, String> specType = getSpecType();
 
-    private static String bulletConver;
-
     private static EmotesDataService emotesDataService;
 
     private static Map<String, String> emotesMap;
 
     @Autowired
     public void setEmotesDataService(EmotesDataService emotesDataService) {
-        BulletUtil.emotesDataService = emotesDataService;
-    }
-
-    @Value("${bulletConver}")
-    public void setBulletConver(String bulletConver) {
-        BulletUtil.bulletConver = bulletConver;
+        BulletXmlUtil.emotesDataService = emotesDataService;
     }
 
     public static void main(String[] args) {
@@ -71,7 +62,7 @@ public class BulletUtil {
     /**
      * 生成xml弹幕文件
      */
-    public static File getXmlFile(List<LiveChatData> chatList, Long startTimestamp, String filePath, int offset, int blockSecond) {
+    public static File getXmlFile(List<LiveChatData> chatList, Long startTimestamp, Integer block, Integer duringSecond) {
         Long minTimestamp = chatList.get(0).getTimestamp();
         Long maxTimestamp = chatList.get(chatList.size() - 1).getTimestamp();
         if(startTimestamp == null || startTimestamp < minTimestamp){
@@ -79,10 +70,8 @@ public class BulletUtil {
         }else if(startTimestamp > maxTimestamp){
             startTimestamp = maxTimestamp;
         }
-        if(startTimestamp > 0){
-            startTimestamp += offset * 1000000L;
-        }
         BufferedWriter writer = null;
+        String filePath = "bullet/xml";
         File floder = new File(filePath);
         if(!floder.exists()){
             floder.mkdir();
@@ -107,7 +96,7 @@ public class BulletUtil {
             writer.newLine();
             //<d p="1568.69900,1,25,16777215,1527417135,0,96de7b6f,144158263607298">熊半城</d>
             for(LiveChatData liveChatData : chatList){
-                String line = getBulletLine(startTimestamp, liveChatData, blockSecond);
+                String line = getBulletXmlLine(startTimestamp, liveChatData, block, duringSecond);
                 if(line == null){
                     continue;
                 }
@@ -131,7 +120,7 @@ public class BulletUtil {
         return file;
     }
 
-    private static String getBulletLine(Long startTimestamp, LiveChatData liveChatData, int blockSecond) {
+    private static String getBulletXmlLine(Long startTimestamp, LiveChatData liveChatData, Integer block, Integer duringSecond) {
         Long timestamp = liveChatData.getTimestamp();
         long time = timestamp - startTimestamp;
         double second = (double) time / 1000000;
@@ -140,8 +129,8 @@ public class BulletUtil {
         }
         if(second < 0){
             second = 0;
-        }else if(blockSecond > 0){
-            blockSecond = blockSecond / 3;
+        }else if(block != null && duringSecond != null && block > 0 && duringSecond > 0){
+            Integer blockSecond = duringSecond / block;
             second = (int)(second / blockSecond) * blockSecond;
         }
         String authorName = liveChatData.getAuthorName().replaceAll("[&<>\u0000-\u0019]","_");
@@ -161,7 +150,7 @@ public class BulletUtil {
         String spec = specType.get(authorName);
         if(spec != null){
             type = spec;
-            if(BulletUtil.TYPE_BOTTOM.equals(type)){
+            if(BulletXmlUtil.TYPE_BOTTOM.equals(type)){
                 //房管
                 fontColor = FONT_COLOR_BLUE;
             }
@@ -220,17 +209,6 @@ public class BulletUtil {
         for(EmotesData emote : emotesData){
             emotesMap.put(emote.getName(), emote.getEmotesId());
         }
-    }
-
-    public static File converBulletAss(File file) {
-        if(StringUtils.isNotBlank(bulletConver) && file != null){
-            File fileAss = new File(file.getAbsolutePath().replace(".xml", ".ass"));
-            if(!fileAss.exists()){
-                CmdUtil.execCmd(String.format("\"%s\" %s", bulletConver, file.getAbsolutePath()));
-            }
-            return fileAss;
-        }
-        return null;
     }
 
 

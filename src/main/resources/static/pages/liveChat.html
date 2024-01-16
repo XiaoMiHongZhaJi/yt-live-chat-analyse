@@ -169,7 +169,38 @@
             return false;
         })
         $("#downloadBullet").click(() => {
-            window.open("/liveInfo/downloadBullet?fileType=ass&liveDate=" + liveInfo.liveDate, '_self');
+            $.ajax({
+                url: '../liveInfo/downloadBullet',
+                data: {
+                    fileType: "ass",
+                    liveDate: liveInfo.liveDate
+                },
+                method: 'post'
+            }).then((result) => {
+                const code = result.code;
+                const msg = result.msg;
+                if(code != 200){
+                    layer.msg("下载失败，原因：" + msg);
+                    return false;
+                }
+                const bulletContent = result.data[0];
+                const bulletFileName = result.data[1];
+                const bulletDetail = result.data[2];
+                // 创建Blob对象
+                var blob = new Blob([bulletContent], {type: 'text/plain'});
+                // 创建下载链接
+                var downloadLink = document.createElement('a');
+                downloadLink.href = URL.createObjectURL(blob);
+                downloadLink.download = bulletFileName;
+                // 将链接添加到页面，并触发点击事件进行下载
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                // 清理
+                document.body.removeChild(downloadLink);
+                layer.msg("下载成功 " + bulletDetail.replace(/\n/g, "<br>"));
+            }, () => {
+                layer.msg("下载失败");
+            })
             return false;
         })
         form.on('switch(refersh-checkbox)',(res) => {

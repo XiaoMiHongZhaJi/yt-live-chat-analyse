@@ -1,5 +1,6 @@
 package com.lwf.ytlivechatanalyse.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,30 +16,31 @@ public class DateUtil {
     private static final Logger logger = LoggerFactory.getLogger(DateUtil.class);
 
     public static void main(String[] args) {
-        System.out.println(getNowTimestamp());
-        System.out.println(getTimestamp("2023-05-24 20:39:45"));
-        //1684759162000000
-        //1684759168000000
+        System.out.println(getTimestamp("2023-09-23 20:42:40"));
+        System.out.println(getDateTime(1696859711l));
     }
 
     /**
      * 时间转时间戳
      */
     public static long getTimestamp(String dateTime){
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        int length = StringUtils.length(dateTime);
+        if(length < 12){
+            return 0;
+        }
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
+        int index = dateTime.indexOf("+");
+        if(index > -1){
+            format.setTimeZone(TimeZone.getTimeZone("GMT+" + dateTime.substring(index)));
+        }else{
+            format.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+        }
+        dateTime = dateTime.replaceAll("[^0-9]", "");
+        dateTime = String.format("%-14s", dateTime).replace(" ", "0");
+        if(dateTime.length() > 14){
+            dateTime = dateTime.substring(0, 14);
+        }
         try {
-            char[] chars = dateTime.toCharArray();
-            if(chars.length > 19){
-                if(chars[19] == '+'){
-                    format.setTimeZone(TimeZone.getTimeZone("GMT" + String.valueOf(chars, 19, chars.length > 21 ? 2 : 1)));
-                }else {
-                    format.setTimeZone(TimeZone.getTimeZone("GMT+8"));
-                }
-            }
-            chars[10] = ' ';
-            chars[13] = ':';
-            chars[16] = ':';
-            dateTime = String.valueOf(chars, 0, 19);
             Date date = format.parse(dateTime);
             return date.getTime() * 1000;
         } catch (ParseException e) {
@@ -72,8 +74,27 @@ public class DateUtil {
         minute = minute % 60;
         String result = minute + ":" + (seconds < 10 ? "0" : "") + seconds;
         if (hour > 0){
-            return hour + ":" + (minute < 10 ? "0" : "") + result;
+            result = hour + ":" + (minute < 10 ? "0" : "") + result;
         }
+        if(isNegative){
+            result = "-" + result;
+        }
+        return result;
+    }
+    /**
+     * xxx秒转x时x分x秒
+     */
+    public static String secondToString(double second){
+        boolean isNegative = second < 0;
+        if(isNegative){
+            second = - second;
+        }
+        int minute = (int) second / 60;
+        double seconds = second % 60;
+        int hour = minute / 60;
+        minute = minute % 60;
+        String result = minute + ":" + (seconds < 10 ? "0" : "") + String.format("%.2f", seconds);
+        result = hour + ":" + (minute < 10 ? "0" : "") + result;
         if(isNegative){
             result = "-" + result;
         }
@@ -128,5 +149,20 @@ public class DateUtil {
 
     public static Long getNowTimestamp() {
         return new Date().getTime() * 1000;
+    }
+
+    public static String getDateString(Date date) {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        return format.format(date);
+    }
+
+    public static Date parseDate(String dateString) {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            return format.parse(dateString);
+        } catch (ParseException e) {
+            logger.error("日期转换失败：{}", dateString);
+        }
+        return null;
     }
 }

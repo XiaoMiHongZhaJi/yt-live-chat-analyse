@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="../css/public.css">
     <script src="../modules/layui/layui.js"></script>
     <script src="../js/public.js"></script>
-    <script src="dialog/liveDetail.js"></script>
+    <script src="dialog/liveDetailEdit.js"></script>
     <style>
         .tableBar a{
            margin: 2px;
@@ -183,11 +183,18 @@
                         processData: false,
                         contentType: false,
                         method: 'post'
-                    }).then(() => {
+                    }).then((result) => {
+                        const code = result.code;
+                        const msg = result.msg;
                         $(el).parent().find(".loading").addClass("layui-hide");
-                        $(el).parent().find(".done").removeClass("layui-hide");
-                        layer.msg("导入成功");
-                        table.reload('liveInfo');
+                        if(code != 200){
+                            layer.msg("导入失败，原因：" + msg);
+                            $(el).parent().find(".import").removeClass("layui-hide");
+                        }else{
+                            layer.msg("导入成功");
+                            $(el).parent().find(".done").removeClass("layui-hide");
+                            table.reload('liveInfo');
+                        }
                     }, () => {
                         $(el).parent().find(".loading").addClass("layui-hide");
                         $(el).parent().find(".import").removeClass("layui-hide");
@@ -213,8 +220,12 @@
                         },
                         method: 'post'
                     }).then((result) => {
-                        if(result){
-                            layer.msg(result);
+                        const code = result.code;
+                        const msg = result.msg;
+                        if(code != 200){
+                            layer.msg("操作失败，原因：" + msg);
+                        }else if(msg){
+                            layer.msg(msg);
                         }
                         table.reload('liveInfo');
                     })
@@ -222,7 +233,7 @@
                     downloadChatData(data, tr);
                 }
             }else if(obj.event === 'edit'){
-                showLiveDetailDialog(data, true);
+                showLiveDetailEditDialog(data);
             }else if(obj.event === 'importSrt'){
                 $(tr).find(".importSrtBtn").data("liveDate", data.liveDate);
                 $(tr).find(".importSrtBtn").click();
@@ -268,7 +279,13 @@
                 // processData: false,
                 // contentType: false
             }).then((result) => {
-                layer.msg("新增成功");
+                const code = result.code;
+                const msg = result.msg;
+                if(code != 200){
+                    layer.msg("新增失败，原因：" + msg);
+                }else{
+                    layer.msg("新增成功");
+                }
                 table.reload('liveInfo');
                 $("#submit").removeClass("layui-btn-disabled");
             }, () => {
@@ -282,7 +299,7 @@
         });
         function getChatCount(data){
             const content = '<span class="chatCount" data-id=' + data.id;
-            if(data.platform == "t" || data.downloadStatus == "1"){
+            if(data.platform == "t" || data.liveStatus == "1"){
                 return  content + '>'+ formatNum(data.livingChatCount) +'</span>';
             }
             if(data.liveChatCount){
@@ -355,10 +372,16 @@
                 url: '../liveInfo/downloadChatData',
                 data: data,
                 method: 'post'
-            }).then(() => {
+            }).then((result) => {
+                const code = result.code;
+                const msg = result.msg;
+                if(code != 200){
+                    layer.msg("弹幕下载失败，原因：" + msg);
+                }else{
+                    layer.msg("正在导入弹幕数据...");
+                }
                 downloadingIdList.push(data.id);
                 setDownloadingInterval();
-                layer.msg("正在导入弹幕数据...");
             }, () => {
                 updateStatus(tr, {downloadStatus: "4"});
                 layer.msg("弹幕下载失败");

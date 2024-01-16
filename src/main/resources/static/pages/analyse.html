@@ -326,7 +326,7 @@
             echartsCompare.setOption(optionDensity);
             echartsCompare.hideLoading();
             //上期
-            $.ajax({url: '../liveInfo/queryLastLiveInfo', data: {liveDate: liveDate}}).then((lastLiveDate) => {
+            $.ajax({url: '../liveInfo/queryPrevLiveInfo', data: {liveDate: liveDate}}).then((lastLiveDate) => {
                 if(!lastLiveDate){
                     return ;
                 }
@@ -352,7 +352,7 @@
                     optionDensity.legend.data.push(lastLiveDate);
                     echartsCompare.setOption(optionDensity);
                     //上上期
-                    $.ajax({url: '../liveInfo/queryLastLiveInfo', data: {liveDate: lastLiveDate}}).then((lastLiveDate) => {
+                    $.ajax({url: '../liveInfo/queryPrevLiveInfo', data: {liveDate: lastLiveDate}}).then((lastLiveDate) => {
                         if(!lastLiveDate){
                             return ;
                         }

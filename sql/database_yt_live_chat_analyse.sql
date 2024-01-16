@@ -9,6 +9,7 @@ CREATE TABLE yt_live_chat_analyse.emotes_data (
   images VARCHAR(120) DEFAULT NULL COMMENT '颜文字图片',
   is_custom_emoji TINYINT(1) DEFAULT NULL COMMENT '是否yt自定义表情',
   name VARCHAR(60) DEFAULT NULL COMMENT '颜文字名称',
+  in_use          tinyint    default 0 null,
   PRIMARY KEY (id)
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 

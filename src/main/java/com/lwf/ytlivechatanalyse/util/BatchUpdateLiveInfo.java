@@ -13,14 +13,19 @@ public class BatchUpdateLiveInfo {
 
     public static void main(String[] args) throws Exception{
 
-        List<String> urlList = getUrlList();
+        List<String> urlList = getUrlList("2023-12-30");
         logger.info("获取到待更新url数量：" + urlList.size());
-        CurlUtil.proxy = "http://192.168.100.30:7890";
+        CurlUtil.proxy = "http://127.0.0.1:7890";
         for (String url : urlList){
             Map<String, String> liveInfo = CurlUtil.getLiveInfo(url);
+            String liveDate = liveInfo.get("liveDate");
+            if(StringUtils.isBlank(liveDate)){
+                logger.info("无法访问：" + liveDate);
+                continue;
+            }
             updateLiveInfo(url, liveInfo);
-            logger.info("已更新" + liveInfo.get("liveDate"));
-            Thread.sleep(10 * 1000 + (int)(Math.random() * 10 * 1000));
+            logger.info("已更新" + liveDate);
+            Thread.sleep(1 * 1000 + (int)(Math.random() * 1 * 1000));
         }
     }
 
@@ -30,6 +35,7 @@ public class BatchUpdateLiveInfo {
         String likeCount = liveInfo.get("likeCount");
         String viewCount = liveInfo.get("viewCount");
         String durationTime = liveInfo.get("videoDurationTime");
+        String startTimestamp = liveInfo.get("startTimestamp");
         StringBuffer sql = new StringBuffer("update live_info set ");
         List<String> params = new ArrayList<>();
         if(StringUtils.isNotBlank(title)){
@@ -45,8 +51,15 @@ public class BatchUpdateLiveInfo {
             params.add(viewCount);
         }
         if(StringUtils.isNotBlank(durationTime)){
+            if(durationTime.split(":").length == 2){
+                durationTime = "0:" + durationTime;
+            }
             sql.append("duration_time = ?, ");
             params.add(durationTime);
+        }
+        if(StringUtils.isNotBlank(startTimestamp)){
+            sql.append("start_timestamp = ?, ");
+            params.add(startTimestamp);
         }
         sql.append("update_time = SYSDATE() ");
         sql.append(" where url = ? ");
@@ -54,8 +67,8 @@ public class BatchUpdateLiveInfo {
         JDBCUtil.executeUpdate(sql.toString(), params);
     }
 
-    private static List<String> getUrlList() {
-        return getUrlList(null, null);
+    private static List<String> getUrlList(String start) {
+        return getUrlList(start, null);
     }
 
     public static List<String> getUrlList(String start, String end){

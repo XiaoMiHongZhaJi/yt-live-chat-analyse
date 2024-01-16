@@ -1,6 +1,5 @@
 package com.lwf.ytlivechatanalyse.util;
 
-import com.github.pagehelper.Page;
 import com.github.pagehelper.PageInfo;
 import lombok.Data;
 
@@ -21,6 +20,17 @@ public class Result<T> implements Serializable {
 
     public Result(){
         this.code = 0;
+    }
+
+    public Result(int code, String msg){
+        this.code = code;
+        this.msg = msg;
+    }
+
+    public Result(int code, String msg, List<T> data){
+        this.code = code;
+        this.msg = msg;
+        this.data = data;
     }
 
     public Result(List<T> list){
