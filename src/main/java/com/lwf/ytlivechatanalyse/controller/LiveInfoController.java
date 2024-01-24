@@ -61,12 +61,7 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/downloadBullet")
-    public Result downloadBullet(HttpServletRequest request, HttpServletResponse response, String liveDate, String startTime, BulletConfig config){
-        if(!AuthUtil.auth(request)){
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
-            return new Result<>(500, "认证失败");
-        }
+    public Result downloadBullet(String liveDate, String startTime, BulletConfig config){
         if(StringUtils.isBlank(liveDate) || liveDate.length() < 10){
             logger.error("liveDate错误{}，{}，{}", liveDate, startTime, config);
             return new Result(500, "输入的liveDate有误，正确的格式为：2023-01-01");
