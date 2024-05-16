@@ -49,21 +49,7 @@ public class LiveChatDataService {
     EmotesDataService emotesDataService;
 
     public List<LiveChatData> selectList(LiveChatData liveChatData, boolean isAsc){
-        QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
-        String keywords = liveChatData.getMessage();
-        if(StringUtils.isNotBlank(keywords)){
-            WrapperUtil.keyWordsLike(queryWrapper, keywords, "message");
-        }
-        String authorName = liveChatData.getAuthorName();
-        if(StringUtils.isNotBlank(authorName)){
-            WrapperUtil.keyWordsLike(queryWrapper, authorName, "author_name");
-        }
-        String liveDate = liveChatData.getLiveDate();
-        if(StringUtils.isNotBlank(liveDate)){
-            queryWrapper.like("live_date", liveDate);
-        }
-        queryWrapper.orderBy(true, isAsc, "timestamp");
-        return liveChatDataMapper.selectList(queryWrapper);
+        return liveChatDataMapper.selectList(liveChatData, isAsc);
     }
 
     public List<LivingChatData> selectLivingList(LiveChatData liveChatData, boolean isAsc){
@@ -78,7 +64,7 @@ public class LiveChatDataService {
         }
         String liveDate = liveChatData.getLiveDate();
         if(StringUtils.isNotBlank(liveDate)){
-            queryWrapper.like("live_date", liveDate);
+            queryWrapper.likeRight("live_date", liveDate);
         }
         queryWrapper.orderBy(true, isAsc, "timestamp");
         return livingChatDataMapper.selectList(queryWrapper);
@@ -100,14 +86,14 @@ public class LiveChatDataService {
     public int selectCount(String liveDate){
         //录像
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
-        queryWrapper.like("live_date", liveDate);
+        queryWrapper.likeRight("live_date", liveDate);
         return Math.toIntExact(liveChatDataMapper.selectCount(queryWrapper));
     }
 
     public int selectLivingCount(String liveDate){
         //直播中，直播预告
         QueryWrapper<LivingChatData> queryWrapper = new QueryWrapper<>();
-        queryWrapper.like("live_date", liveDate);
+        queryWrapper.likeRight("live_date", liveDate);
         return Math.toIntExact(livingChatDataMapper.selectCount(queryWrapper));
     }
 

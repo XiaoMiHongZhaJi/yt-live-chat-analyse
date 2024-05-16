@@ -34,7 +34,7 @@ public class BatchUpdateLiveInfo {
         String title = liveInfo.get("title");
         String likeCount = liveInfo.get("likeCount");
         String viewCount = liveInfo.get("viewCount");
-        String durationTime = liveInfo.get("videoDurationTime");
+        String durationTime = liveInfo.get("durationTime");
         String startTimestamp = liveInfo.get("startTimestamp");
         StringBuffer sql = new StringBuffer("update live_info set ");
         List<String> params = new ArrayList<>();

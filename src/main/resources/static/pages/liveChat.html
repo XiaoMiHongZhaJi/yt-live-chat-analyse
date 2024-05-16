@@ -120,7 +120,7 @@
             limit: 20,
         });
         // 监听搜索操作
-        form.on('submit(search-btn)', (data) => {
+        form.on('submit(search-btn)', data => {
             if($("#submit").hasClass("layui-btn-disabled")){
                 return false;
             }

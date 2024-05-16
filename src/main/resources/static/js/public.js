@@ -3,7 +3,7 @@ layui.use(['jquery'], function(){
     const $ = layui.jquery;
     emoteDict = layui.data("emoteDict");
     if(!emoteDict["STORAGE_OK"]){
-        $.ajax({url: '../liveChat/queryEmotes'}).then((data) => {
+        $.ajax({url: '../liveChat/queryEmotes'}).then(data => {
             $(data).each((i,emote)=>{
                 emoteDict[emote.name] = emote;
                 layui.data("emoteDict",{
@@ -51,7 +51,11 @@ function getEmoteMssage(message){
             if(emote){
                 realMessage += '<img class="emote" src="'+ emote.images +'">';
             }else if(split.trim()){
-                realMessage += "[" + split + "]";
+                if(/^[a-zA-Z ]+$/.test(split)){
+                    realMessage += "[" + split + "]";
+                }else{
+                    realMessage += " " + split + " ";
+                }
             }
         })
         return realMessage;
@@ -154,4 +158,10 @@ function formatNum(string){
         return parseInt(string).toLocaleString();
     }
     return "-";
+}
+function toNum(string){
+    if(string){
+        return string.replace(/[-, ]/g, "");
+    }
+    return "";
 }

@@ -45,7 +45,7 @@ public class LiveInfoService {
         if(index > -1){
             liveDate = liveDate.substring(0, index);
         }
-        queryWrapper.like("live_date", liveDate);
+        queryWrapper.likeRight("live_date", liveDate);
         List<LiveInfo> liveInfoList = liveInfoMapper.selectList(queryWrapper);
         if (liveInfoList.size() == 0){
             liveInfoMapper.insert(liveInfo);
@@ -116,7 +116,7 @@ public class LiveInfoService {
 
     public void addLiveInfo(LiveInfo liveInfo, boolean downLiveChat, boolean getLiveInfo) {
         String url = liveInfo.getUrl();
-        if(url.contains("youtube")){
+        if(url != null && url.contains("youtube")){
             liveInfo.setPlatform("y");
             if(getLiveInfo){
                 //补全信息
@@ -152,12 +152,12 @@ public class LiveInfoService {
             liveInfo.setLiveStatus(LiveInfo.LIVE_STATUS_PREVIEW);
             if(StringUtils.isBlank(liveInfo.getLiveDate())) {
                 liveInfo.setLiveDate(DateUtil.getNowDate() + "_t");
-                if(url.contains("luoshushu")){
+                if(url != null && url.contains("luoshushu")){
                     liveInfo.setLiveDate(DateUtil.getNowDate() + "_l");
                 }
             }
         }
-        if(StringUtils.isBlank(liveInfo.getTitle())){
+        if(url != null && StringUtils.isBlank(liveInfo.getTitle())){
             liveInfo.setTitle(url.substring(url.lastIndexOf("/") + 1));
         }
         insertOrUpdate(liveInfo);

@@ -14,53 +14,108 @@
     }
 </style>
 <div id="liveDetailArea">
-    <form class="layui-form" lay-filter="live-info-form">
-        <div class="layui-form liveDetail" style="padding-top: 15px; min-width: 635px;">
-            <div class="layui-form-item">
-                <label class="layui-form-label">开播日期</label>
-                <div class="layui-input-block live-detail-div">
-                    <input type="hidden" name="id">
-                    <input type="text" name="liveDate" class="layui-input">
-                </div>
+    <form class="layui-form" lay-filter="live-info-form" style="padding-top: 15px; min-width: 635px;">
+        <div class="layui-form-item">
+            <label class="layui-form-label">开播日期</label>
+            <div class="layui-input-block live-detail-div">
+                <input type="hidden" name="id">
+                <input type="text" name="liveDate" class="layui-input">
             </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label required">URL</label>
-                <div class="layui-input-block live-detail-div">
-                    <input type="text" name="url" class="layui-input" style="width: 65%;display: inline-block;" placeholder="请输入URL">
-                    <button type="button" class="layui-btn layui-btn-primary layui-border-green getInfo" style="float: right;margin-right: 10%;">
-                        获取最新数据
-                    </button>
-                </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label required">URL</label>
+            <div class="layui-input-block live-detail-div">
+                <input type="text" name="url" class="layui-input" style="width: 65%;display: inline-block;" placeholder="请输入URL">
+                <button type="button" class="layui-btn layui-btn-primary layui-border-green getInfo" style="float: right;margin-right: 10%;">
+                    获取最新数据
+                </button>
             </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">标题</label>
-                <div class="layui-input-block live-detail-div">
-                    <input type="text" name="title" class="layui-input" style="width: 90%;" placeholder="请输入标题">
-                </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">标题</label>
+            <div class="layui-input-block live-detail-div">
+                <input type="text" name="title" class="layui-input" style="width: 90%;" placeholder="请输入标题">
             </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">播放数</label>
-                <div class="layui-input-block live-detail-div">
-                    <input type="text" name="viewCount" class="layui-input" placeholder="请输入播放数">
-                </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">播放数</label>
+            <div class="layui-input-inline live-detail-div">
+                <input type="text" name="viewCount" class="layui-input" placeholder="请输入播放数">
             </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">点赞数</label>
-                <div class="layui-input-block live-detail-div">
-                    <input type="text" name="likeCount" class="layui-input" placeholder="请输入点赞数">
-                </div>
+            <label class="layui-form-label">点赞数</label>
+            <div class="layui-input-inline live-detail-div">
+                <input type="text" name="likeCount" class="layui-input" placeholder="请输入点赞数">
             </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">弹幕数</label>
-                <div class="layui-input-block live-detail-div">
-                    <input type="text" name="chatCount" class="layui-input" placeholder="请输入弹幕数">
-                </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">弹幕数(实时)</label>
+            <div class="layui-input-inline live-detail-div">
+                <input type="text" name="livingChatCount" class="layui-input" placeholder="请输入弹幕数">
             </div>
-            <div class="layui-form-item layui-form-text">
-                <label class="layui-form-label">时间线</label>
-                <div class="layui-input-block live-detail-div">
-                    <textarea type="text" name="timeline" class="layui-textarea" style="width: 90%;height: 160px;overflow:auto;" placeholder="请输入时间线信息"></textarea>
-                </div>
+            <label class="layui-form-label">弹幕数(汇总)</label>
+            <div class="layui-input-inline live-detail-div">
+                <input type="text" name="liveChatCount" class="layui-input" placeholder="请输入弹幕数">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">字幕数</label>
+            <div class="layui-input-inline live-detail-div">
+                <input type="text" name="srtCount" class="layui-input" placeholder="请输入字幕数">
+            </div>
+            <label class="layui-form-label">平台</label>
+            <!--开播平台，y：YouTube，t：twitch-->
+            <div class="layui-input-inline live-detail-div">
+                <select name="platform" lay-verify="">
+                    <option value=""></option>
+                    <option value="y">YouTube</option>
+                    <option value="t">twitch</option>
+                    <option value="k" disabled>快手</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">开始时间</label>
+            <div class="layui-input-inline live-detail-div">
+                <input type="text" name="startTime" id="startTime" class="layui-input" placeholder="请输入开始时间">
+            </div>
+            <label class="layui-form-label">开始时间戳</label>
+            <div class="layui-input-inline live-detail-div">
+                <input type="text" name="startTimestamp" class="layui-input" placeholder="请输入开始时间戳">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">持续时间</label>
+            <div class="layui-input-inline live-detail-div">
+                <input type="text" name="durationTime" class="layui-input" placeholder="请输入持续时间">
+            </div>
+            <label class="layui-form-label">弹幕状态</label>
+            <!--弹幕下载状态，0：未下载，1：正在下载，2：已下载，4：下载失败-->
+            <div class="layui-input-inline live-detail-div">
+                <select name="downloadStatus">
+                    <option value=""></option>
+                    <option value="0">未下载</option>
+                    <option value="1">正在下载</option>
+                    <option value="2">已下载</option>
+                    <option value="4">下载失败</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">直播状态</label>
+            <!--开播状态，0：直播预告，1：直播中，2：直播结束，4：已删除-->
+            <div class="layui-input-inline live-detail-div">
+                <select name="liveStatus">
+                    <option value=""></option>
+                    <option value="0">直播预告</option>
+                    <option value="1">直播中</option>
+                    <option value="2">直播结束</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item layui-form-text">
+            <label class="layui-form-label">时间线</label>
+            <div class="layui-input-block live-detail-div">
+                <textarea type="text" name="timeline" class="layui-textarea" style="width: 90%;height: 160px;overflow:auto;" placeholder="请输入时间线信息"></textarea>
             </div>
         </div>
     </form>

@@ -12,6 +12,14 @@ import java.util.List;
 @Mapper
 public interface LiveChatDataMapper extends BaseMapper<LiveChatData> {
 
+    @Select({"<script> SELECT * FROM live_chat_data FORCE INDEX (live_date) WHERE 1 = 1",
+            "<if test='data.liveDate != null and data.liveDate != \"\"'> AND live_date LIKE CONCAT(#{data.liveDate}, '%') </if>",
+            "<if test='data.authorName != null and data.authorName != \"\"'> AND author_name LIKE CONCAT('%', #{data.authorName}, '%') </if>",
+            "<if test='data.message != null and data.message != \"\"'> AND message LIKE CONCAT('%', #{data.message}, '%') </if>",
+            "ORDER BY timestamp <choose> <when test='isAsc'> ASC </when>",
+            "<otherwise> DESC </otherwise> </choose> </script>"})
+    List<LiveChatData> selectList(@Param("data") LiveChatData liveChatData, @Param("isAsc") boolean isAsc);
+
     @Select(" insert into live_chat_data(live_date, author_image, author_name, author_id, message, time_in_seconds, time_text, timestamp, emotes_count) select #{liveDate}, #{authorImage}, #{authorName}, #{authorId}, #{message}, #{timeInSeconds}, #{timeText}, #{timestamp}, #{emotesCount} from dual " +
             "  where not exists(select 1 from live_chat_data a where a.timestamp = #{timestamp})")
     void insertNotExists(LiveChatData liveChatData);

@@ -52,7 +52,7 @@
                     <div class="layui-inline">
                         <label class="layui-form-label">直播状态</label>
                         <div class="layui-input-inline">
-                            <select name="liveStatus" class="">
+                            <select name="liveStatus">
                                 <option value="">自动判断</option>
                                 <option value="0">直播预告</option>
                                 <option value="1">直播中</option>
@@ -257,7 +257,7 @@
                 });
             }
         });
-        form.on('submit(add-btn)', (data) => {
+        form.on('submit(add-btn)', data => {
             if($("#submit").hasClass("layui-btn-disabled")){
                 return false;
             }

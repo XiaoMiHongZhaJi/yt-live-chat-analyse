@@ -11,18 +11,19 @@ public class BatchDownloadSong {
 
     private static final Logger logger = LoggerFactory.getLogger(BatchDownloadSong.class);
 
-    private static final String SONG_PATH = "E:\\Music\\2023直播歌曲集\\";
+    private static final String SONG_PATH = "E:\\Music\\2024直播歌曲集\\";
 
-    private static final String IMG_PATH = "E:\\Music\\img\\";
+    private static final String IMG_PATH = "E:\\Music\\2024直播歌曲集\\img\\";
 
     private static final String AUTOHR_ID = "@Chenyifaer288";
+    private static final String START_DATE = "2024-02";
 
     public static void main(String[] args) throws Exception{
 
         CurlUtil.proxy = "http://127.0.0.1:7890";
         YtDlpUtil.proxy = "http://127.0.0.1:7890";
         getAndAddVideoList(AUTOHR_ID);
-        List<Map<String, String>> songList = getSongList(AUTOHR_ID);
+        List<Map<String, String>> songList = getSongList(AUTOHR_ID, START_DATE);
         int count = songList.size();
         logger.info("获取到待下载歌曲数量：" + count);
         int i = 1;
@@ -58,9 +59,9 @@ public class BatchDownloadSong {
                 logger.error(fileName + " 下载失败");
             }
         }
-        int updateImgInfo = updateImgInfo(AUTOHR_ID);
+        int updateImgInfo = updateImgInfo(AUTOHR_ID, START_DATE);
         logger.info("已更新图片信息，条数：" + updateImgInfo);
-        List<Map<String, String>> imgList = getImgList(AUTOHR_ID);
+        List<Map<String, String>> imgList = getImgList(AUTOHR_ID, START_DATE);
         count = imgList.size();
         logger.info("获取到待下载图片数量：" + count);
         i = 1;
@@ -99,7 +100,7 @@ public class BatchDownloadSong {
         }
     }
 
-    private static List<Map<String, String>> getImgList(String authorId) {
+    private static List<Map<String, String>> getImgList(String authorId, String startDate) {
         String sql = "select publish_date, img, title from video_info where 1 = 1 ";
         List<String> params = new ArrayList<>();
         if(StringUtils.isNotBlank(authorId)){
@@ -110,11 +111,15 @@ public class BatchDownloadSong {
         sql += "and img is not null ";
         // 2023年
         sql += "and publish_date > '2023-05' ";
+        if(StringUtils.isNotBlank(startDate)){
+            sql += "and publish_date > ? ";
+            params.add(startDate);
+        }
         sql += "order by publish_date desc";
         return JDBCUtil.queryMapList(sql, params);
     }
 
-    private static int updateImgInfo(String authorId) {
+    private static int updateImgInfo(String authorId, String startDate) {
         String sql = "select id, publish_date, url from video_info where 1 = 1 ";
         List<String> params = new ArrayList<>();
         if(StringUtils.isNotBlank(authorId)){
@@ -125,6 +130,10 @@ public class BatchDownloadSong {
         sql += "and img is null ";
 //        sql += "and publish_date < '2021-10-09' ";
         sql += "and url is not null ";
+        if(StringUtils.isNotBlank(startDate)){
+            sql += "and publish_date > ? ";
+            params.add(startDate);
+        }
         sql += "order by publish_date";
         int updateCount = 0;
         List<Map<String, String>> list = JDBCUtil.queryMapList(sql, params);
@@ -175,7 +184,7 @@ public class BatchDownloadSong {
         JDBCUtil.executeUpdate(sql, Arrays.asList(url));
     }
 
-    private static List<Map<String, String>> getSongList(String authorId){
+    private static List<Map<String, String>> getSongList(String authorId, String startDate){
         String sql = "select url, title, publish_date from video_info where 1 = 1 ";
         List<String> params = new ArrayList<>();
         if(StringUtils.isNotBlank(authorId)){
@@ -187,6 +196,10 @@ public class BatchDownloadSong {
         // 2024年
         sql += "and publish_date like '2024%' ";
         sql += "and publish_date > '2023-04' ";
+        if(StringUtils.isNotBlank(startDate)){
+            sql += "and publish_date > ? ";
+            params.add(startDate);
+        }
         sql += "order by publish_date";
         return JDBCUtil.queryMapList(sql, params);
     }

@@ -1,14 +1,32 @@
+function showFormData($, layero, data) {
+    $(layero).find(".live-detail-div :input").each((i, e) => {
+        const input = $(e);
+        const name = input.attr("name");
+        let value = data[name];
+        if (value) {
+            if (name.indexOf("Count") > -1) {
+                value = formatNum(value);
+            }
+            input.val(value);
+        }
+    })
+    let startTimestamp = data.startTimestamp
+    if(startTimestamp){
+        startTimestamp = parseInt(startTimestamp / 1000);
+        const startTime = new Date(startTimestamp).toLocaleString("zh-CN");
+        $(layero).find("input[name='startTime']").val(startTime.replace(/\//g, "-"));
+        $(layero).find("input[name='startTimestamp']").val(parseInt(startTimestamp / 1000));
+    }
+}
 
 function showLiveDetailEditDialog(liveInfo){
     const size = getWindowSize();
     const table = layui.table;
     const $ = layui.jquery;
     const form = layui.form;
+    const laydate = layui.laydate;
     let height = null;
-    $.ajax({url: '../liveInfo/queryLiveInfo', data: {id: liveInfo.id}}).then((data) => {
-        if(data.timeline){
-            height = Math.min(650, size[1]) + 'px';
-        }
+    $.ajax('../liveInfo/queryLiveInfo', {data: {id: liveInfo.id}}).then(data => {
         showDialog("dialog/liveDetailEdit.html", {
             title: "开播详情",
             area: [null, height],
@@ -23,52 +41,38 @@ function showLiveDetailEditDialog(liveInfo){
                         layer.msg("请先输入URL");
                         return;
                     }
-                    $.ajax({url: '../liveInfo/getLiveInfo', data: {url: url}}).then((data) => {
-                        if(!data || !data.viewCount){
+                    $.ajax('../liveInfo/getLiveInfo', {data: {url: url}}).then(data => {
+                        if(!data || !data.title){
                             layer.msg("获取信息失败，请尝试更换节点或稍后再试");
                             return;
                         }
-                        if(data.viewCount){
-                            $(layero).find("input[name='viewCount']").val(formatNum(data.viewCount));
-                        }
-                        if(data.likeCount){
-                            $(layero).find("input[name='likeCount']").val(formatNum(data.likeCount));
-                        }
-                        if(data.title){
-                            $(layero).find("input[name='title']").val(data.title);
-                        }
-                        if(data.liveDate && !$(layero).find("input[name='liveDate']").val()){
-                            $(layero).find("input[name='liveDate']").val(data.liveDate);
-                        }
+                        showFormData($, layero, data);
                         layer.msg("已获取最新数据");
                         $(layero).find(".getInfo").removeClass("layui-btn-disabled");
                     }, () => {
-                        layer.msg("获取信息失败");
+                        layer.msg("获取信息出错");
                         $(layero).find(".getInfo").removeClass("layui-btn-disabled");
                     })
                 });
-                $(".live-detail-div :input").each((i, e) => {
-                    const input = $(e);
-                    const name = input.attr("name");
-                    let value = data[name];
-                    if(value){
-                        if(name == "viewCount" || name == "likeCount"){
-                            value = formatNum(value);
-                        }
-                        input.val(value);
-                    }
-                })
+                showFormData($, layero, data);
+                form.render();
+                laydate.render({
+                    elem: '#startTime',
+                    type: 'datetime'
+                });
             },
             btn: ["更新", "关闭"],
             yes: function (){
                 const liveInfo = form.val("live-info-form");
-                const viewCount = liveInfo.viewCount;
-                const chatCount = liveInfo.chatCount;
-                if(viewCount){
-                    liveInfo["viewCount"] = viewCount.replace(/,|-| /g,"");
+                for(key in liveInfo){
+                    if(key.indexOf("Count") > -1){
+                        liveInfo[key] = toNum(liveInfo[key]);
+                    }
                 }
-                if(chatCount){
-                    liveInfo["chatCount"] = chatCount.replace(/,|-| /g,"");
+                if(liveInfo.startTimestamp){
+                    liveInfo.startTimestamp = liveInfo.startTimestamp * 1000 * 1000;
+                }else if(liveInfo.startTime){
+                    liveInfo.startTimestamp = new Date(liveInfo.startTime) * 1000;
                 }
                 $.ajax({
                     url: '../liveInfo/updateLiveInfo',

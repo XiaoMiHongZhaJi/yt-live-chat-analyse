@@ -266,7 +266,7 @@ public class AnalyseService {
     public List queryHotListDetail(String liveDate, Long startTimestamp, Integer intervalMinutes){
         Long endTimestamp = startTimestamp + intervalMinutes * 60 * 1000000;
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
-        queryWrapper.like("live_date", liveDate);
+        queryWrapper.likeRight("live_date", liveDate);
         queryWrapper.ge("timestamp", startTimestamp);
         queryWrapper.lt("timestamp", endTimestamp);
         queryWrapper.orderByAsc("timestamp");
@@ -276,7 +276,7 @@ public class AnalyseService {
         if(CollectionUtils.isEmpty(liveChatAll)){
             //直播中
             QueryWrapper<LivingChatData> queryWrapperLiving = new QueryWrapper<>();
-            queryWrapperLiving.like("live_date", liveDate);
+            queryWrapperLiving.likeRight("live_date", liveDate);
             queryWrapperLiving.ge("timestamp", startTimestamp);
             queryWrapperLiving.lt("timestamp", endTimestamp);
             queryWrapperLiving.orderByAsc("timestamp");

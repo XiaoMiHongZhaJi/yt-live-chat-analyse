@@ -103,21 +103,9 @@ class TwitchChatIRC():
 
 class TwitchChatDownloader(BaseChatDownloader):
     _BADGE_INFO = {}
-    _BADGE_INFO_URL = 'https://badges.twitch.tv/v1/badges/global/display'
-    # TODO add local version of badge list?
+    _SUBSCRIBER_BADGE_INFO = {}  # local cache for subscriber badge info
 
     _NAME = 'twitch.tv'
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        self.proxy = kwargs["proxy"]
-
-        # Only get badge info if not already retrieved
-        # TODO add argument (no_badges)
-        if not TwitchChatDownloader._BADGE_INFO:
-            TwitchChatDownloader._BADGE_INFO = self._session_get_json(
-                self._BADGE_INFO_URL).get('badge_sets') or {}
 
     _TESTS = [
         # Live

@@ -5,7 +5,7 @@ function showLiveDetailDialog(liveInfo){
     const $ = layui.jquery;
     const form = layui.form;
     let height = null;
-    $.ajax({url: '../liveInfo/queryLiveInfo', data: {id: liveInfo.id}}).then((data) => {
+    $.ajax({url: '../liveInfo/queryLiveInfo', data: {id: liveInfo.id}}).then(data => {
         if(data.timeline){
             height = Math.min(650, size[1]) + 'px';
         }

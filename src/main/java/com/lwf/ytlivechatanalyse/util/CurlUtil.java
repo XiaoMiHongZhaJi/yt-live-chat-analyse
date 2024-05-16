@@ -97,7 +97,7 @@ public class CurlUtil {
             duration = duration.replaceAll("[\\s:\"]", "");
             if(StringUtils.isNumeric(duration)){
                 String time = DateUtil.secondToString(Integer.parseInt(duration) / 1000);
-                info.put("videoDurationTime", time);
+                info.put("durationTime", time);
             }
         }
         //"videoViewCountRenderer": {"viewCount": {"runs": [{"text": "1,983"}, {"text": " 人正在观看"}]},"isLive": true} 直播中
