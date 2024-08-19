@@ -10,7 +10,7 @@ function showFormData($, layero, data) {
             input.val(value);
         }
     })
-    let startTimestamp = data.startTimestamp
+    let startTimestamp = data.startTimestamp;
     if(startTimestamp){
         startTimestamp = parseInt(startTimestamp / 1000);
         const startTime = new Date(startTimestamp).toLocaleString("zh-CN");
@@ -37,11 +37,19 @@ function showLiveDetailEditDialog(liveInfo){
                     }
                     $(layero).find(".getInfo").addClass("layui-btn-disabled");
                     const url = $(layero).find("input[name='url']").val();
+                    const cookie = $(layero).find("textarea[name='cookie']").val();
                     if(!url){
                         layer.msg("请先输入URL");
                         return;
                     }
-                    $.ajax('../liveInfo/getLiveInfo', {data: {url: url}}).then(data => {
+                    $.ajax({
+                        url: '../liveInfo/getLiveInfo',
+                        data: {
+                            url: url,
+                            cookie: cookie
+                        },
+                        method: 'post'
+                    }).then(data => {
                         if(!data || !data.title){
                             layer.msg("获取信息失败，请尝试更换节点或稍后再试");
                             return;
@@ -49,6 +57,9 @@ function showLiveDetailEditDialog(liveInfo){
                         showFormData($, layero, data);
                         layer.msg("已获取最新数据");
                         $(layero).find(".getInfo").removeClass("layui-btn-disabled");
+                        if(data.errInfo){
+                            layer.msg(data.errInfo);
+                        }
                     }, () => {
                         layer.msg("获取信息出错");
                         $(layero).find(".getInfo").removeClass("layui-btn-disabled");

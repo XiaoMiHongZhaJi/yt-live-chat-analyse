@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<style>
+    #downloadBulletArea .layui-form-label{
+        width: 100px;
+    }
+    .layui-input-unit{
+        width: 73%;
+        float: left;
+    }
+    .unit{
+        color: rgba(0, 0, 0, .60);
+        background: #f0f0f0;
+        display: inline-block;
+        line-height: 38px;
+        text-align: center;
+        width: 27%;
+    }
+</style>
+<div id="downloadBulletArea">
+    <form class="layui-form" lay-filter="downloadBulletForm">
+        <div class="layui-form" style="padding-top: 15px; min-width: 350px;">
+            <div class="layui-form-item">
+                <label class="layui-form-label">开始时间</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="startTime" placeholder="默认开始时间" class="layui-input" value="">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">持续时间</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="duringSecond" class="layui-input layui-input-unit" value="15">
+                    <span class="unit">秒</span>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">每行弹幕数</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="bulletBlock" class="layui-input" value="3">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">字体大小</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="fontSize" class="layui-input" value="25">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">行间距</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="lineSpace" class="layui-input layui-input-unit" value="5">
+                    <span class="unit">像素</span>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">延迟</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="offset" class="layui-input layui-input-unit" value="0">
+                    <span class="unit">秒</span>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">分块显示</label>
+                <div class="layui-input-inline">
+                    <input type="radio" name="blocked" value="true" title="是">
+                    <input type="radio" name="blocked" value="false" title="否" checked="">
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

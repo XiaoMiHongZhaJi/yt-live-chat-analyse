@@ -139,8 +139,8 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/getLiveInfo")
-    public Map<String,String> getLiveInfo(String url){
-        return CurlUtil.getLiveInfo(url);
+    public Map<String,String> getLiveInfo(String url, String cookie){
+        return CurlUtil.getLiveInfo(url, cookie);
     }
 
     @RequestMapping("/downloadChatData")

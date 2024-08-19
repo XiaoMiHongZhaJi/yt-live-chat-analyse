@@ -18,6 +18,7 @@ public class DateUtil {
     public static void main(String[] args) {
         System.out.println(getTimestamp("2023-09-23 20:42:40"));
         System.out.println(getDateTime(1696859711l));
+        System.out.println(getDayBefore("6小时前"));
     }
 
     /**
@@ -111,7 +112,11 @@ public class DateUtil {
         if(dayIndex > -1){
             String numString = str.substring(0, dayIndex - 1);
             try {
-                if(str.contains("天")){
+                if(str.contains("小时")){
+                    numString = str.substring(0, dayIndex - 2);
+                    int number = Integer.parseInt(numString);
+                    calendar.add(Calendar.HOUR, - number);
+                }else if(str.contains("天")){
                     int number = Integer.parseInt(numString);
                     calendar.add(Calendar.DATE, - number);
                 }else if(str.contains("周")){
@@ -149,6 +154,19 @@ public class DateUtil {
 
     public static Long getNowTimestamp() {
         return new Date().getTime() * 1000;
+    }
+
+    public static String converDateStringCN(String dateStringCN) {
+        SimpleDateFormat formatCN = new SimpleDateFormat("yyyy年MM月dd日");
+        Date date = null;
+        try {
+            date = formatCN.parse(dateStringCN);
+        } catch (ParseException e) {
+            logger.error("日期转换失败：{}", dateStringCN);
+            return "";
+        }
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        return format.format(date);
     }
 
     public static String getDateString(Date date) {

@@ -52,21 +52,24 @@ function showLiveDetailDialog(liveInfo){
 
 function getTimeLine(timeline, url){
     const $ = layui.jquery;
-    let html = '<p>';
+    let html = '';
     $(timeline.split("\n")).each((i,e)=>{
         if(!e){
+            html += '<p></p>';
             return;
         }
-        $(e.split(" ")).each((j,content)=>{
+        let line = '';
+        let bold = false;
+        $(e.replace("\t", " ").split(" ")).each((j,content)=>{
             if(content && !isNaN(content[0]) && content.indexOf(":") > -1){
-                html += getYtUrlTag(url, content);
+                line += getYtUrlTag(url, content);
+                bold = true;
             }else{
-                html += content;
+                line += content;
             }
-            html += " ";
+            line += " ";
         })
-        html += '</p><p>';
+        html += '<p' + (bold ? ' style="font-weight: bold;"' : '') + '>' + line + '</p>';
     })
-    html += "</p>";
     return html;
 }

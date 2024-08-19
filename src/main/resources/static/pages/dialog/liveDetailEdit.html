@@ -12,14 +12,21 @@
     .layui-input-block a {
         color: #3ea6ff;
     }
+    textarea::-webkit-scrollbar {
+        display: none; /* 隐藏滚动条 */
+    }
 </style>
 <div id="liveDetailArea">
     <form class="layui-form" lay-filter="live-info-form" style="padding-top: 15px; min-width: 635px;">
         <div class="layui-form-item">
             <label class="layui-form-label">开播日期</label>
-            <div class="layui-input-block live-detail-div">
+            <div class="layui-input-inline live-detail-div">
                 <input type="hidden" name="id">
                 <input type="text" name="liveDate" class="layui-input">
+            </div>
+            <label class="layui-form-label">Cookie</label>
+            <div class="layui-input-inline live-detail-div">
+                <textarea type="text" name="cookie" class="layui-input" style="resize: none; padding: 9px;" title="# Netscape HTTP Cookie File" placeholder="请输入Cookie"></textarea>
             </div>
         </div>
         <div class="layui-form-item">

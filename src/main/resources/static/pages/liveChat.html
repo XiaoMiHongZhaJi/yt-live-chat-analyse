@@ -9,6 +9,7 @@
     <script src="../modules/layui/layui.js"></script>
     <script src="../js/public.js"></script>
     <script src="dialog/liveDetail.js"></script>
+    <script src="dialog/downloadBullet.js"></script>
 </head>
 <body>
 <ul class="layui-nav layui-bg-cyan" lay-filter="demo">
@@ -51,10 +52,13 @@
                         <button id="submit" class="layui-btn" lay-submit lay-filter="search-btn"><i class="layui-icon"></i>查询</button>
                     </div>
                     <div class="layui-inline">
-                        <button id="showDetail" class="layui-btn layui-btn-primary"><i class="layui-icon"></i>详情</button>
+                        <button id="showDetail" class="layui-btn"><i class="layui-icon"></i>详情</button>
                     </div>
                     <div class="layui-inline">
-                        <button id="downloadBullet" class="layui-btn layui-btn-primary"><i class="layui-icon"></i>下载弹幕</button>
+                        <button id="downloadBullet" class="layui-btn">
+                            <i class="layui-icon"></i><span>下载弹幕</span>
+                            <i class="layui-icon layui-icon-down layui-font-12"></i>
+                        </button>
                     </div>
                 </div>
             </form>
@@ -64,48 +68,50 @@
     </div>
 </div>
 <script>
-    layui.use(['form', 'table', 'element'], function (){
+    layui.use(['dropdown', 'laydate', 'form', 'table', 'element'], function (){
         const $ = layui.jquery,
+            dropdown = layui.dropdown,
             form = layui.form,
+            layer = layui.layer,
             table = layui.table;
         let liveInfo = null;
         let interval = null;
         const cols = [[
             {field: 'liveDate', width: 120, title: '日期', sort: true, hide: true},
             {field: 'authorName', width: 180, title: '用户名',templet: (d)=>{
-                if(d.authorImage){
-                    return '<div><img alt="" class="header" src="'+ d.authorImage +'=s32-c-k-c0x00ffffff-no-rj">'+ d.authorName +'<span style="opacity:0">：</span></div>'
-                }
-                return d.authorName;
-            }},
+                    if(d.authorImage){
+                        return '<div><img alt="" class="header" src="'+ d.authorImage +'=s32-c-k-c0x00ffffff-no-rj">'+ d.authorName +'<span style="opacity:0">：</span></div>'
+                    }
+                    return d.authorName;
+                }},
             {field: 'message', minWidth: 180, title: '消息',templet: (d)=>{
-                let message = d.message || '';
-                if(d.emotesCount){
-                    message = getEmoteMssage(message);
-                }
-                const scInfo = d.scInfo
-                if(scInfo){
-                    const index = scInfo.indexOf("#");
-                    if(index > -1){
-                        const color = scInfo.substring(index, index + 7);
-                        if(d.scAmount){
-                            message = '<span style="color: '+ color +'">('+ d.scAmount +') '+ message +'</span>';
+                    let message = d.message || '';
+                    if(d.emotesCount){
+                        message = getEmoteMssage(message);
+                    }
+                    const scInfo = d.scInfo
+                    if(scInfo){
+                        const index = scInfo.indexOf("#");
+                        if(index > -1){
+                            const color = scInfo.substring(index, index + 7);
+                            if(d.scAmount){
+                                message = '<span style="color: '+ color +'">('+ d.scAmount +') '+ message +'</span>';
+                            }
                         }
                     }
-                }
-                return message;
-            }},
+                    return message;
+                }},
             {field: 'timeText', width: 90, title: '时间', sort: true, align: "right", templet: (d)=>{
-                const timeText = d.timeText;
-                const url = liveInfo ? liveInfo["url"] : null;
-                if (timeText){
-                    if (url && url.indexOf("youtube") > -1){
-                        return getYtUrlTag(url, timeText);
+                    const timeText = d.timeText;
+                    const url = liveInfo ? liveInfo["url"] : null;
+                    if (timeText){
+                        if (url && url.indexOf("youtube") > -1){
+                            return getYtUrlTag(url, timeText);
+                        }
+                        return timeText;
                     }
-                    return timeText;
-                }
-                return new Date(d.timestamp / 1000).toLocaleTimeString();
-            }},
+                    return new Date(d.timestamp / 1000).toLocaleTimeString();
+                }},
         ]];
         table.render({
             elem: '#liveChatData',
@@ -168,17 +174,43 @@
             showLiveDetailDialog(liveInfo);
             return false;
         })
-        $("#downloadBullet").click(() => {
+        //下载弹幕按钮
+        dropdown.render({
+            elem: '#downloadBullet',
+            data: [
+                {title: '使用默认配置', id: 1},
+                {title: '自定义...', id: 2}
+            ],
+            click: function (obj) {
+                if(obj.id == 1){
+                    downloadBullet();
+                }else if(obj.id == 2){
+                    showDownloadBulletDialog(downloadBullet);
+                }
+            }
+        });
+        function downloadBullet(config) {
+            if($("#downloadBullet").hasClass("layui-btn-disabled")){
+                return false;
+            }
+            $("#downloadBullet").addClass("layui-btn-disabled");
+            $("#downloadBullet span").text("下载中...");
+            let data = {
+                fileType: "ass",
+                liveDate: liveInfo.liveDate
+            }
+            if(config != null){
+                $.extend(data, config);
+            }
             $.ajax({
                 url: '../liveInfo/downloadBullet',
-                data: {
-                    fileType: "ass",
-                    liveDate: liveInfo.liveDate
-                },
+                data: data,
                 method: 'post'
             }).then((result) => {
                 const code = result.code;
                 const msg = result.msg;
+                $("#downloadBullet").removeClass("layui-btn-disabled");
+                $("#downloadBullet span").text("下载弹幕");
                 if(code != 200){
                     layer.msg("下载失败，原因：" + msg);
                     return false;
@@ -199,10 +231,12 @@
                 document.body.removeChild(downloadLink);
                 layer.msg("下载成功 " + bulletDetail.replace(/\n/g, "<br>"));
             }, () => {
+                $("#downloadBullet").removeClass("layui-btn-disabled");
+                $("#downloadBullet span").text("下载弹幕");
                 layer.msg("下载失败");
             })
             return false;
-        })
+        }
         form.on('switch(refersh-checkbox)',(res) => {
             const checked = $(res.elem).prop("checked");
             if(checked){

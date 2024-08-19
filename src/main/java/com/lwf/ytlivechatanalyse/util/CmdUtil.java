@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
+import static com.lwf.ytlivechatanalyse.util.CurlUtil.cookie;
+
 @Component
 public class CmdUtil {
 
@@ -45,7 +47,14 @@ public class CmdUtil {
 
     @Value("${proxy}")
     public void setProxy(String proxy) {
-        this.proxy = proxy;
+        CmdUtil.proxy = proxy;
+    }
+
+    public static String cookie;
+
+    @Value("${cookie}")
+    public void setCookie(String cookie) {
+        CmdUtil.cookie = cookie;
     }
 
     private static boolean isWin(){
@@ -123,13 +132,16 @@ public class CmdUtil {
     public static String chatDownloader(String url, String liveDate, String fileName){
         String cmd = "chat_downloader ";
         if(StringUtils.isNotBlank(proxy)){
-            cmd += "--proxy " + proxy + " ";
+            cmd += String.format("--proxy %s ", proxy);
+        }
+        if(StringUtils.isNotBlank(cookie)){
+            cmd += String.format("--cookies %s ", cookie);
         }
         if(StringUtils.isNotBlank(liveDate)){
-            cmd += "--live_date " + liveDate + " ";
+            cmd += String.format("--live_date %s ", liveDate);
         }
         if(StringUtils.isNotBlank(fileName)){
-            cmd += "--output output/" + fileName + " ";
+            cmd += String.format("--output output/%s ", fileName);
         }
 
         return CmdUtil.execCmd(cmd + url, true, false);
