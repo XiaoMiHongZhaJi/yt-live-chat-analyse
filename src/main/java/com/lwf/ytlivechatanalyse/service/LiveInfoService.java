@@ -61,7 +61,7 @@ public class LiveInfoService {
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.orderByDesc("live_date");
-        queryWrapper.select("live_date", "title", "url", "id", "live_status", "download_status");
+        queryWrapper.select("live_date", "title", "url", "id", "live_status", "download_status", "start_timestamp");
         if(liveInfo.getSrtCount() != null && liveInfo.getSrtCount() > 0){
             queryWrapper.gt("srt_count", 0);
         }
@@ -357,6 +357,9 @@ public class LiveInfoService {
             return new Result(500, "所选日期无弹幕数据");
         }
         logger.info("开始生成弹幕ass文件：{} {}", liveDate, startTime);
+        if(config == null){
+            config = new BulletConfig();
+        }
         return BulletAssUtil.getAssFile(chatList, startTimestamp, config);
     }
 }

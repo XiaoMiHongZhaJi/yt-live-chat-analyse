@@ -87,7 +87,9 @@ public class BulletAssUtil {
         }else if(startTimestamp > maxTimestamp){
             startTimestamp = maxTimestamp;
         }
+        String fileName = DateUtil.getDateTime(startTimestamp) + ".ass";
         if(offset != 0){
+            fileName = DateUtil.getDateTime(startTimestamp) + "_" + offset + ".ass";
             startTimestamp += offset * 1000000L;
         }
         if(duringSecond <= 5){
@@ -220,7 +222,7 @@ public class BulletAssUtil {
         logger.info(log.toString());
         List<String> result = new ArrayList();
         result.add(assContent.toString());
-        result.add(DateUtil.getDateTime(startTimestamp) + ".ass");
+        result.add(fileName);
         result.add(log.toString());
         return new Result(200, "生成ass文件成功", result);
     }

@@ -5,13 +5,15 @@ function showLiveDetailDialog(liveInfo){
     const $ = layui.jquery;
     const form = layui.form;
     let height = null;
+    let width = null;
     $.ajax({url: '../liveInfo/queryLiveInfo', data: {id: liveInfo.id}}).then(data => {
         if(data.timeline){
             height = Math.min(650, size[1]) + 'px';
+            width = Math.min(850, size[0]) + 'px';
         }
         showDialog("dialog/liveDetail.html", {
             title: "开播详情",
-            area: [null, height],
+            area: [width, height],
             success: function(layero){
                 $(".live-detail-div .detail").each((i, e) => {
                     const span = $(e);
@@ -53,14 +55,32 @@ function showLiveDetailDialog(liveInfo){
 function getTimeLine(timeline, url){
     const $ = layui.jquery;
     let html = '';
-    $(timeline.split("\n")).each((i,e)=>{
+    let subtitle = '';
+    $(timeline.split("\n")).each((i, e)=>{
         if(!e){
-            html += '<p></p>';
-            return;
+            return ;
+        }
+        if(e.startsWith("202") && i <= 1 || e == "思维导图"){
+            return ;
+        }
+        if(["关键词", "全文摘要", "章节速览", "要点回顾"].indexOf(e) > -1){
+            subtitle = e;
+            html += '</div><div class="timeline-title">'
+            html += '<p style="font-weight: bold;">' + e + '</p>';
+            return ;
+        }
+        if(e.endsWith("？")){
+            subtitle = "？";
+            html += '<div><p style="font-weight: bold;">Q: ' + e + '</p>';
+            return ;
+        }
+        if(subtitle == "？"){
+            html += '<p>A: ' + e + '</p></div>';
+            return ;
         }
         let line = '';
         let bold = false;
-        $(e.replace("\t", " ").split(" ")).each((j,content)=>{
+        $(e.replace("\t", " ").split(" ")).each((j, content)=>{
             if(content && !isNaN(content[0]) && content.indexOf(":") > -1){
                 line += getYtUrlTag(url, content);
                 bold = true;
@@ -69,7 +89,8 @@ function getTimeLine(timeline, url){
             }
             line += " ";
         })
-        html += '<p' + (bold ? ' style="font-weight: bold;"' : '') + '>' + line + '</p>';
+        html += '<p style="' + (bold ? 'font-weight: bold;' : 'text-indent: 2em;') + '">' + line + '</p>';
     })
+    html += '</div>';
     return html;
 }
