@@ -22,6 +22,7 @@ public class CurlUtil {
 //        execCurl("http://www.baidu.com/", "get");
         CurlUtil.proxy = "http://192.168.10.30:7890";
         CurlUtil.cookie = "C:\\Users\\Administrator\\IdeaProjects\\yt-live-chat-analyse\\cookies.txt";
+        CurlUtil.curlLog = "C:\\Users\\Administrator\\IdeaProjects\\yt-live-chat-analyse\\html\\";
         Map<String, String> liveInfo = getLiveInfo("https://www.youtube.com/watch?v=ImR8jZ0SkRM");
         System.out.println(liveInfo);
 //        List<Map<String, String>> playlist = getPlaylist("https://www.youtube.com/playlist?list=PLi3zrmUZHiY-eH8eNJiwj-viwP3ngIkcd");
@@ -42,18 +43,27 @@ public class CurlUtil {
         CurlUtil.cookie = cookie;
     }
 
+    public static String curlLog;
+
+    @Value("${curlLog}")
+    public void setCurlLog(String curlLog) {
+        CurlUtil.curlLog = curlLog;
+    }
+
     public static Map<String, String> getLiveInfo(String url, String cookieOuter) {
-        File cookieFile = new File(cookie);
-        if (!cookieFile.exists()) {
-            try {
-                cookieFile.createNewFile();
-            } catch (Exception e) {
-                logger.error("创建cookieFIle失败", e);
+        if(StringUtils.isNotBlank(cookie)){
+            File cookieFile = new File(cookie);
+            if (!cookieFile.exists()) {
+                try {
+                    cookieFile.createNewFile();
+                } catch (Exception e) {
+                    logger.error("创建cookieFile失败", e);
+                }
             }
-        }
-        if (StringUtils.isNotBlank(cookieOuter)) {
-            if (cookieOuter.startsWith("# Netscape HTTP Cookie File")) {
-                FileUtil.writeAsString(cookieFile, cookieOuter);
+            if (StringUtils.isNotBlank(cookieOuter)) {
+                if (cookieOuter.startsWith("# Netscape HTTP Cookie File")) {
+                    FileUtil.writeAsString(cookieFile, cookieOuter);
+                }
             }
         }
         return getLiveInfo(url);
@@ -61,6 +71,24 @@ public class CurlUtil {
 
     public static Map<String, String> getLiveInfo(String url) {
         String curl = execCurl(url);
+        if(StringUtils.isNotBlank(curlLog)){
+            try {
+                File curlLogPath = new File(curlLog);
+                if (!curlLogPath.exists()) {
+                    curlLogPath.mkdirs();
+                }
+                String curlLogName = DateUtil.getNowDateTime().replace(":", "_");
+                String curlLogFile = String.format("%s%s.html", curlLog, curlLogName);
+                FileUtil.writeAsString(new File(curlLogFile), curl);
+                logger.info(String.format("curlLog已写入：%s", curlLogFile));
+            } catch (Exception e) {
+                logger.error("写入curlLog失败", e);
+            }
+        }
+        /*String curl = "";
+        try {
+            curl = FileUtil.readAsString(new File("C:\\Users\\Administrator\\IdeaProjects\\yt-live-chat-analyse\\aa.html"));
+        }catch (Exception e){}*/
         Map<String, String> info = new HashMap<>();
         if (StringUtils.isEmpty(curl)) {
             return info;
@@ -129,7 +157,7 @@ public class CurlUtil {
             } catch (Exception e) {
                 logger.error("获取liveInfo信息出错", e);
             }
-        } else {
+        } else if(curl.contains("\"publishDate\":{\"simpleText\"")){
             logger.warn("cookie已过期");
             info.put("errInfo", "cookie已过期");
             //"publishDate":{"simpleText":"直播开始日期：2024年8月14日"}
