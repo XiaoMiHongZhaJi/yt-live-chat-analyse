@@ -320,11 +320,7 @@ public class CurlUtil {
     }
 
     public static String execCurl(String url) {
-        String cmd = String.format(
-                "curl -H \"accept-language: %s\" -H \"user-agent: %s\" ",
-                "zh-CN,zh;q=0.9",
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-        );
+        String cmd = "curl ";
         if (StringUtils.isNotBlank(proxy)) {
             cmd += String.format("-x %s ", proxy);
         }
