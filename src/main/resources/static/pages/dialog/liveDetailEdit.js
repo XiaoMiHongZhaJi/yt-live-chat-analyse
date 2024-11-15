@@ -26,7 +26,12 @@ function showLiveDetailEditDialog(liveInfo){
     const form = layui.form;
     const laydate = layui.laydate;
     let height = null;
-    $.ajax('../liveInfo/queryLiveInfo', {data: {id: liveInfo.id}}).then(data => {
+    $.ajax('../liveInfo/queryLiveInfo', {
+        data: {
+            id: liveInfo.id,
+            year: layui.data("navInfo")["year"]
+        }
+    }).then(data => {
         showDialog("dialog/liveDetailEdit.html", {
             title: "开播详情",
             area: [null, height],

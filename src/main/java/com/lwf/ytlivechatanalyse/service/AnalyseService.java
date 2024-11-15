@@ -5,6 +5,7 @@ import com.lwf.ytlivechatanalyse.bean.*;
 import com.lwf.ytlivechatanalyse.dao.HotListMapper;
 import com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper;
 import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
+import com.lwf.ytlivechatanalyse.interceptor.DynamicSchemaInterceptor;
 import com.lwf.ytlivechatanalyse.util.Constant;
 import com.lwf.ytlivechatanalyse.util.DateUtil;
 import com.lwf.ytlivechatanalyse.util.MessageUtil;
@@ -54,6 +55,9 @@ public class AnalyseService {
         }
         //开播日期
         String liveDate = liveInfo.getLiveDate();
+        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+        }
         //间隔秒数
         int intervalSeconds = intervalMinutes * 60;
         List<HotList> hotListList = new ArrayList<>();
@@ -139,6 +143,10 @@ public class AnalyseService {
             logger.error("批量插入出错", e);
             for (HotList hotList : hotListList) {
                 try {
+                    String liveDate = hotList.getLiveDate();
+                    if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+                        DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+                    }
                     hotListMapper.insert(hotList);
                 } catch (Exception e1) {
                     logger.error("批量插入出错，已改为单个插入，错误数据：", e1);
@@ -270,6 +278,9 @@ public class AnalyseService {
         queryWrapper.ge("timestamp", startTimestamp);
         queryWrapper.lt("timestamp", endTimestamp);
         queryWrapper.orderByAsc("timestamp");
+        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+        }
         List liveChatAll = liveChatDataMapper.selectList(queryWrapper);
         LiveInfo queryInfo = new LiveInfo();
         queryInfo.setLiveDate(liveDate);

@@ -1,6 +1,7 @@
 package com.lwf.ytlivechatanalyse.bean;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
@@ -11,6 +12,8 @@ public class LiveInfo {
 
     @TableId(type = IdType.AUTO)
     private Integer id;
+    @TableField(exist = false)
+    private String year;
     private String liveDate;
     private String url;
     private String title;

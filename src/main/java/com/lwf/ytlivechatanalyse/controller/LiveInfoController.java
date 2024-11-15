@@ -95,7 +95,7 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/queryList")
-    public Result<LiveInfo> queryList(HttpServletRequest request, HttpServletResponse response, int page, int limit){
+    public Result<LiveInfo> queryList(HttpServletRequest request, HttpServletResponse response, int page, int limit, String year){
         if(!AuthUtil.auth(request)){
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
@@ -103,7 +103,7 @@ public class LiveInfoController {
         }
         limit = Math.min(limit, Constant.MAX_PAGE_SIZE);
         PageHelper.startPage(page, limit);
-        return new Result<>(new PageInfo<>(liveInfoService.selectList()));
+        return new Result<>(new PageInfo<>(liveInfoService.selectList(year)));
     }
 
     @RequestMapping("/queryPrevLiveInfo")

@@ -121,6 +121,7 @@ public class BulletAssUtil {
         try{
             int read = new ClassPathResource("static/assets/head.ass").getInputStream().read(array);
             String head = new String(array, 0, read);
+            head = head.replace("{title}", fileName);
             head = head.replace("{font_size}", String.valueOf(fontSize));
             assContent.append(head);
             for(LiveChatData liveChatData : chatList){

@@ -6,7 +6,12 @@ function showLiveDetailDialog(liveInfo){
     const form = layui.form;
     let height = null;
     let width = null;
-    $.ajax({url: '../liveInfo/queryLiveInfo', data: {id: liveInfo.id}}).then(data => {
+    $.ajax({url: '../liveInfo/queryLiveInfo',
+        data: {
+            id: liveInfo.id,
+            year: layui.data("navInfo")["year"]
+        }
+    }).then(data => {
         if(data.timeline){
             height = Math.min(650, size[1]) + 'px';
             width = Math.min(850, size[0]) + 'px';

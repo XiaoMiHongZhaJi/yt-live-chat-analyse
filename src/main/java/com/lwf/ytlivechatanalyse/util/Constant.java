@@ -5,6 +5,10 @@ import java.util.Map;
 
 public class Constant {
 
+    public static final String DEFAULT_SCHEMA = "yt_live_chat_analyse"; // 默认 schema
+
+    public static final String DEFAULT_YEAR = "2024"; // 默认年份
+
     /**
      * 分页每页最大大小
      */

@@ -9,8 +9,8 @@ import com.lwf.ytlivechatanalyse.bean.LiveChatData;
 import com.lwf.ytlivechatanalyse.bean.LivingChatData;
 import com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper;
 import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
+import com.lwf.ytlivechatanalyse.interceptor.DynamicSchemaInterceptor;
 import com.lwf.ytlivechatanalyse.util.Constant;
-import com.lwf.ytlivechatanalyse.util.DateUtil;
 import com.lwf.ytlivechatanalyse.util.JsonUtil;
 import com.lwf.ytlivechatanalyse.util.WrapperUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -49,6 +49,10 @@ public class LiveChatDataService {
     EmotesDataService emotesDataService;
 
     public List<LiveChatData> selectList(LiveChatData liveChatData, boolean isAsc){
+        String liveDate = liveChatData.getLiveDate();
+        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+        }
         return liveChatDataMapper.selectList(liveChatData, isAsc);
     }
 
@@ -71,6 +75,9 @@ public class LiveChatDataService {
     }
 
     public Long selectStartTimestamp(String liveDate){
+        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+        }
         LiveChatData liveChatData = liveChatDataMapper.selectStartMessage(liveDate);
         if(liveChatData == null){
             return null;
@@ -87,6 +94,9 @@ public class LiveChatDataService {
         //录像
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
         queryWrapper.likeRight("live_date", liveDate);
+        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+        }
         return Math.toIntExact(liveChatDataMapper.selectCount(queryWrapper));
     }
 

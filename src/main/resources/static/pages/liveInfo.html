@@ -354,14 +354,15 @@
                         if(data.downloadStatus == "1"){
                             //正在导入弹幕数据
                             downloadingIdList.push(data.id);
-                            tr.find(".chatCount").html(getChatCount(data));
                         }
+                        tr.find(".chatCount").html(getChatCount(data));
                     }
                     if(downloadingIdList.length == 0){
                         clearInterval(interval);
                     }
                 }, () => {
                     clearInterval(interval);
+                    layer.msg("更新状态失败");
                 })
             }, 10000)
         }
@@ -375,18 +376,20 @@
             }).then((result) => {
                 const code = result.code;
                 const msg = result.msg;
-                if(code != 200){
-                    layer.msg("弹幕下载失败，原因：" + msg);
-                }else{
+                if(code == 200){
                     layer.msg("正在导入弹幕数据...");
+                    if(!downloadingIdList || downloadingIdList.indexOf(data.id) == -1){
+                        downloadingIdList.push(data.id);
+                    }
+                    setDownloadingInterval();
+                }else{
+                    layer.msg("弹幕下载失败，原因：" + msg);
                 }
-                downloadingIdList.push(data.id);
-                setDownloadingInterval();
             }, () => {
-                updateStatus(tr, {downloadStatus: "4"});
                 layer.msg("弹幕下载失败");
             })
         }
+        initYearNav();
     })
 </script>
 </body>

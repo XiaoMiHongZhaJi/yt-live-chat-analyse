@@ -104,7 +104,7 @@
         let echartsData0 = null;
         let echartsData1 = null;
         let echartsData2 = null;
-        initLiveDateSelector((info)=>{
+        initLiveDateSelector((info) => {
             liveInfo = info;
             table.reload('table-list', {
                 loading: true,
@@ -386,6 +386,7 @@
             showLiveDetailDialog(liveInfo);
             return false;
         })
+        initYearNav();
     });
 </script>
 </body>

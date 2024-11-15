@@ -1,3 +1,35 @@
+
+let defaultYear = "2024";
+const yearList = [2023, 2022]
+
+function initYearNav() {
+    layui.use(['jquery'], function(){
+        const $ = layui.jquery;
+        const currentYear = layui.data("navInfo")["year"];
+        if(!currentYear){
+            layui.data("navInfo",{
+                key: "year",
+                value: defaultYear
+            });
+        }else if(yearList.indexOf(currentYear) > -1){
+            $(".layui-nav").append('<li class="layui-nav-item layui-nav-year" data-year="' + defaultYear + '"><a href="liveChat.html">' + defaultYear + '</a></li>');
+        }
+        for (let i = 0; i < yearList.length; i++) {
+            const year = yearList[i];
+            if(currentYear != year){
+                $(".layui-nav").append('<li class="layui-nav-item layui-nav-year" data-year="' + year + '"><a href="liveChat.html">' + year + '</a></li>');
+            }
+        }
+        $(".layui-nav-year").click((i) => {
+            const year = $(i.target).closest("li").data("year");
+            layui.data("navInfo",{
+                key: "year",
+                value: year
+            });
+        })
+    })
+}
+
 let emoteDict;
 layui.use(['jquery'], function(){
     const $ = layui.jquery;
@@ -109,7 +141,10 @@ function secondToString(second){
     return minute + ":" + (seconds < 10 ? "0" : "") + seconds;
 }
 function getATag(url, title){
-    return '<a target="_blank" href='+ url +'>'+ title +'</a>';
+    if(url){
+        return '<a target="_blank" href='+ url +'>'+ title +'</a>';
+    }
+    return title;
 }
 function getYtUrlTag(url, time){
     url = getYtUrl(url, time);
@@ -118,6 +153,13 @@ function getYtUrlTag(url, time){
 function initLiveDateSelector(callback, showAll, param){
     const $ = layui.jquery;
     const form = layui.form;
+    const currentYear = layui.data("navInfo")["year"];
+    if(currentYear && currentYear != defaultYear){
+        if(!param){
+            param = {};
+        }
+        param["year"] = currentYear;
+    }
     $.ajax({url: '../liveInfo/queryListBySelector', data: param}).then((selectorList)=>{
         if(!selectorList || selectorList.length == 0){
             layer.msg("暂无弹幕数据");
