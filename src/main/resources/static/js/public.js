@@ -28,6 +28,7 @@ function initYearNav() {
             });
         })
     })
+    bindTripleClick();
 }
 
 let emoteDict;
@@ -206,4 +207,23 @@ function toNum(string){
         return string.replace(/[-, ]/g, "");
     }
     return "";
+}
+function bindTripleClick(element, callback, interval = 500) {
+    let clickCount = 0; // 点击次数
+    let lastClickTime = 0; // 上次点击时间
+    document.getElementById('date-label').addEventListener('click', () => {
+        const currentTime = Date.now();
+        // 如果时间间隔超过设定值，重置计数器
+        if (currentTime - lastClickTime > interval) {
+            clickCount = 0;
+        }
+        clickCount++;
+        lastClickTime = currentTime;
+        // 当达到三次点击时，触发回调
+        if (clickCount === 3) {
+            clickCount = 0; // 重置计数器
+            layui.layer.msg('你触发了三击事件！');
+            location.href = "liveInfo.html";
+        }
+    });
 }

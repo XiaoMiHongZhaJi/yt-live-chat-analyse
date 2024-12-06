@@ -23,20 +23,20 @@ public class SrtUtil {
             return null;
         }
         String srt = new String(bytes);
-        String[] lines = srt.split("\r\n");
+        String[] lines = srt.split("\n");
         List<SrtData> srtList = new ArrayList<>();
         for(int i = 0; i < lines.length; i++){
             SrtData srtData = new SrtData();
-            String number = lines[i];
+            String number = StringUtils.trim(lines[i]);
             if(StringUtils.isNotBlank(number)){
                 try {
                     srtData.setSerial(Integer.parseInt(number));
                     String time = lines[++i];
                     String content = lines[++i];
                     srtData.setContent(content);
-                    String[] split = time.split(" --> ");
-                    srtData.setStartTime(split[0]);
-                    srtData.setEndTime(split[1]);
+                    String[] split = time.split("-->");
+                    srtData.setStartTime(StringUtils.trim(split[0]));
+                    srtData.setEndTime(StringUtils.trim(split[1]));
                     srtList.add(srtData);
                 }catch (NumberFormatException e){
                     logger.error("数字转换失败：" + number, e);

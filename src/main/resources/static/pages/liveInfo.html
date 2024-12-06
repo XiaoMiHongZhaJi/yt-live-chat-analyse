@@ -29,7 +29,7 @@
     <div class="layuimini-main">
         <fieldset class="table-search-fieldset">
             <legend>新增条目</legend>
-            <form class="layui-form layui-form-pane" lay-filter="search-form" action="/liveInfo/addLiveInfo" method="post" enctype="multipart/form-data" role="form">
+            <form class="layui-form layui-form-pane" lay-filter="search-form" action="" method="post" enctype="multipart/form-data" role="form">
                 <div class="layui-form-item">
                     <div class="layui-inline">
                         <label class="layui-form-label">开播地址</label>
@@ -118,7 +118,8 @@
             laydate = layui.laydate;
         let downloadingIdList = [];
         let interval = null;
-        const liveStatusDict = ["直播预告", "直播中", "已结束"]
+        const liveStatusDict = ["直播预告", "直播中", "已结束"];
+        const currentYear = layui.data("navInfo")["year"];
         table.render({
             elem: '#liveInfo',
             method:'post',
@@ -148,11 +149,13 @@
             ]],
             loading: true,
             url: '../liveInfo/queryList',
+            where: {year: currentYear},
             page: true,
             limits: [10, 15, 35, 50, 100],
             limit: 10,
             done: (obj) => {
                 const list = obj.data;
+                console.log(list)
                 //初始化按钮状态
                 for(let i = 0; i < list.length; i++){
                     const data = list[i];
