@@ -3,7 +3,7 @@ CREATE DATABASE yt_live_chat_analyse DEFAULT CHARACTER SET utf8mb4;
 USE yt_live_chat_analyse;
 
 #颜文字数据表
-CREATE TABLE yt_live_chat_analyse.emotes_data (
+CREATE TABLE emotes_data (
   id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
   emotes_id VARCHAR(60) DEFAULT NULL COMMENT '颜文字id',
   images VARCHAR(120) DEFAULT NULL COMMENT '颜文字图片',
@@ -14,7 +14,7 @@ CREATE TABLE yt_live_chat_analyse.emotes_data (
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 #字幕表
-CREATE TABLE yt_live_chat_analyse.srt_data (
+CREATE TABLE srt_data (
   id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
   live_date VARCHAR(30) DEFAULT NULL COMMENT '开播日期',
   serial INT(11) DEFAULT NULL COMMENT '序号',
@@ -25,7 +25,7 @@ CREATE TABLE yt_live_chat_analyse.srt_data (
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 #弹幕数据表
-CREATE TABLE yt_live_chat_analyse.live_chat_data (
+CREATE TABLE live_chat_data (
   id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
   live_date VARCHAR(30) DEFAULT NULL COMMENT '开播日期',
   author_image VARCHAR(200) DEFAULT NULL COMMENT '用户头像',
@@ -42,7 +42,7 @@ CREATE TABLE yt_live_chat_analyse.live_chat_data (
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 #弹幕数据表-直播中
-CREATE TABLE yt_live_chat_analyse.living_chat_data (
+CREATE TABLE living_chat_data (
   id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
   live_date VARCHAR(30) DEFAULT NULL COMMENT '开播日期',
   author_image VARCHAR(200) DEFAULT NULL COMMENT '用户头像',
@@ -59,7 +59,7 @@ CREATE TABLE yt_live_chat_analyse.living_chat_data (
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 #分析表
-CREATE TABLE yt_live_chat_analyse.hot_list (
+CREATE TABLE hot_list (
   id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
   live_date VARCHAR(30) DEFAULT NULL COMMENT '开播日期',
   interval_seconds INT(11) DEFAULT NULL COMMENT '间隔时间',
@@ -70,17 +70,18 @@ CREATE TABLE yt_live_chat_analyse.hot_list (
   start_time VARCHAR(30) DEFAULT NULL COMMENT '开始时间',
   end_time VARCHAR(30) DEFAULT NULL COMMENT '结束时间',
   messages json DEFAULT NULL COMMENT '相关弹幕',
+  # messages text DEFAULT NULL COMMENT '相关弹幕', #低版本用text
   PRIMARY KEY (id)
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 #直播信息表
-CREATE TABLE yt_live_chat_analyse.live_info (
+CREATE TABLE live_info (
     id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
     live_date VARCHAR(30) DEFAULT NULL COMMENT '开播日期',
     url VARCHAR(200) DEFAULT NULL COMMENT '开播地址',
     title VARCHAR(200) DEFAULT NULL COMMENT '标题',
     img VARCHAR(200) DEFAULT NULL COMMENT '标题图片地址',
-    timeline VARCHAR(4000) DEFAULT NULL COMMENT '时间线',
+    timeline TEXT DEFAULT NULL COMMENT '时间线',
     view_count int(11) DEFAULT NULL COMMENT '观看人数',
     like_count varchar(10) DEFAULT NULL COMMENT '点赞人数',
     live_chat_count INT(11) DEFAULT NULL COMMENT '录像弹幕数',
@@ -131,26 +132,26 @@ CREATE TABLE video_info (
 
 
 #添加索引
-ALTER TABLE yt_live_chat_analyse.live_chat_data
+ALTER TABLE live_chat_data
     ADD INDEX author_name (author_name);
-ALTER TABLE yt_live_chat_analyse.live_chat_data
+ALTER TABLE live_chat_data
     ADD INDEX author_id (author_id);
-ALTER TABLE yt_live_chat_analyse.live_chat_data
+ALTER TABLE live_chat_data
     ADD INDEX TIMESTAMP (TIMESTAMP);
-ALTER TABLE yt_live_chat_analyse.live_chat_data
+ALTER TABLE live_chat_data
     ADD INDEX live_date (live_date);
-ALTER TABLE yt_live_chat_analyse.live_chat_data
+ALTER TABLE live_chat_data
     ADD fulltext INDEX message (message);
 
 
-ALTER TABLE yt_live_chat_analyse.living_chat_data
+ALTER TABLE living_chat_data
     ADD INDEX author_name (author_name);
-ALTER TABLE yt_live_chat_analyse.living_chat_data
+ALTER TABLE living_chat_data
     ADD INDEX author_id (author_id);
-ALTER TABLE yt_live_chat_analyse.living_chat_data
+ALTER TABLE living_chat_data
     ADD INDEX TIMESTAMP (TIMESTAMP);
-ALTER TABLE yt_live_chat_analyse.living_chat_data
+ALTER TABLE living_chat_data
     ADD INDEX live_date (live_date);
-ALTER TABLE yt_live_chat_analyse.living_chat_data
+ALTER TABLE living_chat_data
     ADD fulltext INDEX message (message);
 

@@ -1,6 +1,6 @@
 
-let defaultYear = "2024";
-const yearList = [2023, 2022]
+const defaultYear = "2025";
+const yearList = [2024, 2023, 2022, 2021]
 
 function initYearNav() {
     layui.use(['jquery'], function(){
@@ -159,7 +159,7 @@ function initLiveDateSelector(callback, showAll, param){
         if(!param){
             param = {};
         }
-        param["year"] = currentYear;
+        param["liveDate"] = currentYear;
     }
     $.ajax({url: '../liveInfo/queryListBySelector', data: param}).then((selectorList)=>{
         if(!selectorList || selectorList.length == 0){
@@ -209,9 +209,13 @@ function toNum(string){
     return "";
 }
 function bindTripleClick(element, callback, interval = 500) {
+    const dateLabel = document.getElementById('date-label');
+    if(!dateLabel){
+        return;
+    }
     let clickCount = 0; // 点击次数
     let lastClickTime = 0; // 上次点击时间
-    document.getElementById('date-label').addEventListener('click', () => {
+    dateLabel.addEventListener('click', () => {
         const currentTime = Date.now();
         // 如果时间间隔超过设定值，重置计数器
         if (currentTime - lastClickTime > interval) {

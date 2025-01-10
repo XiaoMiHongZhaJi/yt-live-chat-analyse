@@ -50,7 +50,7 @@ public class LiveChatDataService {
 
     public List<LiveChatData> selectList(LiveChatData liveChatData, boolean isAsc){
         String liveDate = liveChatData.getLiveDate();
-        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
         return liveChatDataMapper.selectList(liveChatData, isAsc);
@@ -75,7 +75,7 @@ public class LiveChatDataService {
     }
 
     public Long selectStartTimestamp(String liveDate){
-        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
         LiveChatData liveChatData = liveChatDataMapper.selectStartMessage(liveDate);
@@ -94,7 +94,7 @@ public class LiveChatDataService {
         //录像
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
         queryWrapper.likeRight("live_date", liveDate);
-        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
         return Math.toIntExact(liveChatDataMapper.selectCount(queryWrapper));

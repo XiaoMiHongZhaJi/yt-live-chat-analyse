@@ -9,7 +9,7 @@ function showLiveDetailDialog(liveInfo){
     $.ajax({url: '../liveInfo/queryLiveInfo',
         data: {
             id: liveInfo.id,
-            year: layui.data("navInfo")["year"]
+            liveDate: liveInfo.liveDate
         }
     }).then(data => {
         if(data.timeline){

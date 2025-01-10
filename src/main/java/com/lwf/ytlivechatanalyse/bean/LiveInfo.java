@@ -12,8 +12,6 @@ public class LiveInfo {
 
     @TableId(type = IdType.AUTO)
     private Integer id;
-    @TableField(exist = false)
-    private String year;
     private String liveDate;
     private String url;
     private String title;

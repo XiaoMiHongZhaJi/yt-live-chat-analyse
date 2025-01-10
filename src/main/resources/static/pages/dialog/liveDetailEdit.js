@@ -29,7 +29,7 @@ function showLiveDetailEditDialog(liveInfo){
     $.ajax('../liveInfo/queryLiveInfo', {
         data: {
             id: liveInfo.id,
-            year: layui.data("navInfo")["year"]
+            liveDate: liveInfo.liveDate
         }
     }).then(data => {
         showDialog("dialog/liveDetailEdit.html", {

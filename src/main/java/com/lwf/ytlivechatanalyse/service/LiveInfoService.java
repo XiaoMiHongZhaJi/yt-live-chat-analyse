@@ -47,9 +47,8 @@ public class LiveInfoService {
             liveDate = liveDate.substring(0, index);
         }
         queryWrapper.likeRight("live_date", liveDate);
-        String year = liveInfo.getYear();
-        if(StringUtils.isNotBlank(year) && !year.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year);
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
         List<LiveInfo> liveInfoList = liveInfoMapper.selectList(queryWrapper);
         if (liveInfoList.size() == 0){
@@ -70,9 +69,9 @@ public class LiveInfoService {
         if(liveInfo.getSrtCount() != null && liveInfo.getSrtCount() > 0){
             queryWrapper.gt("srt_count", 0);
         }
-        String year = liveInfo.getYear();
-        if(StringUtils.isNotBlank(year) && !year.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year);
+        String liveDate = liveInfo.getLiveDate();
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
         return liveInfoMapper.selectList(queryWrapper);
     }
@@ -100,9 +99,9 @@ public class LiveInfoService {
             }
         }
         queryWrapper.last("limit 1");
-        String year = liveInfo.getYear();
-        if(StringUtils.isNotBlank(year) && !year.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year);
+        String liveDate = liveInfo.getLiveDate();
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
         return liveInfoMapper.selectOne(queryWrapper);
     }
@@ -120,9 +119,9 @@ public class LiveInfoService {
 
     public int updateLiveInfoById(LiveInfo liveInfo){
         liveInfo.setUpdateTime(new Date());
-        String year = liveInfo.getYear();
-        if(StringUtils.isNotBlank(year) && !year.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year);
+        String liveDate = liveInfo.getLiveDate();
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
         return liveInfoMapper.updateById(liveInfo);
     }
@@ -131,9 +130,9 @@ public class LiveInfoService {
         liveInfo.setUpdateTime(new Date());
         UpdateWrapper<LiveInfo> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("live_date", liveInfo.getLiveDate());
-        String year = liveInfo.getYear();
-        if(StringUtils.isNotBlank(year) && !year.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year);
+        String liveDate = liveInfo.getLiveDate();
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
         return liveInfoMapper.update(liveInfo, updateWrapper);
     }

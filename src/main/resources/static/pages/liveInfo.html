@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="../modules/layui/css/layui.css">
     <link rel="stylesheet" href="../css/public.css">
     <script src="../modules/layui/layui.js"></script>
-    <script src="../js/public.js"></script>
-    <script src="dialog/liveDetailEdit.js"></script>
+    <script src="../js/public.js?t=2025_01_10"></script>
+    <script src="dialog/liveDetailEdit.js?t=2025_01_10"></script>
     <style>
         .tableBar a{
            margin: 2px;
@@ -38,7 +38,7 @@
                         </div>
                     </div>
                     <div class="layui-inline">
-                        <label class="layui-form-label">开播日期</label>
+                        <label class="layui-form-label" id="date-label">开播日期</label>
                         <div class="layui-input-inline">
                             <input type="text" name="liveDate" autocomplete="off" id="liveDate" class="layui-input" placeholder="非必填">
                         </div>
@@ -155,7 +155,7 @@
             limit: 10,
             done: (obj) => {
                 const list = obj.data;
-                console.log(list)
+                // console.log(list)
                 //初始化按钮状态
                 for(let i = 0; i < list.length; i++){
                     const data = list[i];

@@ -55,7 +55,7 @@ public class AnalyseService {
         }
         //开播日期
         String liveDate = liveInfo.getLiveDate();
-        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
         //间隔秒数
@@ -144,7 +144,7 @@ public class AnalyseService {
             for (HotList hotList : hotListList) {
                 try {
                     String liveDate = hotList.getLiveDate();
-                    if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+                    if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
                         DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
                     }
                     hotListMapper.insert(hotList);
@@ -278,7 +278,7 @@ public class AnalyseService {
         queryWrapper.ge("timestamp", startTimestamp);
         queryWrapper.lt("timestamp", endTimestamp);
         queryWrapper.orderByAsc("timestamp");
-        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
         List liveChatAll = liveChatDataMapper.selectList(queryWrapper);

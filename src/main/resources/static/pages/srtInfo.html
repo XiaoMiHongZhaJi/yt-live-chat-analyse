@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="../modules/layui/css/layui.css">
     <link rel="stylesheet" href="../css/public.css">
     <script src="../modules/layui/layui.js"></script>
-    <script src="../js/public.js"></script>
-    <script src="dialog/liveDetail.js"></script>
+    <script src="../js/public.js?t=2025_01_10"></script>
+    <script src="dialog/liveDetail.js?t=2025_01_10"></script>
 </head>
 <body>
 <ul class="layui-nav layui-bg-cyan" lay-filter="demo">
@@ -89,6 +89,10 @@
                 return false;
             }
             $("#submit").addClass("layui-btn-disabled");
+            const currentYear = layui.data("navInfo")["year"];
+            if(!data.liveDate && defaultYear != currentYear){
+                data.liveDate = currentYear;
+            }
             //执行搜索重载
             const queryInfo = data.field;
             table.reload('srtData', {
@@ -104,6 +108,10 @@
                 cols[0][0]["hide"] = true;
             }else{
                 cols[0][0]["hide"] = false;
+            }
+            const currentYear = layui.data("navInfo")["year"];
+            if(!data.liveDate && defaultYear != currentYear){
+                data.liveDate = currentYear;
             }
             table.reload('srtData', {
                 page: {curr: 1},

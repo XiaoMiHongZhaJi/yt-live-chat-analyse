@@ -32,7 +32,7 @@ public class SrtDataService {
     public Long selectCount(String liveDate){
         QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("live_date", liveDate);
-        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
         Long count = srtDataMapper.selectCount(queryWrapper);
@@ -52,7 +52,7 @@ public class SrtDataService {
             for (SrtData srtData : srtList){
                 srtData.setLiveDate(liveDate);
                 try {
-                    if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+                    if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
                         DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
                     }
                     srtDataMapper.insert(srtData);
@@ -72,7 +72,7 @@ public class SrtDataService {
         batchInsert(liveDate, srtList);
         QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("live_date", liveDate);
-        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
         return srtDataMapper.selectCount(queryWrapper);
@@ -89,7 +89,7 @@ public class SrtDataService {
         }
         queryWrapper.orderByDesc("live_date");
         queryWrapper.orderByAsc("id");
-        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
         return srtDataMapper.selectList(queryWrapper);
