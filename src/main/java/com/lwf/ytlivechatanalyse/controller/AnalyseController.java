@@ -1,7 +1,6 @@
 package com.lwf.ytlivechatanalyse.controller;
 
 import com.lwf.ytlivechatanalyse.bean.HotList;
-import com.lwf.ytlivechatanalyse.bean.LiveChatData;
 import com.lwf.ytlivechatanalyse.bean.LiveInfo;
 import com.lwf.ytlivechatanalyse.service.AnalyseService;
 import com.lwf.ytlivechatanalyse.service.EmotesDataService;
@@ -34,8 +33,8 @@ public class AnalyseController {
 
     @RequestMapping("/queryHotListDetail")
     public Result queryHotListDetail(String liveDate, Long startTimestamp, Integer intervalMinutes){
-        List chatInfoKList = analyseService.queryHotListDetail(liveDate, startTimestamp, intervalMinutes);
-        return new Result<>(chatInfoKList);
+        List hotListDetail = analyseService.queryHotListDetail(liveDate, startTimestamp, intervalMinutes);
+        return new Result<>(hotListDetail);
     }
 
 }

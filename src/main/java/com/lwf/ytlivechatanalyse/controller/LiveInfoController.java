@@ -112,7 +112,7 @@ public class LiveInfoController {
         try {
             parseDate = DateUtils.parseDate(liveDate.substring(0, 10), "yyyy-MM-dd");
         }catch (Exception e){
-            logger.error("转换日期失败，" + liveDate, e);
+            logger.error("转换日期失败，{}", liveDate, e);
         }
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(parseDate);
@@ -152,11 +152,6 @@ public class LiveInfoController {
         }
         liveInfoService.downloadChatData(liveInfo);
         return new Result<>(200, "下载完成");
-    }
-
-    @RequestMapping("/selectCount")
-    public Long selectCount(String liveDate){
-        return srtDataService.selectCount(liveDate);
     }
 
     @RequestMapping("/importSrt")

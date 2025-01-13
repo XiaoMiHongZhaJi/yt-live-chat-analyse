@@ -29,16 +29,6 @@ public class SrtDataService {
     @Autowired
     SqlSessionFactory sqlSessionFactory;
 
-    public Long selectCount(String liveDate){
-        QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("live_date", liveDate);
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
-        Long count = srtDataMapper.selectCount(queryWrapper);
-        return count;
-    }
-
     public void batchInsert(String liveDate, List<SrtData> srtList){
         SqlSession sqlSession = null;
         try{
@@ -78,7 +68,7 @@ public class SrtDataService {
     public List<SrtData> selectSrtInfo(SrtData srtData) {
         String liveDate = srtData.getLiveDate();
         QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
-        if(StringUtils.isNotBlank(srtData.getLiveDate())){
+        if(StringUtils.isNotBlank(liveDate)){
             queryWrapper.likeRight("live_date", liveDate);
         }
         if(StringUtils.isNotBlank(srtData.getContent())){

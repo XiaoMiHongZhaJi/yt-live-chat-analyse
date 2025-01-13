@@ -19,7 +19,7 @@ public class SrtDataController {
 
     @RequestMapping("/queryList")
     public Result<SrtData> queryList(SrtData srtData, int limit, int page){
-        limit = limit > Constant.MAX_PAGE_SIZE ? Constant.MAX_PAGE_SIZE : limit;
+        limit = Math.min(limit, Constant.MAX_PAGE_SIZE);
         PageHelper.startPage(page, limit);
         return new Result<>(new PageInfo<>(srtInfoService.selectSrtInfo(srtData)));
     }
