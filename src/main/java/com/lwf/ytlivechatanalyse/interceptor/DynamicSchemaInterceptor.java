@@ -3,6 +3,8 @@ package com.lwf.ytlivechatanalyse.interceptor;
 import com.lwf.ytlivechatanalyse.util.Constant;
 import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.plugin.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.util.Properties;
@@ -12,7 +14,11 @@ import java.util.Properties;
 })
 public class DynamicSchemaInterceptor implements Interceptor {
 
+    private static final Logger logger = LoggerFactory.getLogger(DynamicSchemaInterceptor.class);
+
     private static final ThreadLocal<String> schemaContext = new ThreadLocal<>();
+
+    private int clientId = 0;
 
     public static void setSchema(String schema) {
         schemaContext.set(schema);
@@ -31,7 +37,13 @@ public class DynamicSchemaInterceptor implements Interceptor {
         String schema = getSchema();
         if (schema != null) {
             Connection connection = (Connection) invocation.getArgs()[0];
+            if(connection.getClientInfo("connectionId") == null) {
+                String connectionId = clientId++ + "";
+                connection.setClientInfo("connectionId", connectionId);
+                logger.info("set connectionId: {}", connectionId);
+            }
             connection.setCatalog(schema);
+            logger.info("database: {} connectionId: {}", schema, connection.getClientInfo("connectionId"));
         }
         return invocation.proceed();
     }
