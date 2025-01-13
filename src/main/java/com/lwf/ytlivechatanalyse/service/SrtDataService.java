@@ -52,9 +52,6 @@ public class SrtDataService {
             for (SrtData srtData : srtList){
                 srtData.setLiveDate(liveDate);
                 try {
-                    if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-                        DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-                    }
                     srtDataMapper.insert(srtData);
                 }catch (Exception e1){
                     logger.error("批量插入出错，已改为单笔插入，错误数据：", e1);
@@ -68,13 +65,13 @@ public class SrtDataService {
     }
 
     public Long importSrt(String liveDate, MultipartFile file) {
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+        }
         List<SrtData> srtList = SrtUtil.fileToSrt(file);
         batchInsert(liveDate, srtList);
         QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("live_date", liveDate);
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
         return srtDataMapper.selectCount(queryWrapper);
     }
 
@@ -82,7 +79,7 @@ public class SrtDataService {
         String liveDate = srtData.getLiveDate();
         QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
         if(StringUtils.isNotBlank(srtData.getLiveDate())){
-            queryWrapper.eq("live_date", liveDate);
+            queryWrapper.likeRight("live_date", liveDate);
         }
         if(StringUtils.isNotBlank(srtData.getContent())){
             queryWrapper.like("content", srtData.getContent());

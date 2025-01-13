@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
 import static com.lwf.ytlivechatanalyse.util.CurlUtil.cookie;
 
@@ -62,8 +63,18 @@ public class CmdUtil {
         return osName.startsWith("Win");
     }
 
+    private static boolean isMac(){
+        String osName = System.getProperty("os.name");
+        return osName.startsWith("Mac");
+    }
+
     public static String execCmd(String cmd){
         return execCmd(cmd, true, true);
+    }
+
+    // Mac
+    public static String execCmd(String[] cmd, boolean print, boolean result){
+        return execCmd(cmd, print, result, "UTF8");
     }
 
     public static String execCmd(String cmd, boolean print, boolean result){
@@ -73,6 +84,37 @@ public class CmdUtil {
             return execCmd(cmd, print, result, "UTF8");
         }
     }
+
+    public static String execCmd(String[] cmd, boolean print, boolean result, String charset){
+        logger.info("执行命令：" + Arrays.toString(cmd).replace(",", ""));
+        Runtime run = Runtime.getRuntime();
+        try {
+            Process process = run.exec(cmd);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), Charset.forName(charset)));
+            StringBuilder builder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null ){
+                if(print){
+                    logger.info(line);
+                }
+                if(result){
+                    builder.append(line);
+                    builder.append(System.getProperty("line.separator"));
+                }
+            }
+            try {
+                process.waitFor();
+            } catch (InterruptedException e){
+                logger.error("执行命令出错", e);
+            }
+            process.destroy();
+            return builder.toString();
+        } catch (IOException e){
+            logger.error("执行命令出错", e);
+        }
+        return "";
+    }
+
     public static String execCmd(String cmd, boolean print, boolean result, String charset){
         logger.info("执行命令：" + cmd);
         Runtime run = Runtime.getRuntime();

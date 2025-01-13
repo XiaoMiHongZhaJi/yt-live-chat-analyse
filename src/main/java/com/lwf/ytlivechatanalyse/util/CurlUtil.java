@@ -77,7 +77,7 @@ public class CurlUtil {
                 if (!curlLogPath.exists()) {
                     curlLogPath.mkdirs();
                 }
-                String curlLogName = DateUtil.getNowDateTime().replace(":", "_");
+                String curlLogName = url.split("v=")[1] + "_" + DateUtil.getNowDateTime().replace(":", "_");
                 String curlLogFile = String.format("%s%s.html", curlLog, curlLogName);
                 FileUtil.writeAsString(new File(curlLogFile), curl);
                 logger.info(String.format("curlLog已写入：%s", curlLogFile));
@@ -295,9 +295,17 @@ public class CurlUtil {
     }
 
     public static long downloadFile(String url, String fileName, String filePath) {
-        String cmd = "curl ";
+        List<String> cmd = new ArrayList<>();
+        cmd.add("curl");
+        cmd.add("-H");
+        cmd.add("accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'");
+        cmd.add("-H");
+        cmd.add("accept-language: zh-CN,zh;q=0.9");
+        cmd.add("-H");
+        cmd.add("user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
         if (StringUtils.isNotBlank(proxy)) {
-            cmd += "--proxy " + proxy + " ";
+            cmd.add("--proxy");
+            cmd.add(proxy);
         }
         if (StringUtils.isNotBlank(fileName)) {
             if (StringUtils.isNotBlank(filePath)) {
@@ -307,11 +315,13 @@ public class CurlUtil {
                 }
                 fileName = filePath + fileName;
             }
-            cmd += "-o \"" + fileName + "\" ";
+            cmd.add("-o");
+            cmd.add(fileName);
         } else {
-            cmd += "-O ";
+            cmd.add("-O");
         }
-        CmdUtil.execCmd(cmd + url, false, true, "UTF-8");
+        cmd.add(url);
+        CmdUtil.execCmd(cmd.toArray(new String[0]), false, true);
         if (StringUtils.isNotBlank(fileName)) {
             File f = new File(fileName);
             return f.length();
@@ -320,14 +330,25 @@ public class CurlUtil {
     }
 
     public static String execCurl(String url) {
-        String cmd = "curl ";
+        List<String> cmd = new ArrayList<>();
+        cmd.add("curl");
+        cmd.add("-H");
+        cmd.add("'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'");
+        cmd.add("-H");
+        cmd.add("'accept-language: zh-CN,zh;q=0.9'");
+        cmd.add("-H");
+        cmd.add("'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'");
         if (StringUtils.isNotBlank(proxy)) {
-            cmd += String.format("-x %s ", proxy);
+            cmd.add("--proxy");
+            cmd.add(proxy);
         }
         if (StringUtils.isNotBlank(cookie)) {
-            cmd += String.format("-b %s ", cookie);
-            cmd += String.format("-c %s ", cookie);
+            cmd.add("-b");
+            cmd.add(cookie);
+            cmd.add("-c");
+            cmd.add(cookie);
         }
-        return CmdUtil.execCmd(cmd + url, false, true, "UTF-8");
+        cmd.add(url);
+        return CmdUtil.execCmd(cmd.toArray(new String[0]), false, true, "UTF-8");
     }
 }

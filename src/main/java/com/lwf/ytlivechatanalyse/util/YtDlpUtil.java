@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @Component
 public class YtDlpUtil {
@@ -29,34 +32,29 @@ public class YtDlpUtil {
     }
 
     public static String execYtDlp(String url, String param, String fileName, String filePath){
-        StringBuffer cmd = new StringBuffer("yt-dlp ");
+        List<String> cmd = new ArrayList<>();
+        cmd.add("yt-dlp");
         if(StringUtils.isNotBlank(proxy)){
-            cmd.append("--proxy ");
-            cmd.append(proxy);
-            cmd.append(" ");
+            cmd.add("--proxy");
+            cmd.add(proxy);
         }
         if(StringUtils.isNotBlank(param)){
-            cmd.append(param);
-            cmd.append(" ");
+            cmd.addAll(Arrays.asList(param.split(" ")));
         }
         if(StringUtils.isNotBlank(fileName)){
-            cmd.append("--output ");
-            cmd.append("\"");
-            cmd.append(fileName);
-            cmd.append(".%(ext)s");
-            cmd.append("\"");
-            cmd.append(" ");
+            cmd.add("--output");
+            cmd.add(fileName + ".mp3");
         }
         if(StringUtils.isNotBlank(filePath)){
             File path = new File(filePath);
             if(!path.exists()){
                 path.mkdirs();
             }
-            cmd.append("--paths ");
-            cmd.append(filePath);
-            cmd.append(" ");
+            cmd.add("--paths");
+            cmd.add(filePath);
         }
-        cmd.append(url);
-        return CmdUtil.execCmd(cmd.toString(), false, true);
+        cmd.add(url);
+        String[] array = cmd.toArray(new String[0]);
+        return CmdUtil.execCmd(array, false, true);
     }
 }

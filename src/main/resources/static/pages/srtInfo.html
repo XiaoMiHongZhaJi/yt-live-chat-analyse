@@ -89,12 +89,12 @@
                 return false;
             }
             $("#submit").addClass("layui-btn-disabled");
-            const currentYear = layui.data("navInfo")["year"];
-            if(!data.liveDate && defaultYear != currentYear){
-                data.liveDate = currentYear;
-            }
             //执行搜索重载
             const queryInfo = data.field;
+            const currentYear = layui.data("navInfo")["year"];
+            if(!queryInfo.liveDate && defaultYear != currentYear){
+                queryInfo.liveDate = currentYear;
+            }
             table.reload('srtData', {
                 page: {curr: 1},
                 where: queryInfo
