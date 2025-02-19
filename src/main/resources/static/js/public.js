@@ -1,6 +1,7 @@
 
 const defaultYear = "2025";
-const yearList = [2024, 2023, 2022, 2021]
+const yearList = [2024, 2023, 2022, 2021];
+let liveInfoDict = {};
 
 function initYearNav() {
     layui.use(['jquery'], function(){
@@ -31,8 +32,97 @@ function initYearNav() {
     bindTripleClick();
 }
 
-let emoteDict;
-layui.use(['jquery'], function(){
+let db;
+const DB_NAME = "emoteDB";
+const DB_VERSION = 1;
+const STORE_NAME = "emotes";
+
+// 打开IndexedDB
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (event) => {
+            db = event.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: "name" });
+            }
+        };
+        request.onerror = (event) => {
+            reject("打开数据库失败");
+        };
+        request.onsuccess = (event) => {
+            db = event.target.result;
+            resolve(db);
+        };
+    });
+}
+
+// 获取指定名称的表情，若数据未准备好则返回null
+function getEmoteByName(name) {
+    if (!db) {
+        return null;  // 如果数据库尚未打开，返回null
+    }
+    const transaction = db.transaction(STORE_NAME, "readonly");
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.get(name);  // 获取特定名称的表情
+    let emote = null;
+    // 同步等待数据返回
+    request.onsuccess = (event) => {
+        emote = event.target.result;  // 数据存在，返回表情对象
+    };
+    // 如果查询失败或数据不存在，返回null
+    request.onerror = () => {
+        emote = null;
+    };
+    // 返回数据或者null
+    return emote;
+}
+
+// 向数据库中插入或更新表情数据
+function saveEmote(emote) {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, "readwrite");
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.put(emote);
+        request.onsuccess = () => {
+            resolve();
+        };
+        request.onerror = (event) => {
+            reject("保存表情数据失败");
+        };
+    });
+}
+
+// 主逻辑
+layui.use(['jquery'], function() {
+    const $ = layui.jquery;
+    openDB().then(() => {
+        // 获取数据字典
+        let emoteDict = {};
+        // 检查是否有STORAGE_OK
+        let storageOkEmote = layui.data("emoteDict");
+        if (!storageOkEmote || !storageOkEmote["STORAGE_OK"] || storageOkEmote["STORAGE_OK"] != "2") {
+            // 如果没有STORAGE_OK标记，则进行ajax请求获取数据
+            $.ajax({url: '../liveChat/queryEmotes'}).then(data => {
+                $(data).each((i, emote) => {
+                    emoteDict[emote.name] = emote;
+                    saveEmote(emote);  // 存储到IndexedDB
+                });
+                layui.data("emoteDict",null);
+                // 最后更新STORAGE_OK标志
+                layui.data("emoteDict",{
+                    key: "STORAGE_OK",
+                    value: "2"
+                });
+            });
+        }
+    }).catch(err => {
+        console.error(err);
+    });
+});
+
+//let emoteDict;
+/*layui.use(['jquery'], function(){
     const $ = layui.jquery;
     emoteDict = layui.data("emoteDict");
     if(!emoteDict["STORAGE_OK"]){
@@ -51,7 +141,7 @@ layui.use(['jquery'], function(){
             });
         })
     }
-})
+})*/
 function getEmoteMssage(message){
     let realMessage;
     if(message.indexOf(":") > -1){
@@ -60,7 +150,7 @@ function getEmoteMssage(message){
         let remain = message.substring(message.indexOf(":") + 1);
         while(remain && remain.indexOf(":") > -1){
             const key = remain.substring(0, remain.indexOf(":"));
-            const emote = emoteDict[key];
+            const emote = getEmoteByName(key);
             if(emote){
                 const emotesId = emote.emotesId;
                 if(emote.isCustomEmoji){
@@ -80,7 +170,7 @@ function getEmoteMssage(message){
         realMessage = "";
         const $ = layui.jquery;
         $(message.split(" ")).each((i,split)=>{
-            const emote = emoteDict[split];
+            const emote = getEmoteByName(split);
             if(emote){
                 realMessage += '<img class="emote" src="'+ emote.images +'">';
             }else if(split.trim()){
@@ -121,14 +211,25 @@ function showDialog(url, settings){
 }
 function getYtUrl(url, time){
     if(isNaN(time)){
+        time = time.trim();
+        let negative = false;
+        if(time.indexOf("-") == 0){
+            negative = true;
+            time = time.substring(1);
+        }
         const split = time.split(":");
         if(split.length == 2){
             time = parseInt(split[0]) * 60 + parseInt(split[1]);
         }else if(split.length == 3){
             time = parseInt(split[0]) * 3600 + parseInt(split[1]) * 60 + parseInt(split[2]);
         }
+        if(negative){
+            time = 0 - time;
+        }
     }
-    url = url + "&t="+ time +"s";
+    if(time > 0){
+        url = url + "&t="+ time +"s";
+    }
     return url;
 }
 function secondToString(second){
@@ -147,9 +248,12 @@ function getATag(url, title){
     }
     return title;
 }
-function getYtUrlTag(url, time){
+function getYtUrlTag(url, time, title){
     url = getYtUrl(url, time);
-    return '<a target="_blank" href='+ url +'>'+ time +'</a>';
+    if(title){
+        title = `title="${title}"`;
+    }
+    return `<a ${title} target="_blank" href="${url}">${time}</a>`;
 }
 function initLiveDateSelector(callback, showAll, param){
     const $ = layui.jquery;
@@ -174,7 +278,7 @@ function initLiveDateSelector(callback, showAll, param){
             const liveDate = liveInfo.liveDate;
             let title = liveDate;
             if(liveInfo.title){
-                title = liveDate + "_" + liveInfo.title;
+                title += "_" + liveInfo.title;
             }
             const option = $('<option value="' + liveDate + '">' + title + '</option>');
             if(i == 0){
@@ -182,6 +286,7 @@ function initLiveDateSelector(callback, showAll, param){
             }
             option.data("liveInfo", liveInfo);
             $("#liveDate").append(option);
+            liveInfoDict[liveDate] = liveInfo;
         })
         if(selectorList[0]){
             form.render();

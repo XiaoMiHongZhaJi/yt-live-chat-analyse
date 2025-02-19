@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="../modules/layui/css/layui.css">
     <link rel="stylesheet" href="../css/public.css">
     <script src="../modules/layui/layui.js"></script>
-    <script src="../js/public.js?t=2025_01_10"></script>
+    <script src="../js/public.js?t=2025_02_19"></script>
     <script src="dialog/liveDetail.js?t=2025_01_10"></script>
 </head>
 <body>
@@ -54,18 +54,22 @@
         const $ = layui.jquery,
             form = layui.form,
             table = layui.table;
-        let liveInfo = null;
-        let interval = null;
+        let currentLiveInfo = null;
         const cols = [[
             {field: 'liveDate', width: 120, title: '日期', sort: true, hide: true},
             {field: 'startTime', width: 90, title: '时间', sort: true, align: "right", templet: (d)=>{
                 const startTime = d.startTime.split(",")[0];
-                const url = liveInfo ? liveInfo["url"] : null;
-                if (startTime){
-                    if (url && url.indexOf("youtube") > -1){
-                        return getYtUrlTag(url, startTime);
+                let url = '';
+                if (currentLiveInfo){
+                    url = currentLiveInfo.url;
+                } else {
+                    const liveInfo = liveInfoDict[d.liveDate];
+                    if (liveInfo){
+                        url = liveInfo.url;
                     }
-                    return startTime;
+                }
+                if (startTime && url && url.indexOf("youtube") > -1){
+                    return getYtUrlTag(url, startTime);
                 }
                 return startTime;
             }},
@@ -103,8 +107,8 @@
         });
         form.on('select(live-date-select)', () => {
             const data = form.val("search-form");
-            liveInfo = $("#liveDate option:selected").data("liveInfo");
-            if(liveInfo){
+            currentLiveInfo = $("#liveDate option:selected").data("liveInfo");
+            if(currentLiveInfo){
                 cols[0][0]["hide"] = true;
             }else{
                 cols[0][0]["hide"] = false;
@@ -120,11 +124,11 @@
             });
         })
         $("#showDetail").click(() => {
-            showLiveDetailDialog(liveInfo);
+            showLiveDetailDialog(currentLiveInfo);
             return false;
         })
         initLiveDateSelector((info)=>{
-            liveInfo = info;
+            currentLiveInfo = info;
             table.reload('srtData', {
                 loading: true,
                 url: '../srtInfo/queryList',

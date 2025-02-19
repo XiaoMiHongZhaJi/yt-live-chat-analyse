@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="../modules/layui/css/layui.css">
     <link rel="stylesheet" href="../css/public.css">
     <script src="../modules/layui/layui.js"></script>
-    <script src="../js/public.js?t=2025_01_10"></script>
+    <script src="../js/public.js?t=2025_02_19"></script>
     <script src="dialog/liveDetail.js?t=2025_01_10"></script>
     <script src="dialog/downloadBullet.js?t=2025_01_10"></script>
 </head>
@@ -74,7 +74,7 @@
             form = layui.form,
             layer = layui.layer,
             table = layui.table;
-        let liveInfo = null;
+        let currentLiveInfo = null;
         let interval = null;
         const cols = [[
             {field: 'liveDate', width: 120, title: '日期', sort: true, hide: true},
@@ -102,15 +102,26 @@
                     return message;
                 }},
             {field: 'timeText', width: 90, title: '时间', sort: true, align: "right", templet: (d)=>{
+                    const timestamp = d.timestamp / 1000;
+                    const title = "发送时间：" + new Date(timestamp).toLocaleString();
                     const timeText = d.timeText;
-                    const url = liveInfo ? liveInfo["url"] : null;
                     if (timeText){
-                        if (url && url.indexOf("youtube") > -1){
-                            return getYtUrlTag(url, timeText);
+                        let url = '';
+                        if (currentLiveInfo){
+                            url = currentLiveInfo.url;
+                        } else {
+                            const liveInfo = liveInfoDict[d.liveDate];
+                            if (liveInfo){
+                                url = liveInfo.url;
+                            }
                         }
-                        return timeText;
+                        if (url && url.indexOf("youtube") > -1){
+                            return getYtUrlTag(url, timeText, title);
+                        }
+                        return `<span title="${title}">${timeText}</span>`;
                     }
-                    return new Date(d.timestamp / 1000).toLocaleTimeString();
+                    const sendTime = new Date(timestamp).toLocaleTimeString()
+                    return `<span title="${title}">${sendTime}</span>`;
                 }},
         ]];
         table.render({
@@ -137,8 +148,8 @@
             if(!queryInfo.liveDate && defaultYear != currentYear){
                 queryInfo.liveDate = currentYear;
             }
-            if(liveInfo){
-                queryInfo.liveStatus = liveInfo.liveStatus;
+            if(currentLiveInfo){
+                queryInfo.liveStatus = currentLiveInfo.liveStatus;
             }
             table.reload('liveChatData', {
                 page: {curr: 1},
@@ -153,10 +164,10 @@
         });
         form.on('select(live-date-select)', () => {
             const data = form.val("search-form");
-            liveInfo = $("#liveDate option:selected").data("liveInfo");
-            if(liveInfo){
-                data.liveStatus = liveInfo.liveStatus;
-                if(liveInfo.liveStatus == "1"){
+            currentLiveInfo = $("#liveDate option:selected").data("liveInfo");
+            if(currentLiveInfo){
+                data.liveStatus = currentLiveInfo.liveStatus;
+                if(currentLiveInfo.liveStatus == "1"){
                     $("input[name='refersh']").closest(".layui-inline").removeClass("layui-hide");
                     $("input[name='refersh']").prop("checked",true);
                     form.render();
@@ -179,7 +190,7 @@
             });
         })
         $("#showDetail").click(() => {
-            showLiveDetailDialog(liveInfo);
+            showLiveDetailDialog(currentLiveInfo);
             return false;
         })
         //下载弹幕按钮
@@ -205,7 +216,7 @@
             $("#downloadBullet span").text("下载中...");
             let data = {
                 fileType: "ass",
-                liveDate: liveInfo.liveDate
+                liveDate: currentLiveInfo.liveDate
             }
             if(config != null){
                 $.extend(data, config);
@@ -254,7 +265,7 @@
             }
         })
         initLiveDateSelector((info)=>{
-            liveInfo = info;
+            currentLiveInfo = info;
             table.reload('liveChatData', {
                 loading: true,
                 url: '../liveChat/queryList',
@@ -263,7 +274,7 @@
                     liveStatus: info.liveStatus
                 }
             });
-            if(liveInfo && liveInfo.liveStatus == "1"){
+            if(currentLiveInfo && currentLiveInfo.liveStatus == "1"){
                 $("input[name='refersh']").closest(".layui-inline").removeClass("layui-hide");
                 $("input[name='refersh']").prop("checked",true);
                 form.render();
@@ -272,7 +283,7 @@
         },true)
         function setRefershInterval(){
             interval = setInterval(()=>{
-                if(liveInfo && liveInfo.liveStatus == "1"){
+                if(currentLiveInfo && currentLiveInfo.liveStatus == "1"){
                     table.reload('liveChatData');
                 }else{
                     clearInterval(interval);
