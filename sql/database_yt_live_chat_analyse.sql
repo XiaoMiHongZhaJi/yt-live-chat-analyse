@@ -97,20 +97,20 @@ CREATE TABLE live_info (
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 #直播信息日志表
-CREATE TABLE `live_info_log` (
-  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
-  `live_date` varchar(30) DEFAULT NULL COMMENT '开播日期',
-  `url` varchar(200) DEFAULT NULL COMMENT '开播地址',
-  `title` varchar(200) DEFAULT NULL COMMENT '标题',
-  `view_count` int(11) DEFAULT NULL COMMENT '观看人数',
-  `living_view_count` int(11) DEFAULT NULL,
-  `like_count` varchar(10) DEFAULT NULL COMMENT '点赞人数',
-  `living_chat_count` int(11) DEFAULT NULL COMMENT '直播弹幕数',
-  `platform` varchar(1) DEFAULT NULL COMMENT '开播平台，y：YouTube，t：twitch',
-  `update_timestamp` bigint(20) DEFAULT NULL COMMENT '开播时间戳，默认取第一个“开了”、“来了”的时间',
-  `live_status` varchar(1) DEFAULT '0' COMMENT '开播状态，0：直播预告，1：直播中，2：直播结束，4：已删除',
-  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`id`)
+CREATE TABLE live_info_log (
+  id int(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
+  live_date varchar(30) DEFAULT NULL COMMENT '开播日期',
+  url varchar(200) DEFAULT NULL COMMENT '开播地址',
+  title varchar(200) DEFAULT NULL COMMENT '标题',
+  view_count int(11) DEFAULT NULL COMMENT '观看人数',
+  living_view_count int(11) DEFAULT NULL,
+  like_count varchar(10) DEFAULT NULL COMMENT '点赞人数',
+  living_chat_count int(11) DEFAULT NULL COMMENT '直播弹幕数',
+  platform varchar(1) DEFAULT NULL COMMENT '开播平台，y：YouTube，t：twitch',
+  update_timestamp bigint(20) DEFAULT NULL COMMENT '开播时间戳，默认取第一个“开了”、“来了”的时间',
+  live_status varchar(1) DEFAULT '0' COMMENT '开播状态，0：直播预告，1：直播中，2：直播结束，4：已删除',
+  update_time datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE video_info (
@@ -128,7 +128,26 @@ CREATE TABLE video_info (
   comment_count int(11) DEFAULT NULL COMMENT '评论数',
   down_song_status varchar(1) DEFAULT '0' COMMENT '下歌曲下载状态，0：未下载 1：已下载',
   PRIMARY KEY (id)
-) ENGINE=InnoDB AUTO_INCREMENT=1235 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE yt_live_chat_analyse.author_info (
+  id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
+  author_id VARCHAR(30) NOT NULL COMMENT '用户id',
+  first_live_date VARCHAR(30) DEFAULT NULL COMMENT '首次发言所在的直播日期',
+  first_author_name VARCHAR(60) DEFAULT NULL COMMENT '首次发言时的名称',
+  first_message VARCHAR(600) DEFAULT NULL COMMENT '首次发言的内容',
+  first_time_text VARCHAR(30) DEFAULT NULL COMMENT '首次发言的时间文本',
+  first_timestamp BIGINT(20) DEFAULT NULL COMMENT '首次发言的时间戳',
+  last_live_date VARCHAR(30) DEFAULT NULL COMMENT '最近一次发言所在的直播日期',
+  last_author_name VARCHAR(60) DEFAULT NULL COMMENT '最近一次发言时的名称',
+  last_message VARCHAR(600) DEFAULT NULL COMMENT '最近一次发言的内容',
+  last_time_text VARCHAR(30) DEFAULT NULL COMMENT '最近一次发言的时间文本',
+  last_timestamp BIGINT(20) DEFAULT NULL COMMENT '最近一次发言的时间戳',
+  message_count INT DEFAULT NULL COMMENT '用户总发言次数',
+  update_time DATETIME DEFAULT NULL COMMENT '最后更新时间',
+  PRIMARY KEY (id)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='用户信息统计';
+
 
 
 #添加索引

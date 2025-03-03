@@ -39,7 +39,7 @@
                     <div class="layui-inline ">
                         <label class="layui-form-label">用户名</label>
                         <div class="layui-input-inline">
-                            <input type="text" name="authorName" autocomplete="off" class="layui-input" placeholder="请输入内容">
+                            <input type="text" name="authorName" id="authorName" autocomplete="off" class="layui-input" placeholder="请输入内容">
                         </div>
                     </div>
                     <div class="layui-inline layui-hide">
@@ -76,6 +76,9 @@
             table = layui.table;
         let currentLiveInfo = null;
         let interval = null;
+        window.form = form;
+        window.dropdown = dropdown;
+        window.$ = $;
         const cols = [[
             {field: 'liveDate', width: 120, title: '日期', sort: true, hide: true},
             {field: 'authorName', width: 180, title: '用户名',templet: (d)=>{
@@ -134,7 +137,7 @@
             },
             page: true,
             limits: [10, 15, 20, 50, 100],
-            limit: 20,
+            limit: 15,
         });
         // 监听搜索操作
         form.on('submit(search-btn)', data => {
@@ -207,6 +210,66 @@
                     showDownloadBulletDialog(downloadBullet);
                 }
             }
+        });
+        //用户信息下拉框
+        const authorDropdown = dropdown.render({
+            elem: '#authorName',
+            data: [{
+                title: '请输入用户名关键字'
+            }],
+            click: function (clickAuthorData) {
+                console.log(clickAuthorData);
+                form.val('search-form', {
+                    authorName: clickAuthorData.title
+                });
+                $("#submit").trigger("click");
+            }
+        });
+        function refreshAuthorDropdown(authorName){
+            $.ajax({
+                url: '../authorInfo/queryListBySelector',
+                data: {
+                    authorName: authorName
+                },
+            }).then((authorInfoList) => {
+                let authorData = [];
+                if (authorInfoList) {
+                    authorInfoList.forEach(authorInfo => {
+                        let title = authorInfo.lastAuthorName;
+                        let templet = authorInfo.lastAuthorName;
+                        if(authorInfo.lastAuthorName != authorInfo.firstAuthorName){
+                            title = `${authorInfo.lastAuthorName}「${authorInfo.firstAuthorName}」`;
+                            templet = `${authorInfo.lastAuthorName}<span style="color: #5f5f5f;">「${authorInfo.firstAuthorName}」</span>`;
+                        }
+                        authorData.push({
+                            title: title,
+                            templet: templet
+                        });
+                    });
+                }else{
+                    authorData.push({
+                        title: "未找到此用户",
+                        id: authorInfo.authorId
+                    })
+                }
+                authorDropdown.reloadData({
+                    data: authorData
+                });
+            })
+        }
+        //绑定事件
+        let timeoutId = null;
+        $('#authorName').on('input', function () {
+            // 清除之前的定时器
+            clearTimeout(timeoutId);
+            // 设置新的定时器
+            timeoutId = setTimeout(function () {
+                const authorName = $('#authorName').val();
+                if(!authorName){
+                    return;
+                }
+                refreshAuthorDropdown(authorName);
+            }, 1000);
         });
         function downloadBullet(config) {
             if($("#downloadBullet").hasClass("layui-btn-disabled")){

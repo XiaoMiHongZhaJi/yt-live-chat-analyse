@@ -28,3 +28,5 @@
 hs_err_pid*
 /bullet/ass/
 /yt-live-chat-analyse.iml
+.vscode/*
+.DS_Store

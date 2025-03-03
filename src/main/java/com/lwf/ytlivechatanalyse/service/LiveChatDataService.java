@@ -49,28 +49,66 @@ public class LiveChatDataService {
     EmotesDataService emotesDataService;
 
     public List<LiveChatData> selectList(LiveChatData liveChatData, boolean isAsc){
-        String liveDate = liveChatData.getLiveDate();
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
-        return liveChatDataMapper.selectList(liveChatData, isAsc);
-    }
-
-    public List<LivingChatData> selectLivingList(LiveChatData liveChatData, boolean isAsc){
-        QueryWrapper<LivingChatData> queryWrapper = new QueryWrapper<>();
+        QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
         String keywords = liveChatData.getMessage();
         if(StringUtils.isNotBlank(keywords)){
-            WrapperUtil.keyWordsLike(queryWrapper, keywords, "message");
+            queryWrapper.like("message", keywords);
         }
         String authorName = liveChatData.getAuthorName();
         if(StringUtils.isNotBlank(authorName)){
-            WrapperUtil.keyWordsLike(queryWrapper, authorName, "author_name");
+            int index = authorName.indexOf("「");
+            if(index > -1){
+                String lastAuthorName = authorName.substring(0, index);
+                String firstAuthorName = authorName.substring(index + 1, authorName.length() - 1);
+                queryWrapper.and(wrapper -> wrapper
+                    .like("author_name", lastAuthorName)
+                    .or()
+                    .like("author_name", firstAuthorName)
+                );
+            }else{
+                queryWrapper.like("author_name", authorName);
+            }
         }
         String liveDate = liveChatData.getLiveDate();
         if(StringUtils.isNotBlank(liveDate)){
             queryWrapper.likeRight("live_date", liveDate);
         }
         queryWrapper.orderBy(true, isAsc, "timestamp");
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+        }
+        return liveChatDataMapper.selectList(queryWrapper);
+    }
+
+    public List<LivingChatData> selectLivingList(LiveChatData liveChatData, boolean isAsc){
+        QueryWrapper<LivingChatData> queryWrapper = new QueryWrapper<>();
+        String keywords = liveChatData.getMessage();
+        if(StringUtils.isNotBlank(keywords)){
+            queryWrapper.like("message", keywords);
+        }
+        String authorName = liveChatData.getAuthorName();
+        if(StringUtils.isNotBlank(authorName)){
+            int index = authorName.indexOf("「");
+            if(index > -1){
+                String lastAuthorName = authorName.substring(0, index);
+                String firstAuthorName = authorName.substring(index + 1, authorName.length() - 1);
+                queryWrapper.and(wrapper -> wrapper
+                    .like("author_name", lastAuthorName)
+                    .or()
+                    .like("author_name", firstAuthorName)
+                );
+            }else{
+                queryWrapper.like("author_name", authorName);
+            }
+        }
+        String liveDate = liveChatData.getLiveDate();
+        if(StringUtils.isNotBlank(liveDate)){
+            queryWrapper.likeRight("live_date", liveDate);
+        }
+        queryWrapper.orderBy(true, isAsc, "timestamp");
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+        }
         return livingChatDataMapper.selectList(queryWrapper);
     }
 
