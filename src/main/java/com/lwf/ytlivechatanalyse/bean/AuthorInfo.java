@@ -22,6 +22,7 @@ public class AuthorInfo {
     private String lastMessage;
     private String lastTimeText;
     private Long lastTimestamp;
+    private String authorImage;
     private Integer messageCount;
     private Date updateTime;//最后更新时间
 

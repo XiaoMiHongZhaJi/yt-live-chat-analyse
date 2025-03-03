@@ -12,9 +12,22 @@
 /**搜索框*/
 .layuimini-container .table-search-fieldset {margin: 0;border: 1px solid #e6e6e6;padding: 10px 20px 5px 20px;color: #6b6b6b;}
 
+.layui-menu-body-title img.header{
+    width: 26px;
+    border-radius: 13px;
+    margin-right: 5px;
+}
+.layui-menu-body-title img.twitch{
+    width: 26px;
+    margin-right: 5px;
+}
 .layui-table-cell img.header{
     width: 26px;
     border-radius: 13px;
+    margin-right: 5px;
+}
+.layui-table-cell img.twitch{
+    width: 26px;
     margin-right: 5px;
 }
 .layui-table-cell img.emote{

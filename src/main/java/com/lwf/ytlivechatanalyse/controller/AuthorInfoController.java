@@ -3,7 +3,6 @@ package com.lwf.ytlivechatanalyse.controller;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.lwf.ytlivechatanalyse.bean.AuthorInfo;
-import com.lwf.ytlivechatanalyse.bean.LiveInfo;
 import com.lwf.ytlivechatanalyse.service.AuthorInfoService;
 import com.lwf.ytlivechatanalyse.util.Constant;
 import com.lwf.ytlivechatanalyse.util.Result;

@@ -26,14 +26,19 @@ public class AuthorInfoService {
     public List<AuthorInfo> queryListBySelector(String authorName, String year){
         QueryWrapper<AuthorInfo> queryWrapper = new QueryWrapper<>();
         if(StringUtils.isNotBlank(authorName)){
+            int index = authorName.indexOf("「");
+            if(index > -1){
+                authorName = authorName.substring(0, index);
+            }
+            String keywords = authorName;
             queryWrapper.and(wrapper -> wrapper
-                .like("last_author_name", authorName)
+                .like("last_author_name", keywords)
                 .or()
-                .like("first_author_name", authorName)
+                .like("first_author_name", keywords)
             );
         }
         queryWrapper.orderByDesc("last_timestamp");
-        queryWrapper.select("author_id", "first_author_name", "last_author_name");
+        queryWrapper.select("author_id", "first_author_name", "last_author_name", "author_image");
         queryWrapper.last("limit 5");
         if(StringUtils.isNotBlank(year) && !year.equals(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year);

@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes" />
     <title>弹幕统计分析</title>
-    <link rel="stylesheet" href="../modules/layui/css/layui.css">
-    <link rel="stylesheet" href="../css/public.css">
-    <script src="../modules/layui/layui.js"></script>
-    <script src="../js/public.js?t=2025_02_19"></script>
+    <link rel="stylesheet" href="../modules/layui/css/layui.css?t=2025_03_03">
+    <link rel="stylesheet" href="../css/public.css?t=2025_03_03">
+    <script src="../modules/layui/layui.js?t=2025_03_03"></script>
+    <script src="../js/public.js?t=2025_03_03"></script>
     <script src="dialog/liveDetail.js?t=2025_01_10"></script>
     <script src="dialog/downloadBullet.js?t=2025_01_10"></script>
 </head>
@@ -33,13 +33,13 @@
                     <div class="layui-inline">
                         <label class="layui-form-label">关键字</label>
                         <div class="layui-input-inline">
-                            <input type="text" name="message" autocomplete="off" class="layui-input" placeholder="请输入内容">
+                            <input type="text" name="message" autocomplete="off" class="layui-input" placeholder="请输入弹幕关键字">
                         </div>
                     </div>
                     <div class="layui-inline ">
                         <label class="layui-form-label">用户名</label>
                         <div class="layui-input-inline">
-                            <input type="text" name="authorName" id="authorName" autocomplete="off" class="layui-input" placeholder="请输入内容">
+                            <input type="text" name="authorName" id="authorName" autocomplete="off" class="layui-input" placeholder="请输入用户名关键字">
                         </div>
                     </div>
                     <div class="layui-inline layui-hide">
@@ -83,9 +83,9 @@
             {field: 'liveDate', width: 120, title: '日期', sort: true, hide: true},
             {field: 'authorName', width: 180, title: '用户名',templet: (d)=>{
                     if(d.authorImage){
-                        return '<div><img alt="" class="header" src="'+ d.authorImage +'=s32-c-k-c0x00ffffff-no-rj">'+ d.authorName +'<span style="opacity:0">：</span></div>'
+                        return `<div><img alt="" class="header" src="${d.authorImage}=s32-c-k-c0x00ffffff-no-rj">${d.authorName}</div>`;
                     }
-                    return d.authorName;
+                    return `<div><img alt="" class="twitch" src="https://twitch.tv/favicon.ico">${d.authorName}</div>`;
                 }},
             {field: 'message', minWidth: 180, title: '消息',templet: (d)=>{
                     let message = d.message || '';
@@ -214,13 +214,19 @@
         //用户信息下拉框
         const authorDropdown = dropdown.render({
             elem: '#authorName',
+            trigger: "click",
+            closeOnClick: false,
             data: [{
-                title: '请输入用户名关键字'
+                title: ' ',
+                templet: '<span style="color: #5f5f5f;">请输入用户名关键字</span>'
             }],
             click: function (clickAuthorData) {
-                console.log(clickAuthorData);
+                const clickAuthorName = $.trim(clickAuthorData.title);
+                if(!clickAuthorName){
+                    return;
+                }
                 form.val('search-form', {
-                    authorName: clickAuthorData.title
+                    authorName: clickAuthorName
                 });
                 $("#submit").trigger("click");
             }
@@ -233,13 +239,18 @@
                 },
             }).then((authorInfoList) => {
                 let authorData = [];
-                if (authorInfoList) {
+                if (authorInfoList && authorInfoList.length > 0) {
                     authorInfoList.forEach(authorInfo => {
                         let title = authorInfo.lastAuthorName;
                         let templet = authorInfo.lastAuthorName;
                         if(authorInfo.lastAuthorName != authorInfo.firstAuthorName){
                             title = `${authorInfo.lastAuthorName}「${authorInfo.firstAuthorName}」`;
                             templet = `${authorInfo.lastAuthorName}<span style="color: #5f5f5f;">「${authorInfo.firstAuthorName}」</span>`;
+                        }
+                        if (authorInfo.authorImage) {
+                            templet = `<div><img alt="" class="header" src="${authorInfo.authorImage}=s32-c-k-c0x00ffffff-no-rj">${templet}</div>`;
+                        } else {
+                            templet = `<div><img alt="" class="twitch" src="https://twitch.tv/favicon.ico">${templet}</div>`;
                         }
                         authorData.push({
                             title: title,
@@ -248,8 +259,8 @@
                     });
                 }else{
                     authorData.push({
-                        title: "未找到此用户",
-                        id: authorInfo.authorId
+                        title: ' ',
+                        templet: '<span style="color: #5f5f5f;">未找到此用户</span>'
                     })
                 }
                 authorDropdown.reloadData({
@@ -259,17 +270,19 @@
         }
         //绑定事件
         let timeoutId = null;
+        let lastKeywords = null;
         $('#authorName').on('input', function () {
+            const authorName = $('#authorName').val().trim();
+            if(!authorName || authorName.indexOf("'") > -1 || lastKeywords == authorName){
+                return;
+            }
+            lastKeywords = authorName;
             // 清除之前的定时器
             clearTimeout(timeoutId);
             // 设置新的定时器
             timeoutId = setTimeout(function () {
-                const authorName = $('#authorName').val();
-                if(!authorName){
-                    return;
-                }
                 refreshAuthorDropdown(authorName);
-            }, 1000);
+            }, 500);
         });
         function downloadBullet(config) {
             if($("#downloadBullet").hasClass("layui-btn-disabled")){

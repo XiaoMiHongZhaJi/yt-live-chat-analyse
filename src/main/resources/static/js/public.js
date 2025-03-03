@@ -115,33 +115,13 @@ layui.use(['jquery'], function() {
                     value: "2"
                 });
             });
+            layer.msg("正在初始化一些数据，请稍候...");
         }
     }).catch(err => {
         console.error(err);
     });
 });
 
-//let emoteDict;
-/*layui.use(['jquery'], function(){
-    const $ = layui.jquery;
-    emoteDict = layui.data("emoteDict");
-    if(!emoteDict["STORAGE_OK"]){
-        $.ajax({url: '../liveChat/queryEmotes'}).then(data => {
-            $(data).each((i,emote)=>{
-                emoteDict[emote.name] = emote;
-                layui.data("emoteDict",{
-                    key: emote.name,
-                    value: emote
-                });
-            })
-            emoteDict["STORAGE_OK"] = "1";
-            layui.data("emoteDict",{
-                key: "STORAGE_OK",
-                value: "1"
-            });
-        })
-    }
-})*/
 function getEmoteMssage(message){
     let realMessage;
     if(message.indexOf(":") > -1){

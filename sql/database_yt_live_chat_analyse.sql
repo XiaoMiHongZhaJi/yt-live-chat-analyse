@@ -143,6 +143,7 @@ CREATE TABLE yt_live_chat_analyse.author_info (
   last_message VARCHAR(600) DEFAULT NULL COMMENT '最近一次发言的内容',
   last_time_text VARCHAR(30) DEFAULT NULL COMMENT '最近一次发言的时间文本',
   last_timestamp BIGINT(20) DEFAULT NULL COMMENT '最近一次发言的时间戳',
+  author_image VARCHAR(200) DEFAULT NULL COMMENT '用户头像',
   message_count INT DEFAULT NULL COMMENT '用户总发言次数',
   update_time DATETIME DEFAULT NULL COMMENT '最后更新时间',
   PRIMARY KEY (id)
@@ -174,3 +175,9 @@ ALTER TABLE living_chat_data
 ALTER TABLE living_chat_data
     ADD fulltext INDEX message (message);
 
+ALTER TABLE author_info
+    ADD INDEX first_author_name (first_author_name);
+ALTER TABLE author_info
+    ADD INDEX last_author_name (last_author_name);
+ALTER TABLE author_info
+    ADD INDEX last_timestamp (last_timestamp);
