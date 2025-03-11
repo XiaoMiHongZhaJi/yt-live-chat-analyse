@@ -96,6 +96,7 @@ function saveEmote(emote) {
 // 主逻辑
 layui.use(['jquery'], function() {
     const $ = layui.jquery;
+    const layer = layui.layer;
     openDB().then(() => {
         // 获取数据字典
         let emoteDict = {};
