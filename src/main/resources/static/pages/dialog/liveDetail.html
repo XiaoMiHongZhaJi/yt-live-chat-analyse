@@ -4,7 +4,7 @@
         padding-right: 20px;
     }
     .layui-input-block span {
-        line-height: 36px;
+        line-height: 22px;
     }
     .live-detail-div input {
         width: 150px;
@@ -12,12 +12,19 @@
     .layui-input-block a {
         color: #3ea6ff;
     }
-    .timeline-title{
-        margin-top: 4px;
-        background-color: #f5f5f5;
-        border-radius: 8px;
-        padding: 0px 10px;
+    .live-detail-div .detail{
         display: inline-block;
+        background-color: #eee;
+        padding: 8px 18px;
+        border-radius: 14px;
+    }
+    .live-detail-div .detail h2 {
+        line-height: 30px;
+        margin-top: 15px;
+    }
+    .live-detail-div .detail h5 {
+        line-height: 25px;
+        margin-top: 5px;
     }
 </style>
 <div id="liveDetailArea">
@@ -62,7 +69,7 @@
             <div class="layui-form-item layui-form-text">
                 <label class="layui-form-label">时间线</label>
                 <div class="layui-input-block live-detail-div">
-                    <span class="detail" data-name="timeline"></span>
+                    <div class="detail" data-name="timeline"></div>
                 </div>
             </div>
         </div>

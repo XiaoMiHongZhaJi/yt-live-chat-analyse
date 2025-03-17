@@ -74,6 +74,10 @@ public class SrtDataService {
         if(StringUtils.isNotBlank(srtData.getContent())){
             queryWrapper.like("content", srtData.getContent());
         }
+        Integer serial = srtData.getSerial();
+        if(serial != null && serial > 0){
+            queryWrapper.ge("serial", serial);
+        }
         queryWrapper.orderByDesc("live_date");
         queryWrapper.orderByAsc("id");
         if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){

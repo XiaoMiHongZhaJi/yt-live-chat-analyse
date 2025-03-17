@@ -29,7 +29,7 @@ function showLiveDetailDialog(liveInfo){
                             span.text(formatNum(value));
                         } else if (name == "timeline") {
                             //时间线处理
-                            span.html(getTimeLine(value, data["url"]));
+                            span.html(getTimeLine(marked.marked(value), data["url"]));
                         } else if (name == "url") {
                             span.html('<a target="_blank" href="' + value + '">' + value + '</a>');
                         } else {
@@ -60,42 +60,24 @@ function showLiveDetailDialog(liveInfo){
 function getTimeLine(timeline, url){
     const $ = layui.jquery;
     let html = '';
-    let subtitle = '';
     $(timeline.split("\n")).each((i, e)=>{
-        if(!e){
-            return ;
-        }
-        if(e.startsWith("202") && i <= 1 || e == "思维导图"){
-            return ;
-        }
-        if(["关键词", "全文摘要", "章节速览", "要点回顾"].indexOf(e) > -1){
-            subtitle = e;
-            html += '</div><div class="timeline-title">'
-            html += '<p style="font-weight: bold;">' + e + '</p>';
-            return ;
-        }
-        if(e.endsWith("？")){
-            subtitle = "？";
-            html += '<div><p style="font-weight: bold;">Q: ' + e + '</p>';
-            return ;
-        }
-        if(subtitle == "？"){
-            html += '<p>A: ' + e + '</p></div>';
-            return ;
-        }
         let line = '';
-        let bold = false;
         $(e.replace("\t", " ").split(" ")).each((j, content)=>{
-            if(content && !isNaN(content[0]) && content.indexOf(":") > -1){
-                line += getYtUrlTag(url, content);
-                bold = true;
+            if(content && content.indexOf(":") > -1){
+                const index = content.indexOf(">");
+                line += content.substring(0, index + 1);
+                const timeString = content.substring(index + 1)
+                if(!isNaN(timeString[0])){
+                    line += getYtUrlTag(url, timeString);
+                }else{
+                    line += timeString;
+                }
             }else{
                 line += content;
             }
             line += " ";
         })
-        html += '<p style="' + (bold ? 'font-weight: bold;' : 'text-indent: 2em;') + '">' + line + '</p>';
+        html += line;
     })
-    html += '</div>';
     return html;
 }
