@@ -32,6 +32,9 @@ function showLiveDetailEditDialog(liveInfo){
             liveDate: liveInfo.liveDate
         }
     }).then(data => {
+        if(size[1] < 650){
+            height = '650px';
+        }
         showDialog("dialog/liveDetailEdit.html", {
             title: "开播详情",
             area: [null, height],

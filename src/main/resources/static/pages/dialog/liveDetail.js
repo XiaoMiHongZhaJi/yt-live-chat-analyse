@@ -13,7 +13,7 @@ function showLiveDetailDialog(liveInfo){
         }
     }).then(data => {
         if(data.timeline){
-            height = Math.min(650, size[1]) + 'px';
+            height = Math.min(850, size[1]) + 'px';
             width = Math.min(850, size[0]) + 'px';
         }
         showDialog("dialog/liveDetail.html", {
