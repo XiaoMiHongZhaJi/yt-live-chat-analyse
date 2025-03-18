@@ -14,7 +14,10 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -193,6 +196,24 @@ public class LiveInfoController {
             return new Result<>(200, "未在下载，已更新状态");
         }
         return new Result<>(200, "已结束并更新状态");
+    }
+    @RequestMapping("/queryImgUrl")
+    public ResponseEntity<String> getRedirectedImageUrl(@RequestParam String originalUrl) {
+        if(StringUtils.isBlank(originalUrl)){
+            return ResponseEntity.ok("");
+        }
+        HttpHeaders headers = new HttpHeaders();
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        RestTemplateBuilder builder = new RestTemplateBuilder();
+        RestTemplate restTemplate = builder.build();
+
+        ResponseEntity<Void> response = restTemplate.exchange(originalUrl, HttpMethod.HEAD, entity, Void.class);
+
+        if (response.getStatusCode() == HttpStatus.FOUND || response.getStatusCode() == HttpStatus.MOVED_PERMANENTLY) {
+            String redirectedUrl = response.getHeaders().getLocation().toString();
+            return ResponseEntity.ok(redirectedUrl);
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error");
     }
 }
 

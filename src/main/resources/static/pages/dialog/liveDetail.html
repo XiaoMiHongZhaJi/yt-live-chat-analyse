@@ -6,25 +6,25 @@
     .layui-input-block span {
         line-height: 22px;
     }
-    .live-detail-div input {
-        width: 150px;
-    }
     .layui-input-block a {
         color: #3ea6ff;
     }
-    .live-detail-div .detail{
+    .detail{
         display: inline-block;
         background-color: #eee;
         padding: 8px 18px;
         border-radius: 14px;
     }
-    .live-detail-div .detail h2 {
+    .timeline h2 {
         line-height: 30px;
         margin-top: 15px;
     }
-    .live-detail-div .detail h5 {
+    .timeline h5 {
         line-height: 25px;
         margin-top: 5px;
+    }
+    .timeline img {
+        display: none;
     }
 </style>
 <div id="liveDetailArea">
@@ -32,44 +32,44 @@
         <div class="layui-form liveDetail" style="padding-top: 15px; min-width: 635px;">
             <div class="layui-form-item">
                 <label class="layui-form-label">开播日期</label>
-                <div class="layui-input-block live-detail-div">
+                <div class="layui-input-block">
                     <span class="detail" data-name="liveDate"></span>
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label required">URL</label>
-                <div class="layui-input-block live-detail-div">
+                <div class="layui-input-block">
                     <span class="detail" data-name="url"></span>
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label">标题</label>
-                <div class="layui-input-block live-detail-div">
+                <div class="layui-input-block">
                     <span class="detail" data-name="title"></span>
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label">播放数</label>
-                <div class="layui-input-block live-detail-div">
+                <div class="layui-input-block">
                     <span class="detail" data-name="viewCount"></span>
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label">点赞数</label>
-                <div class="layui-input-block live-detail-div">
+                <div class="layui-input-block">
                     <span class="detail" data-name="likeCount"></span>
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label">弹幕数</label>
-                <div class="layui-input-block live-detail-div">
+                <div class="layui-input-block">
                     <span class="detail" data-name="chatCount"></span>
                 </div>
             </div>
             <div class="layui-form-item layui-form-text">
                 <label class="layui-form-label">时间线</label>
-                <div class="layui-input-block live-detail-div">
-                    <div class="detail" data-name="timeline"></div>
+                <div class="layui-input-block">
+                    <div class="detail timeline" data-name="timeline"></div>
                 </div>
             </div>
         </div>
