@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -146,13 +147,24 @@ public class LiveChatDataService {
     }
 
     public void insertBatch(List<LiveChatData> batchList){
+        if (CollectionUtils.isEmpty(batchList)) {
+            return;
+        }
         try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
+            String liveDate = batchList.get(0).getLiveDate();
+            if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+                DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+            }
             for (LiveChatData liveChatData : batchList) {
                 sqlSession.insert("com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper.insertNotExists", liveChatData);
             }
             sqlSession.commit();
         } catch (Exception e) {
             for (LiveChatData liveChatData : batchList) {
+                String liveDate = liveChatData.getLiveDate();
+                if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+                    DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+                }
                 try {
                     liveChatDataMapper.insertNotExists(liveChatData);
                 } catch (Exception e1) {

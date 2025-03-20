@@ -1,6 +1,7 @@
 package com.lwf.ytlivechatanalyse.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.github.pagehelper.PageInfo;
 import com.lwf.ytlivechatanalyse.bean.SrtData;
 import com.lwf.ytlivechatanalyse.dao.SrtDataMapper;
 import com.lwf.ytlivechatanalyse.interceptor.DynamicSchemaInterceptor;
@@ -33,6 +34,9 @@ public class SrtDataService {
         SqlSession sqlSession = null;
         try{
             sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH);
+            if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+                DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+            }
             for (SrtData srtData : srtList){
                 srtData.setLiveDate(liveDate);
                 sqlSession.insert("com.lwf.ytlivechatanalyse.dao.SrtDataMapper.insert", srtData);
@@ -41,6 +45,9 @@ public class SrtDataService {
         }catch (Exception e){
             for (SrtData srtData : srtList){
                 srtData.setLiveDate(liveDate);
+                if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+                    DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+                }
                 try {
                     srtDataMapper.insert(srtData);
                 }catch (Exception e1){
@@ -80,6 +87,31 @@ public class SrtDataService {
         }
         queryWrapper.orderByDesc("live_date");
         queryWrapper.orderByAsc("id");
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+        }
+        return srtDataMapper.selectList(queryWrapper);
+    }
+
+    public List<SrtData> selectSrtDetail(SrtData srtData, Integer startSerial, Integer endSerial) {
+        String liveDate = srtData.getLiveDate();
+        QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
+        if(StringUtils.isNotBlank(liveDate)){
+            queryWrapper.likeRight("live_date", liveDate);
+        }
+        Integer serial = srtData.getSerial();
+        if(serial != null && serial > 0){
+            startSerial = serial - 10;
+            endSerial = serial + 11;
+        }
+        if(startSerial != null && startSerial > 0){
+            queryWrapper.ge("serial", startSerial);
+        }
+        if(endSerial != null && endSerial > 0){
+            queryWrapper.lt("serial", endSerial);
+        }
+        queryWrapper.orderByAsc("id");
+        queryWrapper.last("limit 21");
         if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }

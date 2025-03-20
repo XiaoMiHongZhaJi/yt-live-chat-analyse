@@ -23,4 +23,9 @@ public class SrtDataController {
         PageHelper.startPage(page, limit);
         return new Result<>(new PageInfo<>(srtInfoService.selectSrtInfo(srtData)));
     }
+
+    @RequestMapping("/querySrtDetail")
+    public Result<SrtData> querySrtDetail(SrtData srtData, Integer startSerial, Integer endSerial){
+        return new Result<>(srtInfoService.selectSrtDetail(srtData, startSerial, endSerial));
+    }
 }

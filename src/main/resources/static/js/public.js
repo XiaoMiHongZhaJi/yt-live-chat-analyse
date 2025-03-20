@@ -191,6 +191,9 @@ function showDialog(url, settings){
     });
 }
 function getYtUrl(url, time){
+    if(!time){
+        return url;
+    }
     if(isNaN(time)){
         time = time.trim();
         let negative = false;
@@ -213,6 +216,18 @@ function getYtUrl(url, time){
     }
     return url;
 }
+function getLiveUrl(currentLiveInfo, liveDate){
+    let url = '';
+    if (currentLiveInfo){
+        url = currentLiveInfo.url;
+    } else {
+        const liveInfo = liveInfoDict[liveDate];
+        if (liveInfo){
+            url = liveInfo.url;
+        }
+    }
+    return url;
+}
 function secondToString(second){
     let minute = second / 60;
     const seconds = second % 60;
@@ -229,11 +244,17 @@ function getATag(url, title){
     }
     return title;
 }
-function getYtUrlTag(url, time, title){
-    url = getYtUrl(url, time);
+function getUrlTag(url, time, title){
+    if(!url){
+        return time;
+    }
     if(title){
         title = `title="${title}"`;
     }
+    if(url.indexOf("youtube") == -1){
+        return `<a ${title} target="_blank" href="${url}">${time}</a>`;
+    }
+    url = getYtUrl(url, time);
     return `<a ${title} target="_blank" href="${url}">${time}</a>`;
 }
 function initLiveDateSelector(callback, showAll, param){

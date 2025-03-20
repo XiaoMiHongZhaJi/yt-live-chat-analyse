@@ -97,7 +97,7 @@ function getTimeLine(timeline, url){
                 line += content.substring(0, index + 1);
                 const timeString = content.substring(index + 1)
                 if(!isNaN(timeString[0])){
-                    line += getYtUrlTag(url, timeString);
+                    line += getUrlTag(url, timeString);
                 }else{
                     line += timeString;
                 }

@@ -43,7 +43,7 @@ public class DynamicSchemaInterceptor implements Interceptor {
                 logger.info("set connectionId: {}", connectionId);
             }
             connection.setCatalog(schema);
-            logger.info("database: {} connectionId: {}", schema, connection.getClientInfo("connectionId"));
+            logger.info("connectionId: {}, database: {}", connection.getClientInfo("connectionId"), schema);
         }
         return invocation.proceed();
     }

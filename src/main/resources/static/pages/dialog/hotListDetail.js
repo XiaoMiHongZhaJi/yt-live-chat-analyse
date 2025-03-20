@@ -5,7 +5,7 @@ function showHotListDetailDialog(liveDate, startTimestamp, intervalMinutes, url,
     const table = layui.table;
     showDialog("dialog/hotListDetail.html", {
         title: "弹幕详情",
-        area: [Math.min(800, size[0]) + 'px', Math.min(600, size[1]) + 'px'],
+        area: [Math.min(800, size[0]) + 'px', Math.min(800, size[1]) + 'px'],
         success: function (layero){
             $(layero).find("#single").html(tr.html());
             $(layero).find("#single").find("td[data-field='messages']>div").removeClass().css({
@@ -42,10 +42,10 @@ function showHotListDetailDialog(liveDate, startTimestamp, intervalMinutes, url,
                     }},
                     {field: 'timeText', width: 90, title: '时间', sort: true, align: "right",templet: (d)=>{
                         const timeText = d.timeText;
-                        if(url && timeText){
-                            return getYtUrlTag(url, timeText);
+                        if(timeText){
+                            return getUrlTag(url, timeText);
                         }
-                        return new Date(d.timestamp / 1000).toTimeString().substr(0, 8);
+                        return new Date(d.timestamp / 1000).toTimeString().substring(0, 8);
                     }}
                 ]],
                 loading: true,

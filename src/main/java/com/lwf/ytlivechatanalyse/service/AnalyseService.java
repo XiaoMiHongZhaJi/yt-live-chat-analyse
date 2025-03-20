@@ -134,7 +134,14 @@ public class AnalyseService {
     }
 
     private void batchInsertHotList(List<HotList> hotListList) {
+        if (CollectionUtils.isEmpty(hotListList)) {
+            return;
+        }
         try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
+            String liveDate = hotListList.get(0).getLiveDate();
+            if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+                DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+            }
             for (HotList hotList : hotListList) {
                 sqlSession.insert("com.lwf.ytlivechatanalyse.dao.HotListMapper.insert", hotList);
             }
@@ -142,11 +149,11 @@ public class AnalyseService {
         } catch (Exception e) {
             logger.error("批量插入出错", e);
             for (HotList hotList : hotListList) {
+                String liveDate = hotList.getLiveDate();
+                if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+                    DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+                }
                 try {
-                    String liveDate = hotList.getLiveDate();
-                    if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-                        DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-                    }
                     hotListMapper.insert(hotList);
                 } catch (Exception e1) {
                     logger.error("批量插入出错，已改为单个插入，错误数据：", e1);

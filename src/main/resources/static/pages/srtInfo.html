@@ -7,9 +7,10 @@
     <link rel="stylesheet" href="../modules/layui/css/layui.css?t=2025_03_11">
     <link rel="stylesheet" href="../css/public.css">
     <script src="../modules/layui/layui.js?t=2025_03_11"></script>
-    <script src="../js/public.js?t=2025_03_11"></script>
-    <script src="dialog/liveDetail.js?t=2025_03_17"></script>
+    <script src="../js/public.js?t=2025_03_20"></script>
+    <script src="dialog/liveDetail.js?t=2025_03_20"></script>
     <script src="../js/marked.min.js"></script>
+    <script src="dialog/srtDetail.js?t=2025_03_20"></script>
 </head>
 <body>
 <ul class="layui-nav layui-bg-cyan" lay-filter="demo">
@@ -32,15 +33,15 @@
                         </div>
                     </div>
                     <div class="layui-inline">
-                        <label class="layui-form-label">关键字</label>
-                        <div class="layui-input-inline">
-                            <input type="text" name="content" class="layui-input" placeholder="请输入关键字">
-                        </div>
-                    </div>
-                    <div class="layui-inline">
                         <label class="layui-form-label">开始序号</label>
                         <div class="layui-input-inline">
                             <input type="text" name="serial" class="layui-input" placeholder="请输入序号">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">关键字</label>
+                        <div class="layui-input-inline">
+                            <input type="text" name="content" class="layui-input" placeholder="请输入关键字">
                         </div>
                     </div>
                     <div class="layui-inline">
@@ -52,7 +53,7 @@
                 </div>
             </form>
         </fieldset>
-        <table class="layui-hide" id="srtData" lay-filter="currentTableFilter">
+        <table class="layui-hide" id="srtData" lay-filter="srtInfoTableFilter">
         </table>
     </div>
 </div>
@@ -67,19 +68,7 @@
             {field: 'serial', width: 90, title: '序号', sort: true, align: "right"},
             {field: 'startTime', width: 90, title: '时间', sort: true, align: "right", templet: (d)=>{
                 const startTime = d.startTime.split(",")[0];
-                let url = '';
-                if (currentLiveInfo){
-                    url = currentLiveInfo.url;
-                } else {
-                    const liveInfo = liveInfoDict[d.liveDate];
-                    if (liveInfo){
-                        url = liveInfo.url;
-                    }
-                }
-                if (startTime && url && url.indexOf("youtube") > -1){
-                    return getYtUrlTag(url, startTime);
-                }
-                return startTime;
+                return getUrlTag(getLiveUrl(currentLiveInfo, d.liveDate), startTime);
             }},
             {field: 'content', minWidth: 180, title: '字幕'},
         ]];
@@ -91,9 +80,17 @@
             done: function(res){
                 $("#submit").removeClass("layui-btn-disabled");
             },
+            error: function(e, msg) {
+                $("#submit").removeClass("layui-btn-disabled");
+            },
             page: true,
             limits: [10, 15, 20, 50, 100],
             limit: 15,
+        });
+        table.on('rowDouble(srtInfoTableFilter)', tr => {
+            const data = tr.data;
+            showSrtDetailDialog(data.liveDate, data.serial, getLiveUrl(currentLiveInfo, data.liveDate));
+            return false;
         });
         // 监听搜索操作
         form.on('submit(search-btn)', data => {
