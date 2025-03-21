@@ -40,6 +40,7 @@ public class AuthorInfoService {
         queryWrapper.orderByDesc("last_timestamp");
         queryWrapper.select("author_id", "first_author_name", "last_author_name", "author_image");
         queryWrapper.last("limit 5");
+        queryWrapper.ne("blocked", 1);
         if(StringUtils.isNotBlank(year) && !year.equals(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year);
         }
@@ -53,6 +54,7 @@ public class AuthorInfoService {
         if(StringUtils.isNotBlank(lastAuthorName)){
             WrapperUtil.keyWordsLike(queryWrapper, lastAuthorName, "last_author_name");
         }
+        queryWrapper.ne("blocked", 1);
         if(StringUtils.isNotBlank(year) && !year.equals(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year);
         }
@@ -62,6 +64,10 @@ public class AuthorInfoService {
             queryWrapper.orderByDesc("last_author_name");
             if(StringUtils.isNotBlank(lastAuthorName)){
                 WrapperUtil.keyWordsLike(queryWrapper, lastAuthorName, "first_author_name");
+            }
+            queryWrapper.ne("blocked", 1);
+            if(StringUtils.isNotBlank(year) && !year.equals(Constant.DEFAULT_YEAR)){
+                DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year);
             }
             authorInfoList = authorInfoMapper.selectList(queryWrapper);
         }

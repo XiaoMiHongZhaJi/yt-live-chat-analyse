@@ -21,6 +21,7 @@ CREATE TABLE srt_data (
   start_time VARCHAR(30) DEFAULT NULL COMMENT '开始时间',
   end_time VARCHAR(30) DEFAULT NULL COMMENT '结束时间',
   content VARCHAR(600) DEFAULT NULL COMMENT '内容',
+  update_time datetime default now() comment '更新时间',
   PRIMARY KEY (id)
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
@@ -38,6 +39,7 @@ CREATE TABLE live_chat_data (
   time_text VARCHAR(30) DEFAULT NULL COMMENT '发送时刻',
   TIMESTAMP BIGINT(20) DEFAULT NULL COMMENT '发送时间戳',
   emotes_count INT(11) DEFAULT 0 COMMENT '颜文字个数',
+  blocked TINYINT DEFAULT 0 COMMENT '是否屏蔽，0：不屏蔽，1：屏蔽',
   PRIMARY KEY (id)
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
@@ -55,6 +57,7 @@ CREATE TABLE living_chat_data (
   time_text VARCHAR(30) DEFAULT NULL COMMENT '发送时刻',
   TIMESTAMP BIGINT(20) DEFAULT NULL COMMENT '发送时间戳',
   emotes_count INT(11) DEFAULT 0 COMMENT '颜文字个数',
+  blocked TINYINT DEFAULT 0 COMMENT '是否屏蔽，0：不屏蔽，1：屏蔽',
   PRIMARY KEY (id)
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
@@ -71,6 +74,7 @@ CREATE TABLE hot_list (
   end_time VARCHAR(30) DEFAULT NULL COMMENT '结束时间',
   messages json DEFAULT NULL COMMENT '相关弹幕',
   # messages text DEFAULT NULL COMMENT '相关弹幕', #低版本用text
+  update_time datetime default now() comment '更新时间',
   PRIMARY KEY (id)
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
@@ -88,11 +92,11 @@ CREATE TABLE live_info (
     living_chat_count INT(11) DEFAULT NULL COMMENT '直播弹幕数',
     srt_count INT(11) DEFAULT NULL COMMENT '字幕数',
     platform VARCHAR(1) DEFAULT NULL COMMENT '开播平台，y：YouTube，t：twitch',
-    start_timestamp BIGINT(20) DEFAULT NULL COMMENT '开播时间戳，默认取第一个“开了”、“来了”的时间',
+    start_timestamp BIGINT(20) DEFAULT NULL COMMENT '开播时间戳',
     duration_time varchar(10) DEFAULT NULL COMMENT '持续时长',
     live_status varchar(1) default '0' null comment '开播状态，0：直播预告，1：直播中，2：直播结束，4：已删除',
     download_status varchar(1) default '0' null comment '弹幕下载状态，0：未下载，1：正在下载，2：已下载，4：下载失败',
-    update_time datetime null comment '更新时间',
+    update_time datetime default now() comment '更新时间',
     PRIMARY KEY (id)
 ) ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
@@ -107,9 +111,9 @@ CREATE TABLE live_info_log (
   like_count varchar(10) DEFAULT NULL COMMENT '点赞人数',
   living_chat_count int(11) DEFAULT NULL COMMENT '直播弹幕数',
   platform varchar(1) DEFAULT NULL COMMENT '开播平台，y：YouTube，t：twitch',
-  update_timestamp bigint(20) DEFAULT NULL COMMENT '开播时间戳，默认取第一个“开了”、“来了”的时间',
+  update_timestamp bigint(20) DEFAULT NULL COMMENT '开播时间戳',
   live_status varchar(1) DEFAULT '0' COMMENT '开播状态，0：直播预告，1：直播中，2：直播结束，4：已删除',
-  update_time datetime DEFAULT NULL COMMENT '更新时间',
+  update_time datetime DEFAULT now() COMMENT '更新时间',
   PRIMARY KEY (id)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
@@ -124,13 +128,13 @@ CREATE TABLE video_info (
   like_count varchar(10) DEFAULT NULL COMMENT '点赞人数',
   platform varchar(1) DEFAULT NULL COMMENT '开播平台，y：YouTube，t：twitch',
   duration_time varchar(10) DEFAULT NULL COMMENT '持续时长',
-  update_time datetime DEFAULT NULL COMMENT '最后更新时间',
+  update_time datetime DEFAULT now() COMMENT '最后更新时间',
   comment_count int(11) DEFAULT NULL COMMENT '评论数',
   down_song_status varchar(1) DEFAULT '0' COMMENT '下歌曲下载状态，0：未下载 1：已下载',
   PRIMARY KEY (id)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE yt_live_chat_analyse.author_info (
+CREATE TABLE author_info (
   id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
   author_id VARCHAR(30) NOT NULL COMMENT '用户id',
   first_live_date VARCHAR(30) DEFAULT NULL COMMENT '首次发言所在的直播日期',
@@ -145,9 +149,18 @@ CREATE TABLE yt_live_chat_analyse.author_info (
   last_timestamp BIGINT(20) DEFAULT NULL COMMENT '最近一次发言的时间戳',
   author_image VARCHAR(200) DEFAULT NULL COMMENT '用户头像',
   message_count INT DEFAULT NULL COMMENT '用户总发言次数',
-  update_time DATETIME DEFAULT NULL COMMENT '最后更新时间',
+  update_time DATETIME DEFAULT now() COMMENT '最后更新时间',
+  blocked TINYINT DEFAULT 0 COMMENT '是否屏蔽，0：不屏蔽，1：屏蔽',
   PRIMARY KEY (id)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='用户信息统计';
+
+CREATE TABLE blocked_keywords (
+  id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',
+  keywords VARCHAR(30) NOT NULL COMMENT '屏蔽词关键字',
+  blocked_type TINYINT DEFAULT 0 COMMENT '屏蔽类型，-1：不启用，0：消息和用户名，1：仅消息，2：仅用户名',
+  update_time DATETIME DEFAULT now() COMMENT '最后更新时间',
+  PRIMARY KEY (id)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='屏蔽词信息';
 
 
 
