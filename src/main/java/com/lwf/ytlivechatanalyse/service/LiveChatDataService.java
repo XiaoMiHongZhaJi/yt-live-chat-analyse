@@ -74,7 +74,7 @@ public class LiveChatDataService {
         if(StringUtils.isNotBlank(liveDate)){
             queryWrapper.likeRight("live_date", liveDate);
         }
-        queryWrapper.ne("blocked", 1);
+        queryWrapper.eq("blocked", 0);
         queryWrapper.orderBy(true, isAsc, "timestamp");
         if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
@@ -107,7 +107,7 @@ public class LiveChatDataService {
         if(StringUtils.isNotBlank(liveDate)){
             queryWrapper.likeRight("live_date", liveDate);
         }
-        queryWrapper.ne("blocked", 1);
+        queryWrapper.eq("blocked", 0);
         queryWrapper.orderBy(true, isAsc, "timestamp");
         if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
@@ -135,7 +135,7 @@ public class LiveChatDataService {
         //录像
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
         queryWrapper.likeRight("live_date", liveDate);
-        queryWrapper.ne("blocked", 1);
+        queryWrapper.eq("blocked", 0);
         if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
@@ -146,7 +146,7 @@ public class LiveChatDataService {
         //直播中，直播预告
         QueryWrapper<LivingChatData> queryWrapper = new QueryWrapper<>();
         queryWrapper.likeRight("live_date", liveDate);
-        queryWrapper.ne("blocked", 1);
+        queryWrapper.eq("blocked", 0);
         if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
