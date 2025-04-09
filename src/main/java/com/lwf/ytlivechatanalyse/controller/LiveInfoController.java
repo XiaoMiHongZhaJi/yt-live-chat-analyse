@@ -52,13 +52,25 @@ public class LiveInfoController {
             response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
             return new Result<>(500, "认证失败");
         }
-        liveInfoService.addLiveInfo(liveInfo, downLiveChat, getLiveInfo);
+        String url = liveInfo.getUrl();
+        if(StringUtils.isBlank(url)){
+            return new Result<>(500, "url不能为空");
+        }
+        String result;
+        if(url.contains("you")){
+            result = liveInfoService.addYoutubeLiveInfo(liveInfo, downLiveChat, getLiveInfo);
+        }else{
+            result = liveInfoService.addTwitchLiveInfo(liveInfo, downLiveChat);
+        }
         //从文件导入
         if(file != null){
             String filename = file.getOriginalFilename();
             if(filename != null && filename.endsWith("json")){
                 liveChatDataService.importJsonFile(file, liveInfo.getLiveDate());
             }
+        }
+        if(StringUtils.isNotBlank(result)){
+            return new Result<>(500, result);
         }
         return new Result<>(200, "新增成功");
     }

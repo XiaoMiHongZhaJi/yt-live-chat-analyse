@@ -39,26 +39,12 @@ public class LiveInfoService {
     @Autowired
     LiveChatDataService liveChatDataService;
 
-    public void insertOrUpdate(LiveInfo liveInfo) {
-        QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
+    public void insertLiveInfo(LiveInfo liveInfo) {
         String liveDate = liveInfo.getLiveDate();
-        int index = liveDate.indexOf("_");
-        if(index > -1){
-            liveDate = liveDate.substring(0, index);
-        }
-        queryWrapper.likeRight("live_date", liveDate);
         if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
-        List<LiveInfo> liveInfoList = liveInfoMapper.selectList(queryWrapper);
-        if (liveInfoList.size() == 0){
-            liveInfoMapper.insert(liveInfo);
-        }else{
-            liveInfo.setId(liveInfoList.get(0).getId());
-            if("y".equals(liveInfo.getPlatform())){
-                liveInfoMapper.updateById(liveInfo);
-            }
-        }
+        liveInfoMapper.insert(liveInfo);
     }
 
     public List<LiveInfo> queryListBySelector(LiveInfo liveInfo){
@@ -137,56 +123,114 @@ public class LiveInfoService {
         return liveInfoMapper.update(liveInfo, updateWrapper);
     }
 
-    public void addLiveInfo(LiveInfo liveInfo, boolean downLiveChat, boolean getLiveInfo) {
+    public String addYoutubeLiveInfo(LiveInfo liveInfo, boolean downLiveChat, boolean getLiveInfo) {
         String url = liveInfo.getUrl();
-        if(url != null && url.contains("youtube")){
-            liveInfo.setPlatform("y");
-            if(getLiveInfo){
-                //补全信息
-                Map<String, String> info = CurlUtil.getLiveInfo(liveInfo.getUrl());
-                addLiveInfoLog(url, info);
-                if(StringUtils.isNotBlank(info.get("viewCount"))){
-                    liveInfo.setViewCount(Integer.valueOf(info.get("viewCount")));
-                }
-                if(StringUtils.isNotBlank(info.get("likeCount"))){
-                    liveInfo.setLikeCount(info.get("likeCount"));
-                }
-                if(StringUtils.isBlank(liveInfo.getTitle())){
-                    liveInfo.setTitle(info.get("title"));
-                }
-                if(StringUtils.isBlank(liveInfo.getLiveStatus())){
-                    liveInfo.setLiveStatus(info.get("liveStatus"));
-                }
-                if(StringUtils.isBlank(liveInfo.getLiveDate())){
-                    liveInfo.setLiveDate(info.get("liveDate"));
-                }
-                if(liveInfo.getStartTimestamp() == null && LiveInfo.LIVE_STATUS_LIVEING.equals(liveInfo.getLiveStatus())){
-                    String startTimestamp = info.get("startTimestamp");
-                    if(StringUtils.isNotBlank(startTimestamp)){
-                        liveInfo.setStartTimestamp(Long.valueOf(startTimestamp));
-                    }
-                }
+        liveInfo.setPlatform("y");
+        if(getLiveInfo){
+            //补全信息
+            Map<String, String> info = CurlUtil.getLiveInfo(liveInfo.getUrl());
+            addLiveInfoLog(url, info);
+            if(StringUtils.isNotBlank(info.get("viewCount"))){
+                liveInfo.setViewCount(Integer.valueOf(info.get("viewCount")));
+            }
+            if(StringUtils.isNotBlank(info.get("likeCount"))){
+                liveInfo.setLikeCount(info.get("likeCount"));
+            }
+            if(StringUtils.isBlank(liveInfo.getTitle())){
+                liveInfo.setTitle(info.get("title"));
+            }
+            if(StringUtils.isBlank(liveInfo.getLiveStatus())){
+                liveInfo.setLiveStatus(info.get("liveStatus"));
             }
             if(StringUtils.isBlank(liveInfo.getLiveDate())){
-                liveInfo.setLiveDate(DateUtil.getNowDate());
+                liveInfo.setLiveDate(info.get("liveDate"));
             }
-        }else{
-            liveInfo.setPlatform("t");
-            liveInfo.setLiveStatus(LiveInfo.LIVE_STATUS_PREVIEW);
-            if(StringUtils.isBlank(liveInfo.getLiveDate())) {
-                liveInfo.setLiveDate(DateUtil.getNowDate() + "_t");
-                if(url != null && url.contains("luoshushu")){
-                    liveInfo.setLiveDate(DateUtil.getNowDate() + "_l");
+            if(liveInfo.getStartTimestamp() == null && LiveInfo.LIVE_STATUS_LIVEING.equals(liveInfo.getLiveStatus())){
+                String startTimestamp = info.get("startTimestamp");
+                if(StringUtils.isNotBlank(startTimestamp)){
+                    liveInfo.setStartTimestamp(Long.valueOf(startTimestamp));
                 }
             }
         }
-        if(url != null && StringUtils.isBlank(liveInfo.getTitle())){
-            liveInfo.setTitle(url.substring(url.lastIndexOf("/") + 1));
+        if(StringUtils.isBlank(liveInfo.getLiveDate())){
+            liveInfo.setLiveDate(DateUtil.getNowDate());
         }
-        insertOrUpdate(liveInfo);
+        if(StringUtils.isBlank(liveInfo.getTitle())){
+            liveInfo.setTitle(url.substring(url.lastIndexOf("=") + 1));
+        }
+        String liveDate = liveInfo.getLiveDate();
+        // 判断 url 是否已存在，若已存在，则不再添加
+        Long urlCount = getUrlCount(url, liveDate);
+        if(urlCount > 0){
+            logger.warn("{} url 已存在，不再添加", url);
+            return "url 已存在";
+        }
+        // 判断 Title 是否已存在，若已存在，则重命名
+        Long titleCount = getTitleCount(liveDate);
+        int i = 0;
+        while (titleCount > 0){
+            i ++;
+            if(i >= 10){
+                logger.error("{} Title 已存在，尝试次数过多", liveDate);
+                return "Title 已存在，尝试次数过多";
+            }
+            logger.warn("{} Title 已存在，尝试更换", liveDate);
+            liveDate = String.format("%s_0%s", liveInfo.getLiveDate(), i);
+            liveInfo.setLiveDate(liveDate);
+            titleCount = getTitleCount(liveDate);
+        }
+        insertLiveInfo(liveInfo);
         if(downLiveChat){
             downloadChatData(liveInfo);
         }
+        return null;
+    }
+
+    public String addTwitchLiveInfo(LiveInfo liveInfo, boolean downLiveChat) {
+        String url = liveInfo.getUrl();
+        // twitch平台
+        liveInfo.setPlatform("t");
+        liveInfo.setLiveStatus(LiveInfo.LIVE_STATUS_PREVIEW);
+        // 补全信息
+        if(StringUtils.isBlank(liveInfo.getLiveDate())) {
+            liveInfo.setLiveDate(DateUtil.getNowDate() + "_t");
+            if(url.contains("luoshushu")){
+                liveInfo.setLiveDate(DateUtil.getNowDate() + "_l");
+            }
+        }
+        if(StringUtils.isBlank(liveInfo.getTitle())){
+            liveInfo.setTitle(url.substring(url.lastIndexOf("/") + 1));
+        }
+        String liveDate = liveInfo.getLiveDate();
+        // 判断 Title 是否已存在，若已存在，则不再添加
+        Long titleCount = getTitleCount(liveDate);
+        if (titleCount == 0){
+            insertLiveInfo(liveInfo);
+        }
+        if(downLiveChat){
+            downloadChatData(liveInfo);
+        }
+        return null;
+    }
+
+    private Long getUrlCount(String url, String liveDate) {
+        QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
+        queryWrapper.eq("url", url);
+        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+        }
+        return liveInfoMapper.selectCount(queryWrapper);
+    }
+
+    private Long getTitleCount(String liveDate) {
+        QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
+        queryWrapper.eq("live_date", liveDate);
+        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+        }
+        return liveInfoMapper.selectCount(queryWrapper);
     }
 
     public void downloadChatData(LiveInfo liveInfo) {
