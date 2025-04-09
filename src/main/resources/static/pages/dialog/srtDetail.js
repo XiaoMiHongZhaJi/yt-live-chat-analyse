@@ -1,16 +1,15 @@
 
-function showSrtDetailDialog(liveDate, serial, url){
+function showSrtDetailDialog(liveDate, serial, currentLiveInfo){
     const size = getWindowSize();
     const $ = layui.jquery;
     const table = layui.table;
-    let currentLiveInfo = null;
+    const url = getLiveUrl(currentLiveInfo, liveDate);
     showDialog("dialog/srtDetail.html", {
         title: "附近字幕",
         area: [Math.min(800, size[0]) + 'px', Math.min(800, size[1]) + 'px'],
         success: function (layero){
-            let currentLiveInfo = null;
             const cols = [[
-                {field: 'liveDate', width: 120, title: '日期', sort: true, hide: true},
+                {field: 'liveDate', width: 120, title: '日期', sort: true},
                 {field: 'serial', width: 90, title: '序号', sort: true, align: "right"},
                 {field: 'startTime', width: 90, title: '时间', sort: true, align: "right", templet: (d)=>{
                         const startTime = d.startTime.split(",")[0];
@@ -23,7 +22,6 @@ function showSrtDetailDialog(liveDate, serial, url){
                         const content = d.content;
                         const currentSerial = d.serial;
                         if (serial == currentSerial){
-                            console.log(d,e)
                             return `<span class="selected">${content}</span>`;
                         }
                         return content;
@@ -42,7 +40,20 @@ function showSrtDetailDialog(liveDate, serial, url){
                 done: function(res){
                     $("#srtDetailArea span.selected").closest("tr").css("background-color", "#ddd");
                 },
-                page: false
+                page: true,
+                limits: [20, 30, 50, 100],
+                limit: 20,
+            });
+            table.on('rowDouble(srtDetailTableFilter)', tr => {
+                const data = tr.data;
+                serial = data.serial;
+                table.reload('srtDetail', {
+                    where: {
+                        liveDate: liveDate,
+                        serial: serial
+                    }
+                });
+                return false;
             });
 
         },

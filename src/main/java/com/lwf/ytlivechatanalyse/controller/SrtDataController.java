@@ -25,7 +25,7 @@ public class SrtDataController {
     }
 
     @RequestMapping("/querySrtDetail")
-    public Result<SrtData> querySrtDetail(SrtData srtData, Integer startSerial, Integer endSerial){
-        return new Result<>(srtInfoService.selectSrtDetail(srtData, startSerial, endSerial));
+    public Result<SrtData> querySrtDetail(SrtData srtData, int limit){
+        return new Result<>(srtInfoService.selectSrtDetail(srtData, limit));
     }
 }

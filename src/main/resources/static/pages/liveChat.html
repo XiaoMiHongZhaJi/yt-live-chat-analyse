@@ -9,6 +9,7 @@
     <script src="../modules/layui/layui.js?t=2025_03_11"></script>
     <script src="../js/public.js?t=2025_03_20"></script>
     <script src="dialog/liveDetail.js?t=2025_03_20"></script>
+    <script src="dialog/liveChatDetail.js?t=2025_04_09"></script>
     <script src="../js/marked.min.js"></script>
     <script src="dialog/downloadBullet.js?t=2025_01_10"></script>
 </head>
@@ -64,8 +65,7 @@
                 </div>
             </form>
         </fieldset>
-        <table class="layui-hide" id="liveChatData" lay-filter="currentTableFilter">
-        </table>
+        <table class="layui-hide" id="liveChatData" lay-filter="liveChatTableFilter"></table>
     </div>
 </div>
 <script>
@@ -93,7 +93,7 @@
                     if(d.emotesCount){
                         message = getEmoteMssage(message);
                     }
-                    const scInfo = d.scInfo
+                    const scInfo = d.scInfo;
                     if(scInfo){
                         const index = scInfo.indexOf("#");
                         if(index > -1){
@@ -127,6 +127,11 @@
             page: true,
             limits: [10, 15, 20, 50, 100],
             limit: 15,
+        });
+        table.on('rowDouble(liveChatTableFilter)', tr => {
+            const data = tr.data;
+            showLiveChatDetailDialog(data.liveDate, data.id, currentLiveInfo);
+            return false;
         });
         // 监听搜索操作
         form.on('submit(search-btn)', data => {

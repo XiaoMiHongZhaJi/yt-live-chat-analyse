@@ -93,27 +93,24 @@ public class SrtDataService {
         return srtDataMapper.selectList(queryWrapper);
     }
 
-    public List<SrtData> selectSrtDetail(SrtData srtData, Integer startSerial, Integer endSerial) {
+    public List<SrtData> selectSrtDetail(SrtData srtData, int limit) {
         String liveDate = srtData.getLiveDate();
         QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
+        Integer serial = srtData.getSerial();
+        if(serial == null){
+            serial = 0;
+        }
+        int startSerial = serial - limit / 2;
+        int endSerial = serial + limit / 2;
+        queryWrapper.ge("serial", startSerial);
+        queryWrapper.lt("serial", endSerial);
+        queryWrapper.orderByAsc("id");
+        queryWrapper.last("limit " + limit);
         if(StringUtils.isNotBlank(liveDate)){
             queryWrapper.likeRight("live_date", liveDate);
-        }
-        Integer serial = srtData.getSerial();
-        if(serial != null && serial > 0){
-            startSerial = serial - 10;
-            endSerial = serial + 11;
-        }
-        if(startSerial != null && startSerial > 0){
-            queryWrapper.ge("serial", startSerial);
-        }
-        if(endSerial != null && endSerial > 0){
-            queryWrapper.lt("serial", endSerial);
-        }
-        queryWrapper.orderByAsc("id");
-        queryWrapper.last("limit 21");
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+            if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+                DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+            }
         }
         return srtDataMapper.selectList(queryWrapper);
     }

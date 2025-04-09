@@ -10,7 +10,7 @@
     <script src="../js/public.js?t=2025_03_20"></script>
     <script src="dialog/liveDetail.js?t=2025_03_20"></script>
     <script src="../js/marked.min.js"></script>
-    <script src="dialog/srtDetail.js?t=2025_03_20"></script>
+    <script src="dialog/srtDetail.js?t=2025_04_09"></script>
 </head>
 <body>
 <ul class="layui-nav layui-bg-cyan" lay-filter="demo">
@@ -89,7 +89,7 @@
         });
         table.on('rowDouble(srtInfoTableFilter)', tr => {
             const data = tr.data;
-            showSrtDetailDialog(data.liveDate, data.serial, getLiveUrl(currentLiveInfo, data.liveDate));
+            showSrtDetailDialog(data.liveDate, data.serial, currentLiveInfo);
             return false;
         });
         // 监听搜索操作

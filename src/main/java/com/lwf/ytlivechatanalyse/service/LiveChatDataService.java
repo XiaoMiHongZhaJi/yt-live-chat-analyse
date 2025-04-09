@@ -12,7 +12,6 @@ import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
 import com.lwf.ytlivechatanalyse.interceptor.DynamicSchemaInterceptor;
 import com.lwf.ytlivechatanalyse.util.Constant;
 import com.lwf.ytlivechatanalyse.util.JsonUtil;
-import com.lwf.ytlivechatanalyse.util.WrapperUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
@@ -30,7 +29,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 @Service
 public class LiveChatDataService {
@@ -202,6 +200,28 @@ public class LiveChatDataService {
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("live_date", liveDate);
         liveChatDataMapper.delete(queryWrapper);
+    }
+
+    public List<LiveChatData> selectLiveChatDetail(LiveChatData liveChatData, int limit) {
+        String liveDate = liveChatData.getLiveDate();
+        QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
+        Integer id = liveChatData.getId();
+        if(id == null){
+            id = 0;
+        }
+        int startId = id - limit / 2;
+        int endId = id + limit / 2;
+        queryWrapper.ge("id", startId);
+        queryWrapper.lt("id", endId);
+        queryWrapper.orderByAsc("id");
+        queryWrapper.last("limit " + limit);
+        if(StringUtils.isNotBlank(liveDate)){
+            queryWrapper.likeRight("live_date", liveDate);
+            if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
+                DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+            }
+        }
+        return liveChatDataMapper.selectList(queryWrapper);
     }
 
 
