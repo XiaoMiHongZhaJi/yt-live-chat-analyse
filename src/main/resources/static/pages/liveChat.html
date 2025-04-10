@@ -300,13 +300,18 @@
                 const msg = result.msg;
                 $("#downloadBullet").removeClass("layui-btn-disabled");
                 $("#downloadBullet span").text("下载弹幕");
-                if(code != 200){
+                if(code != 200 || !result.data){
                     layer.msg("下载失败，原因：" + msg);
                     return false;
                 }
-                const bulletContent = result.data[0];
-                const bulletFileName = result.data[1];
-                const bulletDetail = result.data[2];
+                const data = result.data;
+                if(data.length < 3){
+                    layer.msg("下载失败，原因：" + data[0]);
+                    return false;
+                }
+                const bulletDetail = data[0];
+                const bulletFileName = data[1];
+                const bulletContent = data[2];
                 // 创建Blob对象
                 var blob = new Blob([bulletContent], {type: 'text/plain'});
                 // 创建下载链接

@@ -53,25 +53,10 @@ public class BulletAssUtil {
         }
     }
 
-    public static void main(String[] args) throws Exception{
-
-        String liveDate = "2023-10-09";
-        Long startTimestamp = getStartTimestamp(liveDate);
-        startTimestamp = DateUtil.getTimestamp("2023-10-09_21-55-11");
-        List<LiveChatData> chatList = getChatList(liveDate);
-        if(chatList.size() == 0){
-            return;
-        }
-        initEmoteMapLocal();
-        BulletConfig config = new BulletConfig();
-//        config.setOffset(5558);
-        getAssFile(chatList, startTimestamp, config);
-    }
-
     /**
      * 生成ass弹幕文件
      */
-    public static Result getAssFile(List<LiveChatData> chatList, Long startTimestamp, BulletConfig config) {
+    public static List<String> getAssContent(List<LiveChatData> chatList, Long startTimestamp, BulletConfig config) {
         int offset = config.getOffset();
         int duringSecond = config.getDuringSecond();
         int fontSize = config.getFontSize();
@@ -218,14 +203,14 @@ public class BulletAssUtil {
             assContent.append("\n");
         }catch(Exception e){
             logger.error("生成ass文件失败", e);
-            return new Result(500, "生成ass文件失败：" + e.getMessage());
+            return null;
         }
         logger.info(log.toString());
-        List<String> result = new ArrayList();
-        result.add(assContent.toString());
-        result.add(fileName);
+        List<String> result = new ArrayList<>();
         result.add(log.toString());
-        return new Result(200, "生成ass文件成功", result);
+        result.add(fileName);
+        result.add(assContent.toString());
+        return result;
     }
 
     private static String getEmoteMssage(String message) {

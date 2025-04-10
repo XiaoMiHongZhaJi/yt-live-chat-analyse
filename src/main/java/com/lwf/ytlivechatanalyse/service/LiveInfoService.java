@@ -16,7 +16,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 
 @Service
@@ -385,32 +387,7 @@ public class LiveInfoService {
         liveInfoLogMapper.insert(liveInfoLog);
     }
 
-    public Result getBulletFile(String liveDate, String startTime, BulletConfig config) {
-        Long startTimestamp = null;
-        if(StringUtils.isBlank(startTime)){
-            LiveInfo liveInfo = new LiveInfo();
-            liveInfo.setLiveDate(liveDate);
-            liveInfo = selectOne(liveInfo);
-            if(liveInfo != null){
-                startTimestamp = liveInfo.getStartTimestamp();
-            }
-            logger.info("获取到开播信息中的startTimestamp：{}", startTimestamp);
-        }else if(startTime.startsWith("1") && StringUtils.isNumeric(startTime)){
-            //时间戳
-            startTime = String.format("%-16d", startTime).replace(" ", "0");
-            startTimestamp = Long.parseLong(startTime);
-        }else if(startTime.startsWith("202")){
-            //日期时间
-            startTimestamp = DateUtil.getTimestamp(startTime);
-            logger.info("获取到转换的startTimestamp：{}", startTimestamp);
-        }else if(startTime.startsWith("20:") && startTime.length() <= 8){
-            //时间
-            startTimestamp = DateUtil.getTimestamp(liveDate + startTime);
-            logger.info("获取到转换的startTimestamp：{}", startTimestamp);
-        }else{
-            logger.warn("输入的开播时间有误：{} {}", liveDate, startTime);
-            return new Result(500, "输入的开播时间有误");
-        }
+    public List<LiveChatData> getLiveChatData(String liveDate) {
         logger.info("开始获取弹幕数据");
         LiveChatData liveChatData = new LiveChatData();
         liveChatData.setLiveDate(liveDate);
@@ -419,14 +396,47 @@ public class LiveInfoService {
             List<LivingChatData> livingChatData = liveChatDataService.selectLivingList(liveChatData, true);
             chatList.addAll(livingChatData);
         }
-        if(CollectionUtils.isEmpty(chatList)){
-            logger.warn("所选日期无弹幕数据：{} {}", liveDate, startTime);
-            return new Result(500, "所选日期无弹幕数据");
+        return chatList;
+    }
+
+    public List<String> getBulletContent(List<LiveChatData> chatList, Long startTimestamp, BulletConfig config) {
+        logger.info("开始生成弹幕ass文件：{} {}", startTimestamp, config);
+        return BulletAssUtil.getAssContent(chatList, startTimestamp, config);
+    }
+
+    public File getBulletFile(String bulletContent, String fileName) {
+        String filePath = "bullet/ass";
+        File floder = new File(filePath);
+        if(!floder.exists()){
+            floder.mkdirs();
         }
-        logger.info("开始生成弹幕ass文件：{} {}", liveDate, startTime);
-        if(config == null){
-            config = new BulletConfig();
+        filePath = floder.getAbsolutePath();
+        if(filePath.contains("\\")){
+            filePath = filePath + "\\";
         }
-        return BulletAssUtil.getAssFile(chatList, startTimestamp, config);
+        if(filePath.contains("/")){
+            filePath = filePath + "/";
+        }
+        File file = new File(filePath + fileName);
+        if(file.exists()){
+            return file;
+        }
+        BufferedWriter writer = null;
+        try{
+            writer = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(file.toPath()), StandardCharsets.UTF_8));
+            writer.write(bulletContent);
+            writer.flush();
+        }catch(Exception e){
+            logger.error("生成弹幕文件失败", e);
+        }finally{
+            try {
+                if(writer != null){
+                    writer.close();
+                }
+            }catch(IOException e){
+                logger.error("关闭流失败", e);
+            }
+        }
+        return file;
     }
 }

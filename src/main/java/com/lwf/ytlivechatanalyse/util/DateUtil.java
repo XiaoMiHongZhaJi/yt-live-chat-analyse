@@ -16,7 +16,12 @@ public class DateUtil {
     private static final Logger logger = LoggerFactory.getLogger(DateUtil.class);
 
     public static void main(String[] args) {
-        System.out.println(getTimestamp("2023-09-23 20:42:40"));
+        System.out.println(getTimestamp("2025-09-23 20:42:40"));
+        System.out.println(getTimestamp("25-09-23 20:42:40"));
+        System.out.println(getTimestamp("09-23 20:42:40"));
+        System.out.println(getTimestamp("20250923204240"));
+        System.out.println(getTimestamp("250923204240"));
+        System.out.println(getTimestamp("0923204240"));
         System.out.println(getDateTime(1696859711l));
         System.out.println(getDayBefore("6小时前"));
     }
@@ -26,18 +31,37 @@ public class DateUtil {
      */
     public static long getTimestamp(String dateTime){
         int length = StringUtils.length(dateTime);
-        if(length < 12){
+        if(length < 10){
             return 0;
         }
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
-        int index = dateTime.indexOf("+");
-        if(index > -1){
-            format.setTimeZone(TimeZone.getTimeZone("GMT+" + dateTime.substring(index)));
+        if(StringUtils.isNumeric(dateTime)){
+            //纯数字
+            //补充完整年份
+            if(dateTime.startsWith("2") && !dateTime.startsWith("202")){
+                // 230101204000
+                dateTime = "20" + dateTime;
+            }else if((dateTime.startsWith("0") || dateTime.startsWith("1")) && length == 10){
+                // 0101204000
+                dateTime = DateUtil.getNowDate().substring(0, 4) + dateTime;
+            }
         }else{
-            format.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+            //补充完整年份
+            if(dateTime.startsWith("2") && dateTime.indexOf("-") == 2){
+                // 23-01-01 20:40:00
+                dateTime = "20" + dateTime;
+            }else if((dateTime.startsWith("0") || dateTime.startsWith("1"))&& dateTime.indexOf("-") == 2){
+                // 01-01 20:40:00
+                dateTime = DateUtil.getNowDate().substring(0, 5) + dateTime;
+            }
+            int index = dateTime.indexOf("+");
+            if(index > -1){
+                format.setTimeZone(TimeZone.getTimeZone("GMT+" + dateTime.substring(index)));
+            }else{
+                format.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+            }
+            dateTime = dateTime.replaceAll("[^0-9]", "");
         }
-        dateTime = dateTime.replaceAll("[^0-9]", "");
-        dateTime = String.format("%-14s", dateTime).replace(" ", "0");
         if(dateTime.length() > 14){
             dateTime = dateTime.substring(0, 14);
         }
