@@ -1,0 +1,15 @@
+###
+POST https://livechat.cyf.mom/liveInfo/addLiveInfo
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="liveDate"
+Content-Type: text/plain
+
+2025-04-21_l
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="file.json"
+Content-Type: application/json
+
+< E:\Videos\直播录像\2025-04-21\2025-04-21_05_10_02_l.json
+--WebAppBoundary--

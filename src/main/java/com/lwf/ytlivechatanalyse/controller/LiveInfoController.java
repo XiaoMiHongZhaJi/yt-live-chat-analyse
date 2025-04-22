@@ -60,6 +60,14 @@ public class LiveInfoController {
         }
         String url = liveInfo.getUrl();
         if(StringUtils.isBlank(url)){
+            //从文件导入
+            if(file != null){
+                String filename = file.getOriginalFilename();
+                if(filename != null && filename.endsWith("json")){
+                    String importResult = liveChatDataService.importJsonFile(file, liveInfo.getLiveDate());
+                    return new Result<>(200, importResult);
+                }
+            }
             return new Result<>(500, "url不能为空");
         }
         String result;
@@ -67,13 +75,6 @@ public class LiveInfoController {
             result = liveInfoService.addYoutubeLiveInfo(liveInfo, downLiveChat, getLiveInfo);
         }else{
             result = liveInfoService.addTwitchLiveInfo(liveInfo, downLiveChat);
-        }
-        //从文件导入
-        if(file != null){
-            String filename = file.getOriginalFilename();
-            if(filename != null && filename.endsWith("json")){
-                liveChatDataService.importJsonFile(file, liveInfo.getLiveDate());
-            }
         }
         if(StringUtils.isNotBlank(result)){
             return new Result<>(500, result);
