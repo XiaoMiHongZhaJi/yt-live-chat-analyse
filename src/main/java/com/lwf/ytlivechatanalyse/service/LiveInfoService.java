@@ -53,7 +53,7 @@ public class LiveInfoService {
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.orderByDesc("live_date");
-        queryWrapper.select("live_date", "title", "url", "id", "live_status", "download_status", "start_timestamp");
+        queryWrapper.select("id", "live_date", "title", "url", "live_status", "download_status", "start_timestamp");
         if(liveInfo.getSrtCount() != null && liveInfo.getSrtCount() > 0){
             queryWrapper.gt("srt_count", 0);
         }
@@ -98,6 +98,7 @@ public class LiveInfoService {
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.orderByDesc("live_date");
+        queryWrapper.select("id", "live_date", "title", "url", "live_status", "download_status", "view_count", "like_count", "srt_count", "live_chat_count", "living_chat_count", "platform", "start_timestamp");
         if(StringUtils.isNotBlank(year) && !year.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year);
         }

@@ -7,6 +7,9 @@ function showFormData($, layero, data) {
             if (name.indexOf("Count") > -1) {
                 value = formatNum(value);
             }
+            if (name == "liveDate" && input.val()) {
+                return;
+            }
             input.val(value);
         }
     })
