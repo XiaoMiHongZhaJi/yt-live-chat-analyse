@@ -8,8 +8,8 @@ function showDownloadBulletDialog(downloadBullet){
             const liveInfo = $("#liveDate option:selected").data("liveInfo");
             let startTimestamp = liveInfo.startTimestamp;
             if(startTimestamp){
-                const startTime = new Date(startTimestamp / 1000).toLocaleString("zh-CN");
-                $(layero).find("input[name='startTime']").val(startTime.replace(/\//g, "-"));
+                const startTime = formatTime(startTimestamp);
+                $(layero).find("input[name='startTime']").val(startTime);
             }
             form.render();
         },

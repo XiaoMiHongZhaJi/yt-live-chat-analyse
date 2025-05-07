@@ -106,13 +106,13 @@
                     return message;
                 }},
             {field: 'timeText', width: 90, title: '时间', sort: true, align: "right", templet: (d)=>{
-                    const timestamp = d.timestamp / 1000;
-                    const title = "发送时间：" + new Date(timestamp).toLocaleString();
+                    const sendDateTime = formatTime(d.timestamp / 1000);
+                    const title = "发送时间：" + sendDateTime;
                     const timeText = d.timeText;
                     if (timeText){
                         return getUrlTag(getLiveUrl(currentLiveInfo, d.liveDate), timeText, title);
                     }
-                    const sendTime = new Date(timestamp).toLocaleTimeString()
+                    const sendTime = sendDateTime.substring(11);
                     return `<span title="${title}">${sendTime}</span>`;
                 }},
         ]];

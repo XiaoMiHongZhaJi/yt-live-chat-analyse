@@ -194,15 +194,20 @@ public class LiveInfoController {
         //用于定时器更新
         List<LiveInfo> liveInfoList = liveInfoService.queryListById(ids);
         for(LiveInfo liveInfo : liveInfoList){
+            String liveDate = liveInfo.getLiveDate();
             LiveInfo updateLiveInfo = new LiveInfo();
             updateLiveInfo.setId(liveInfo.getId());
             if(LiveInfo.LIVE_STATUS_DONE.equals(liveInfo.getLiveStatus())){
                 //录像
-                liveInfo.setLiveChatCount(liveChatDataService.selectCount(liveInfo.getLiveDate()));
-                updateLiveInfo.setLiveChatCount(liveInfo.getLiveChatCount());
+                if(liveInfo.getLiveChatCount() == null) {
+                    int liveChatCount = liveChatDataService.selectCount(liveDate);
+                    liveInfo.setLiveChatCount(liveChatCount);
+                    updateLiveInfo.setLiveChatCount(liveChatCount);
+                }
             }else{
-                liveInfo.setLivingChatCount(liveChatDataService.selectLivingCount(liveInfo.getLiveDate()));
-                updateLiveInfo.setLivingChatCount(liveInfo.getLivingChatCount());
+                int livingChatCount = liveChatDataService.selectLivingCount(liveDate);
+                liveInfo.setLivingChatCount(livingChatCount);
+                updateLiveInfo.setLivingChatCount(livingChatCount);
             }
             liveInfoService.updateLiveInfoById(updateLiveInfo);
         }
@@ -241,16 +246,21 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/updateLiveInfo")
-    public void updateLiveInfo(LiveInfo liveInfo){
-        if(liveInfo == null || liveInfo.getId() == null){
-            throw new RuntimeException("更新失败");
+    public int updateLiveInfo(LiveInfo liveInfo){
+        if(liveInfo == null || StringUtils.isBlank(liveInfo.getLiveDate())){
+            throw new RuntimeException("更新失败：liveDate 不能为空");
         }
         String liveDate = liveInfo.getLiveDate();
-        if(StringUtils.isNotBlank(liveDate)){
+        if(liveInfo.getId() == null){
+            return liveInfoService.updateLiveInfoByDate(liveInfo);
+        }
+        if(liveInfo.getLiveChatCount() == null){
             liveInfo.setLiveChatCount(liveChatDataService.selectCount(liveDate));
+        }
+        if(liveInfo.getLivingChatCount() == null){
             liveInfo.setLivingChatCount(liveChatDataService.selectLivingCount(liveDate));
         }
-        liveInfoService.updateLiveInfoById(liveInfo);
+        return liveInfoService.updateLiveInfoById(liveInfo);
     }
 
     @RequestMapping("/getLiveInfo")

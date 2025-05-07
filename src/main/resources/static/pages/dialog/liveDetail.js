@@ -29,7 +29,7 @@ function showLiveDetailDialog(liveInfo){
                             span.text(formatNum(value));
                         } else if (name == "timeline") {
                             //时间线处理
-                            span.html(getTimeLine(marked.marked(value), data["url"]));
+                            span.html(getTimeLine(marked.marked(value), data["url"], data["startTimestamp"]));
                         } else if (name == "url") {
                             span.html('<a target="_blank" href="' + value + '">' + value + '</a>');
                         } else {
@@ -84,7 +84,7 @@ function showLiveDetailDialog(liveInfo){
     })
 }
 
-function getTimeLine(timeline, url){
+function getTimeLine(timeline, url, startTimestamp){
     const $ = layui.jquery;
     let html = '';
     $(timeline.split("\n")).each((i, e)=>{
@@ -97,7 +97,8 @@ function getTimeLine(timeline, url){
                 line += content.substring(0, index + 1);
                 const timeString = content.substring(index + 1)
                 if(!isNaN(timeString[0])){
-                    line += getUrlTag(url, timeString);
+                    const title = formatTime(startTimestamp, timeString);
+                    line += getUrlTag(url, timeString, title);
                 }else{
                     line += timeString;
                 }

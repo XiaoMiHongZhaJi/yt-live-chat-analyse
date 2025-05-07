@@ -250,6 +250,8 @@ function getUrlTag(url, time, title){
     }
     if(title){
         title = `title="${title}"`;
+    }else{
+        title = "";
     }
     if(url.indexOf("youtube") == -1){
         return `<a ${title} target="_blank" href="${url}">${time}</a>`;
@@ -314,6 +316,36 @@ function toNum(string){
         return string.replace(/[-, ]/g, "");
     }
     return "";
+}
+function formatTime(timestamp, offsetStr) {
+    // 自动识别时间戳单位（秒 / 毫秒 / 微秒）
+    let msTimestamp;
+    if (timestamp > 1e15) {
+        msTimestamp = Math.floor(timestamp / 1000); // 微秒 → 毫秒
+    } else if (timestamp > 1e12) {
+        msTimestamp = timestamp; // 已是毫秒
+    } else if (timestamp > 1e9) {
+        msTimestamp = timestamp * 1000; // 秒 → 毫秒
+    } else {
+        console.warn('时间戳过小或不合法');
+        return '';
+    }
+    if (offsetStr) {
+        const parts = offsetStr.split(':').map(Number);
+        let offsetSeconds = 0;
+        if (parts.length === 2) {
+            offsetSeconds = parts[0] * 60 + parts[1];
+        } else if (parts.length === 3) {
+            offsetSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+        } else {
+            console.warn('偏移格式应为 MM:SS 或 HH:MM:SS');
+        }
+        msTimestamp += offsetSeconds * 1000;
+    }
+    const date = new Date(msTimestamp);
+    const pad = n => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())} ` +
+        `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 function bindTripleClick(element, callback, interval = 500) {
     const dateLabel = document.getElementById('date-label');

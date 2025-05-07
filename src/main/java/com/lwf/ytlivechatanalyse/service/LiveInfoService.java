@@ -117,9 +117,9 @@ public class LiveInfoService {
 
     public int updateLiveInfoByDate(LiveInfo liveInfo){
         liveInfo.setUpdateTime(new Date());
-        UpdateWrapper<LiveInfo> updateWrapper = new UpdateWrapper<>();
-        updateWrapper.eq("live_date", liveInfo.getLiveDate());
         String liveDate = liveInfo.getLiveDate();
+        UpdateWrapper<LiveInfo> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("live_date", liveDate);
         if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }

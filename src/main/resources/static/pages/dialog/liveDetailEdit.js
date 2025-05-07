@@ -16,8 +16,8 @@ function showFormData($, layero, data) {
     let startTimestamp = data.startTimestamp;
     if(startTimestamp){
         startTimestamp = parseInt(startTimestamp / 1000);
-        const startTime = new Date(startTimestamp).toLocaleString("zh-CN");
-        $(layero).find("input[name='startTime']").val(startTime.replace(/\//g, "-"));
+        const startTime = formatTime(startTimestamp);
+        $(layero).find("input[name='startTime']").val(startTime);
         $(layero).find("input[name='startTimestamp']").val(parseInt(startTimestamp / 1000));
     }
 }
