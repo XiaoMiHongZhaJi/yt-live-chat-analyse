@@ -96,11 +96,14 @@ public class LiveInfoService {
 
     public List<LiveInfo> selectList(String year){
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
+        if(StringUtils.isNotBlank(year)){
+            queryWrapper.likeRight("live_date", year);
+        }
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.orderByDesc("live_date");
         queryWrapper.select("id", "live_date", "title", "url", "live_status", "download_status", "view_count", "like_count", "srt_count", "live_chat_count", "living_chat_count", "platform", "start_timestamp");
         if(StringUtils.isNotBlank(year) && !year.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year);
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year.substring(0, 4));
         }
         List<LiveInfo> liveInfoList = liveInfoMapper.selectList(queryWrapper);
         return liveInfoList;

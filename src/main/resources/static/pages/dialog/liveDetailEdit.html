@@ -15,6 +15,12 @@
     textarea::-webkit-scrollbar {
         display: none; /* 隐藏滚动条 */
     }
+    #liveDetailArea .layui-textarea {
+        width: 90%;
+        height: 90px;
+        min-height: 90px;
+        overflow:hidden;
+    }
 </style>
 <div id="liveDetailArea">
     <form class="layui-form" lay-filter="live-info-form" style="padding-top: 15px; min-width: 635px;">
@@ -122,7 +128,19 @@
         <div class="layui-form-item layui-form-text">
             <label class="layui-form-label">时间线</label>
             <div class="layui-input-block live-detail-div">
-                <textarea type="text" name="timeline" class="layui-textarea" style="width: 90%;height: 160px;overflow:auto;" placeholder="请输入时间线信息"></textarea>
+                <textarea type="text" name="timeline" class="layui-textarea" placeholder="请输入时间线信息"></textarea>
+            </div>
+        </div>
+        <div class="layui-form-item layui-form-text">
+            <label class="layui-form-label">导读</label>
+            <div class="layui-input-block live-detail-div">
+                <textarea type="text" name="summary" class="layui-textarea" placeholder="请输入时间线信息"></textarea>
+            </div>
+        </div>
+        <div class="layui-form-item layui-form-text">
+            <label class="layui-form-label">思维导图</label>
+            <div class="layui-input-block live-detail-div">
+                <textarea type="text" name="mindMap" class="layui-textarea" placeholder="请输入时间线信息"></textarea>
             </div>
         </div>
     </form>

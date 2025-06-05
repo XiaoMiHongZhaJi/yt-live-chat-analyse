@@ -12,7 +12,7 @@ function showLiveDetailDialog(liveInfo){
             liveDate: liveInfo.liveDate
         }
     }).then(data => {
-        if(data.timeline){
+        if(data.timeline || data.summary || data.mindMap){
             height = Math.min(850, size[1]) + 'px';
             width = Math.min(850, size[0]) + 'px';
         }
@@ -28,8 +28,14 @@ function showLiveDetailDialog(liveInfo){
                         if (name == "viewCount" || name == "likeCount") {
                             span.text(formatNum(value));
                         } else if (name == "timeline") {
-                            //时间线处理
-                            span.html(getTimeLine(marked.marked(value), data["url"], data["startTimestamp"]));
+                            //时间线
+                            span.html(getTimeLine(value, data["url"], data["startTimestamp"]));
+                        } else if (name == "summary") {
+                            //导读
+                            span.html(getSummary(marked.marked(value), data["url"], data["startTimestamp"]));
+                        } else if (name == "mindMap") {
+                            //脑图
+                            span.html(getMindMap(marked.marked(value)));
                         } else if (name == "url") {
                             span.html('<a target="_blank" href="' + value + '">' + value + '</a>');
                         } else {
@@ -51,7 +57,7 @@ function showLiveDetailDialog(liveInfo){
 
                     }
                 })
-                $(".timeline img").each((i, e) => {
+                $(".summary img").each((i, e) => {
                     const originalUrl = $(e).data("src");
                     $.ajax({
                         url: "../liveInfo/queryImgUrl",
@@ -68,6 +74,14 @@ function showLiveDetailDialog(liveInfo){
                         }
                     });
                 })
+                $(".mindMap li").click((e) => {
+                    e.stopPropagation();
+                    if(e.target.tagName == "STRONG"){
+                        $(e.target).closest("li").toggleClass('open');
+                    }else if ($(e.target).children('ul').length > 0) {
+                        $(e.target).toggleClass('open');
+                    }
+                });
             },
             btn: ["关闭"]
         })
@@ -87,7 +101,32 @@ function showLiveDetailDialog(liveInfo){
 function getTimeLine(timeline, url, startTimestamp){
     const $ = layui.jquery;
     let html = '';
-    $(timeline.split("\n")).each((i, e)=>{
+    $(timeline.split("\n")).each((i,e)=>{
+        if(!e){
+            html += '<p></p>';
+            return;
+        }
+        let line = '';
+        let bold = false;
+        $(e.replace("\t", " ").split(" ")).each((j,content)=>{
+            if(content && !isNaN(content[0]) && content.indexOf(":") > -1){
+                const title = formatTime(startTimestamp, content);
+                line += getUrlTag(url, content, title);
+                bold = true;
+            }else{
+                line += content;
+            }
+            line += " ";
+        })
+        html += `<p ${bold ? 'style="font-weight: bold;"' : ''}>${line}</p>`;
+    })
+    return html;
+}
+
+function getSummary(summary, url, startTimestamp){
+    const $ = layui.jquery;
+    let html = '';
+    $(summary.split("\n")).each((i, e)=>{
         let line = '';
         $(e.replace("\t", " ").split(" ")).each((j, content)=>{
             if(content.indexOf("src") > -1){
@@ -110,4 +149,8 @@ function getTimeLine(timeline, url, startTimestamp){
         html += line;
     })
     return html;
+}
+
+function getMindMap(mindMap){
+    return mindMap;
 }

@@ -294,11 +294,15 @@ public class LiveInfoController {
         if(filename == null || !filename.endsWith(".srt")){
             return new Result<>(500, "只能导入srt文件");
         }
-        Long count = srtDataService.importSrt(liveDate, file);
+        String errMsg = srtDataService.importSrt(liveDate, file);
+        Long count = srtDataService.selectCount(liveDate);
         LiveInfo liveInfo = new LiveInfo();
         liveInfo.setLiveDate(liveDate);
         liveInfo.setSrtCount(count.intValue());
         liveInfoService.updateLiveInfoByDate(liveInfo);
+        if(StringUtils.isNotBlank(errMsg)){
+            return new Result<>(200, String.format("导入部分出错，当前字幕条数：%d\n错误位置：%s", count, errMsg));
+        }
         return new Result<>(200, "导入完成，当前字幕条数：" + count);
     }
 

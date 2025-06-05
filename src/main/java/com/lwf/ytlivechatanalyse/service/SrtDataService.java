@@ -1,7 +1,6 @@
 package com.lwf.ytlivechatanalyse.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.github.pagehelper.PageInfo;
 import com.lwf.ytlivechatanalyse.bean.SrtData;
 import com.lwf.ytlivechatanalyse.dao.SrtDataMapper;
 import com.lwf.ytlivechatanalyse.interceptor.DynamicSchemaInterceptor;
@@ -17,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -30,43 +30,55 @@ public class SrtDataService {
     @Autowired
     SqlSessionFactory sqlSessionFactory;
 
-    public void batchInsert(String liveDate, List<SrtData> srtList){
+    public String batchInsert(String liveDate, List<SrtData> srtList) {
         SqlSession sqlSession = null;
-        try{
+        try {
             sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH);
-            if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            if (StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)) {
                 DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
             }
-            for (SrtData srtData : srtList){
+            for (SrtData srtData : srtList) {
                 srtData.setLiveDate(liveDate);
                 sqlSession.insert("com.lwf.ytlivechatanalyse.dao.SrtDataMapper.insert", srtData);
             }
             sqlSession.commit();
-        }catch (Exception e){
-            for (SrtData srtData : srtList){
+        } catch (Exception e) {
+            if (sqlSession != null) {
+                sqlSession.rollback();
+            }
+            logger.error("批量插入出错，已改为单个插入");
+            List<SrtData> errList = new ArrayList<>();
+            for (SrtData srtData : srtList) {
                 srtData.setLiveDate(liveDate);
-                if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+                if (StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)) {
                     DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
                 }
                 try {
                     srtDataMapper.insert(srtData);
-                }catch (Exception e1){
-                    logger.error("批量插入出错，已改为单笔插入，错误数据：", e1);
-                    logger.error(srtData.toString());
+                } catch (Exception e1) {
+                    logger.error("错误信息：", e1);
+                    errList.add(srtData);
                 }
             }
-        }finally {
-            if(sqlSession != null)
+            String errMsg = errList.toString();
+            logger.error("错误数据：" + errMsg);
+            return errMsg;
+        } finally {
+            if (sqlSession != null)
                 sqlSession.close();
         }
+        return "";
     }
 
-    public Long importSrt(String liveDate, MultipartFile file) {
+    public String importSrt(String liveDate, MultipartFile file) {
+        List<SrtData> srtList = SrtUtil.fileToSrt(file);
+        return batchInsert(liveDate, srtList);
+    }
+
+    public Long selectCount(String liveDate) {
         if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
         }
-        List<SrtData> srtList = SrtUtil.fileToSrt(file);
-        batchInsert(liveDate, srtList);
         QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("live_date", liveDate);
         return srtDataMapper.selectCount(queryWrapper);

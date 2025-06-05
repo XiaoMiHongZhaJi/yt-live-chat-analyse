@@ -19,7 +19,7 @@ public class Result<T> implements Serializable {
     private List<T> data;
 
     public Result(){
-        this.code = 0;
+        this.code = 200;
     }
 
     public Result(int code, String msg){
@@ -27,14 +27,15 @@ public class Result<T> implements Serializable {
         this.msg = msg;
     }
 
-    public Result(int code, String msg, List<T> data){
+    public Result(int code, String msg, List<T> list){
         this.code = code;
         this.msg = msg;
-        this.data = data;
+        this.data = list;
+        this.count = list.size();
     }
 
     public Result(List<T> list){
-        this.code = 0;
+        this.code = 200;
         this.data = list;
         this.count = list.size();
     }

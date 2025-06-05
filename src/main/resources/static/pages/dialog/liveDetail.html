@@ -15,16 +15,54 @@
         padding: 8px 18px;
         border-radius: 14px;
     }
-    .timeline h2 {
+    .timeline p{
+        margin-top: 4px;
+    }
+    .summary h2 {
         line-height: 30px;
         margin-top: 15px;
     }
-    .timeline h5 {
+    .summary h5 {
         line-height: 25px;
         margin-top: 5px;
     }
-    .timeline img {
+    .summary img {
         display: none;
+    }
+    .detail.mindMap > ul {
+        display: block;
+    }
+    .mindMap ul {
+        margin-left: 1em;
+        padding-left: 1em;
+        border-left: 1px dashed #ccc;
+        line-height: 25px;
+        display: none;
+    }
+    .mindMap li {
+        cursor: default;
+        margin: 0.2em 0;
+        list-style: none;
+        position: relative;
+    }
+    .mindMap li:has(ul) {
+        cursor: pointer;
+    }
+    .mindMap li::before {
+        content: "▶";
+        position: absolute;
+        left: -1.2em;
+        transition: transform 0.2s;
+    }
+    .mindMap .open > ul {
+        display: block;
+    }
+    .mindMap li.open::before {
+        transform: rotate(90deg);
+    }
+    /* 叶子节点不显示箭头 */
+    .mindMap li:not(:has(ul))::before {
+        content: "";
     }
 </style>
 <div id="liveDetailArea">
@@ -50,19 +88,17 @@
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label">播放数</label>
-                <div class="layui-input-block">
+                <div class="layui-input-inline">
                     <span class="detail" data-name="viewCount"></span>
                 </div>
-            </div>
-            <div class="layui-form-item">
                 <label class="layui-form-label">点赞数</label>
-                <div class="layui-input-block">
+                <div class="layui-input-inline">
                     <span class="detail" data-name="likeCount"></span>
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label">弹幕数</label>
-                <div class="layui-input-block">
+                <div class="layui-input-inline">
                     <span class="detail" data-name="chatCount"></span>
                 </div>
             </div>
@@ -70,6 +106,18 @@
                 <label class="layui-form-label">时间线</label>
                 <div class="layui-input-block">
                     <div class="detail timeline" data-name="timeline"></div>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">导读</label>
+                <div class="layui-input-block">
+                    <div class="detail summary" data-name="summary"></div>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">思维导图</label>
+                <div class="layui-input-block">
+                    <div class="detail mindMap" data-name="mindMap"></div>
                 </div>
             </div>
         </div>

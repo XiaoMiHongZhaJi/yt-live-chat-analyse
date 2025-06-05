@@ -15,7 +15,9 @@ public class LiveInfo {
     private String url;
     private String title;
     private String img;
-    private String timeline;
+    private String timeline; //时间线
+    private String summary; //AI总结
+    private String mindMap; //AI思维导图
     private Integer viewCount; //播放数
     private String likeCount; //点赞数
     private Integer liveChatCount; //录像弹幕数
