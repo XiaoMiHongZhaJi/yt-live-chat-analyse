@@ -42,13 +42,13 @@ function showLiveDetailEditDialog(liveInfo){
             title: "开播详情",
             area: [null, height],
             success: function(layero){
-                $(layero).find(".getInfo").click(() => {
+                layero.find(".getInfo").click(() => {
                     if($(this).hasClass("layui-btn-disabled")){
                         return;
                     }
-                    $(layero).find(".getInfo").addClass("layui-btn-disabled");
-                    const url = $(layero).find("input[name='url']").val();
-                    const cookie = $(layero).find("textarea[name='cookie']").val();
+                    layero.find(".getInfo").addClass("layui-btn-disabled");
+                    const url = layero.find("input[name='url']").val();
+                    const cookie = layero.find("textarea[name='cookie']").val();
                     if(!url){
                         layer.msg("请先输入URL");
                         return;
@@ -67,13 +67,13 @@ function showLiveDetailEditDialog(liveInfo){
                         }
                         showFormData($, layero, data);
                         layer.msg("已获取最新数据");
-                        $(layero).find(".getInfo").removeClass("layui-btn-disabled");
+                        layero.find(".getInfo").removeClass("layui-btn-disabled");
                         if(data.errInfo){
                             layer.msg(data.errInfo);
                         }
                     }, () => {
                         layer.msg("获取信息出错");
-                        $(layero).find(".getInfo").removeClass("layui-btn-disabled");
+                        layero.find(".getInfo").removeClass("layui-btn-disabled");
                     })
                 });
                 showFormData($, layero, data);
@@ -82,6 +82,9 @@ function showLiveDetailEditDialog(liveInfo){
                     elem: '#startTime',
                     type: 'datetime'
                 });
+                dragFile(layero.find("textarea[name='timeline']")[0])
+                dragFile(layero.find("textarea[name='summary']")[0])
+                dragFile(layero.find("textarea[name='mindMap']")[0])
             },
             btn: ["更新", "关闭"],
             yes: function (){

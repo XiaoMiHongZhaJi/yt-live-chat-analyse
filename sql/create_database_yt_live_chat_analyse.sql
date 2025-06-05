@@ -87,7 +87,7 @@ CREATE TABLE live_info (
     img VARCHAR(200) DEFAULT NULL COMMENT '标题图片地址',
     timeline TEXT DEFAULT NULL COMMENT '时间线',
     summary TEXT DEFAULT NULL COMMENT 'AI总结',
-    mindMap TEXT DEFAULT NULL COMMENT 'AI思维导图',
+    mind_map TEXT DEFAULT NULL COMMENT 'AI思维导图',
     view_count int(11) DEFAULT NULL COMMENT '观看人数',
     like_count varchar(10) DEFAULT NULL COMMENT '点赞人数',
     live_chat_count INT(11) DEFAULT NULL COMMENT '录像弹幕数',

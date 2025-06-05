@@ -370,3 +370,26 @@ function bindTripleClick(element, callback, interval = 500) {
         }
     });
 }
+// 支持拖动文件到文本框
+function dragFile(textarea) {
+    // 阻止默认行为
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        textarea.addEventListener(eventName, e => e.preventDefault());
+    });
+    textarea.addEventListener('dragover', () => textarea.classList.add('hover'));
+    textarea.addEventListener('dragleave', () => textarea.classList.remove('hover'));
+    textarea.addEventListener('drop', (e) => {
+        textarea.classList.remove('hover');
+        const file = e.dataTransfer.files[0];
+        if (file && /\.(md|txt|json|csv|xml|html?)$/i.test(file.name)) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                textarea.value = event.target.result;
+                layer.msg('复制成功');
+            };
+            reader.readAsText(file, 'utf-8');
+        } else {
+            layer.msg('不支持的文件类型，只支持文本类文档', {icon: 2});
+        }
+    });
+}
