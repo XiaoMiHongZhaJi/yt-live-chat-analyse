@@ -119,7 +119,7 @@ public class CurlUtil {
                 info.put("viewCount", livingViewCount);
                 if ("0".equals(livingViewCount)) {
                     String viewCount = jsonObject.getJSONObject("viewCount").getJSONObject("videoViewCountRenderer").getJSONObject("viewCount").getString("simpleText");
-                    viewCount = viewCount.replace("次观看", "").replace(",", "");
+                    viewCount = viewCount.replaceAll("次观看|views|,| ", "");
                     info.put("viewCount", viewCount);
                 }
             } catch (Exception e) {

@@ -78,7 +78,7 @@ public class LiveInfoService {
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         if(liveInfo.getId() != null){
             queryWrapper.eq("id", liveInfo.getId());
-        }else {
+        } else {
             if (StringUtils.isNotBlank(liveInfo.getLiveDate())) {
                 queryWrapper.eq("live_date", liveInfo.getLiveDate());
             }
@@ -87,6 +87,7 @@ public class LiveInfoService {
             }
         }
         queryWrapper.last("limit 1");
+        queryWrapper.orderByDesc("live_date");
         String liveDate = liveInfo.getLiveDate();
         if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
             DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
@@ -243,25 +244,26 @@ public class LiveInfoService {
         String url = liveInfo.getUrl();
         Integer id = liveInfo.getId();
         String liveDate = liveInfo.getLiveDate();
-        if(StringUtils.isBlank(url) || id == null || id == 0){
+        LiveInfo finalLiveInfo = selectOne(liveInfo);
+        if(finalLiveInfo == null){
+            return ;
+        }
+        // 检查是否已经在下载
+        if("y".equals(finalLiveInfo.getPlatform()) && LiveInfo.DOWNLOAD_STATUS_DOWNLOADING.equals(finalLiveInfo.getDownloadStatus())){
+            logger.info("{} 已在下载。当前时间：{}", url, DateUtil.getNowDateTime());
             return ;
         }
         //状态更新为下载中
         LiveInfo updateLiveInfo = new LiveInfo();
         updateLiveInfo.setId(id);
-        updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DOWNLOADING);
-        updateLiveInfoById(updateLiveInfo);
-        // 检查是否已经在下载
-        if("y".equals(liveInfo.getPlatform()) && LiveInfo.DOWNLOAD_STATUS_DOWNLOADING.equals(liveInfo.getDownloadStatus())){
-            logger.info("{} 已在下载。当前时间：{}", url, DateUtil.getNowDateTime());
-            return ;
-        }
         if("t".equals(liveInfo.getPlatform())){
             // twitch
             new Thread(() -> {
+                updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DOWNLOADING);
+                updateLiveInfoById(updateLiveInfo);
                 String fileName = DateUtil.getNowDateTime() + "_t_living.json";
                 CmdUtil.chatDownloader(url, liveDate, fileName);
-                updateLiveInfo.setLivingChatCount(liveChatDataService.selectLivingCount(liveInfo.getLiveDate()));
+                updateLiveInfo.setLivingChatCount(liveChatDataService.selectLivingCount(finalLiveInfo.getLiveDate()));
                 updateLiveInfo.setLiveStatus(LiveInfo.LIVE_STATUS_DONE);
                 updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
                 updateLiveInfoById(updateLiveInfo);
@@ -270,29 +272,13 @@ public class LiveInfoService {
         }else if(LiveInfo.LIVE_STATUS_DONE.equals(liveInfo.getLiveStatus())){
             //直播已结束，录像弹幕
             new Thread(() -> {
-                CmdUtil.chatDownloader(url, liveDate, liveDate + ".json");
-                int count = liveChatDataService.selectCount(liveInfo.getLiveDate());
-                if(count == 0){
-                    logger.error("{} 下载弹幕信息失败，条数为0，url：{}", liveDate, url);
-                    updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_FILURE);
-                    updateLiveInfoById(updateLiveInfo);
-                    return;
-                }
-                updateLiveInfo.setLiveChatCount(count);
-                logger.info("{} 下载弹幕信息完成，条数：{}", liveDate, count);
-                Integer asyncCount = liveChatDataMapper.asyncLivingChatData(liveDate);
-                logger.info("{} 同步弹幕信息完成，同步条数：{}", liveDate, asyncCount);
-                updateLiveInfo.setLivingChatCount(liveChatDataService.selectCount(liveInfo.getLiveDate()));
-                Long startTimestamp = liveChatDataService.selectStartTimestamp(liveDate);
-                if(startTimestamp != null){
-                    updateLiveInfo.setStartTimestamp(startTimestamp);
-                }
-                updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
-                updateLiveInfoById(updateLiveInfo);
+                downloadLiveChat(finalLiveInfo);
             }).start();
         }else{
             //直播中或预告状态
             new Thread(() ->{
+                updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DOWNLOADING);
+                updateLiveInfoById(updateLiveInfo);
                 for (int i = 0; i < Constant.DOWNLOAD_FAILURE_RETRY_COUNT; i++) {
                     String fileName = DateUtil.getNowDateTime() + "_living.json";
                     CmdUtil.chatDownloader(url, liveDate, fileName);
@@ -355,6 +341,35 @@ public class LiveInfoService {
         }
     }
 
+    public Long downloadLiveChat(LiveInfo liveInfo) {
+        String liveDate = liveInfo.getLiveDate();
+        String url = liveInfo.getUrl();
+        LiveInfo updateLiveInfo = new LiveInfo();
+        updateLiveInfo.setId(liveInfo.getId());
+        updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DOWNLOADING);
+        updateLiveInfoById(updateLiveInfo);
+        CmdUtil.chatDownloader(url, liveDate, liveDate + ".json");
+        int count = liveChatDataService.selectCount(liveDate);
+        if(count == 0){
+            logger.error("{} 下载弹幕信息失败，条数为0，url：{}", liveDate, url);
+            updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_FILURE);
+            updateLiveInfoById(updateLiveInfo);
+            return null;
+        }
+        updateLiveInfo.setLiveChatCount(count);
+        logger.info("{} 下载弹幕信息完成，条数：{}", liveDate, count);
+        Integer asyncCount = liveChatDataMapper.asyncLivingChatData(liveDate);
+        logger.info("{} 同步弹幕信息完成，同步条数：{}", liveDate, asyncCount);
+        updateLiveInfo.setLivingChatCount(liveChatDataService.selectCount(liveDate));
+        Long startTimestamp = liveChatDataService.selectStartTimestamp(liveDate);
+        if(startTimestamp != null){
+            updateLiveInfo.setStartTimestamp(startTimestamp);
+        }
+        updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
+        updateLiveInfoById(updateLiveInfo);
+        return startTimestamp;
+    }
+
     public LiveInfoLog queryLatestLog(String url, String liveDate){
         QueryWrapper<LiveInfoLog> queryWrapper = new QueryWrapper<>();
         if(StringUtils.isBlank(url)){
@@ -366,6 +381,13 @@ public class LiveInfoService {
         queryWrapper.last("limit 1");
         LiveInfoLog liveInfoLog = liveInfoLogMapper.selectOne(queryWrapper);
         return liveInfoLog;
+    }
+
+    public LiveInfo queryLastestLiveInfo() {
+        QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.orderByDesc("live_date");
+        queryWrapper.last("limit 1");
+        return liveInfoMapper.selectOne(queryWrapper);
     }
 
     public void addLiveInfoLog(String url, Map<String, String> info){

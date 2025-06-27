@@ -35,7 +35,7 @@ public class Result<T> implements Serializable {
     }
 
     public Result(List<T> list){
-        this.code = 200;
+        this.code = 0;
         this.data = list;
         this.count = list.size();
     }

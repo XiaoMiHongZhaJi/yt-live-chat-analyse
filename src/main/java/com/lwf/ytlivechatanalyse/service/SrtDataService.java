@@ -1,6 +1,7 @@
 package com.lwf.ytlivechatanalyse.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.lwf.ytlivechatanalyse.bean.SrtData;
 import com.lwf.ytlivechatanalyse.dao.SrtDataMapper;
 import com.lwf.ytlivechatanalyse.interceptor.DynamicSchemaInterceptor;
@@ -72,6 +73,14 @@ public class SrtDataService {
 
     public String importSrt(String liveDate, MultipartFile file) {
         List<SrtData> srtList = SrtUtil.fileToSrt(file);
+        if (CollectionUtils.isNotEmpty(srtList)) {
+            if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+                DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+            }
+            QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("live_date", liveDate);
+            srtDataMapper.delete(queryWrapper);
+        }
         return batchInsert(liveDate, srtList);
     }
 

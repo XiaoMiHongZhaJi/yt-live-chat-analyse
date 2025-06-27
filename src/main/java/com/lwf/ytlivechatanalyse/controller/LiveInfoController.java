@@ -83,70 +83,83 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/downloadBullet")
-    public Result<String> downloadBullet(String liveDate, String startTime, BulletConfig config){
-        Long startTimestamp = null;
+    public Result<String> downloadBullet(String liveDate, String startTime, Long startTimestamp, BulletConfig config){
         if(StringUtils.isBlank(liveDate) || liveDate.length() < 10){
             //未传入日期，尝试从 startTime 中获取日期
             if(StringUtils.isBlank(startTime)){
-                logger.error("liveDate 格式错误{}，{}", liveDate, startTime);
-                return new Result<>(500, "传入的 liveDate 有误，正确的格式为：2023-01-01");
-            }
-            if(startTime.length() < 10 || startTime.substring(0, 3).contains(":")){
-                logger.error("startTime 格式错误{}，{}", liveDate, startTime);
-                return new Result<>(500, "传入的 startTime 有误，正确的格式为：2023-01-01 20:40:00");
-            }
-            if(startTime.startsWith("202") && startTime.indexOf("-") == 4){
-                // 2023-01-01 20:40:00
-                liveDate = startTime.substring(0, 10);
-            }else if(startTime.startsWith("2") && startTime.indexOf("-") == 2){
-                // 23-01-01 20:40:00
-                liveDate = "20" + startTime.substring(0, 8);
-            }else if((startTime.startsWith("0") || startTime.startsWith("1"))&& startTime.indexOf("-") == 2){
-                // 01-01 20:40:00
-                liveDate = DateUtil.getNowDate().substring(0, 5) + startTime.substring(0, 5);
-            }else{
-                logger.error("startTime 格式错误{}，{}", liveDate, startTime);
-                return new Result<>(500, "传入的 startTime 有误，正确的格式为：2023-01-01 20:40:00");
-            }
-        }
-        if(StringUtils.isBlank(startTime)){
-            //未传入开始时间，尝试从数据库中获取开始时间
-            LiveInfo liveInfo = new LiveInfo();
-            liveInfo.setLiveDate(liveDate);
-            liveInfo = liveInfoService.selectOne(liveInfo);
-            if(liveInfo != null){
+                //取最新日期
+                LiveInfo liveInfo = liveInfoService.queryLastestLiveInfo();
+                if (liveInfo == null || StringUtils.isBlank(liveInfo.getLiveDate())) {
+                    return new Result<>(500, "传入的 liveDate 有误，正确的格式为：2023-01-01");
+                }
+                liveDate = liveInfo.getLiveDate();
                 startTimestamp = liveInfo.getStartTimestamp();
+            } else {
+                if(startTime.length() < 10 || startTime.substring(0, 3).contains(":")){
+                    logger.error("startTime 格式错误{}，{}", liveDate, startTime);
+                    return new Result<>(500, "传入的 startTime 有误，正确的格式为：2023-01-01 20:40:00");
+                }
+                if(startTime.startsWith("202") && startTime.indexOf("-") == 4){
+                    // 2023-01-01 20:40:00
+                    liveDate = startTime.substring(0, 10);
+                }else if(startTime.startsWith("2") && startTime.indexOf("-") == 2){
+                    // 23-01-01 20:40:00
+                    liveDate = "20" + startTime.substring(0, 8);
+                }else if((startTime.startsWith("0") || startTime.startsWith("1"))&& startTime.indexOf("-") == 2){
+                    // 01-01 20:40:00
+                    liveDate = DateUtil.getNowDate().substring(0, 5) + startTime.substring(0, 5);
+                }else{
+                    logger.error("startTime 格式错误{}，{}", liveDate, startTime);
+                    return new Result<>(500, "传入的 startTime 有误，正确的格式为：2023-01-01 20:40:00");
+                }
             }
-            logger.info("获取到开播信息中的startTimestamp：{}", startTimestamp);
-            if(startTimestamp == null || startTimestamp == 0){
-                logger.error("所选日期暂无开播时间信息：{} {}", liveDate, startTime);
-                return new Result<>(500, "所选日期暂无开播时间信息，请传入 startTime，格式为：2023-01-01 20:40:00");
-            }
-        }else if(startTime.startsWith("1") && StringUtils.isNumeric(startTime)){
-            //时间戳
-            startTime = String.format("%-16d", startTime).replace(" ", "0");
-            startTimestamp = Long.parseLong(startTime);
-        }else if(startTime.startsWith("202")){
-            //日期时间
-            startTimestamp = DateUtil.getTimestamp(startTime);
-            logger.info("获取到转换的startTimestamp：{}", startTimestamp);
-        }else if(startTime.substring(0, 3).contains(":") && startTime.length() <= 8){
-            //时间
-            startTimestamp = DateUtil.getTimestamp(liveDate + startTime);
-            logger.info("获取到转换的startTimestamp：{}", startTimestamp);
-        }else{
-            //默认
-            startTimestamp = DateUtil.getTimestamp(startTime);
-            logger.info("获取到转换的startTimestamp：{}", startTimestamp);
         }
-        if(startTimestamp == null || startTimestamp == 0){
-            logger.error("传入的 startTime 有误：{} {}", liveDate, startTime);
-            return new Result<>(500, "传入的 startTime 有误，正确的格式为：2023-01-01 20:40:00");
+        // 获取startTimestamp
+        if (startTimestamp == null || startTimestamp == 0) {
+            if(StringUtils.isBlank(startTime)){
+                //未传入开始时间，尝试从数据库中获取开始时间
+                LiveInfo liveInfo = new LiveInfo();
+                liveInfo.setLiveDate(liveDate);
+                liveInfo = liveInfoService.selectOne(liveInfo);
+                if(liveInfo != null){
+                    if (LiveInfo.DOWNLOAD_STATUS_NONE.equals(liveInfo.getDownloadStatus())) {
+                        logger.info("弹幕未下载，自动下载：{}", liveDate);
+                        startTimestamp = liveInfoService.downloadLiveChat(liveInfo);
+                    } else if (LiveInfo.DOWNLOAD_STATUS_DOWNLOADING.equals(liveInfo.getDownloadStatus())) {
+                        return new Result<>(500, "弹幕下载中，请稍后再试");
+                    } else if (LiveInfo.DOWNLOAD_STATUS_FILURE.equals(liveInfo.getDownloadStatus())) {
+                        return new Result<>(500, "弹幕获取状态为失败");
+                    }
+                }
+                logger.info("获取到开播信息中的startTimestamp：{}", startTimestamp);
+            }else if(startTime.startsWith("1") && StringUtils.isNumeric(startTime)){
+                //时间戳
+                startTime = String.format("%-16d", startTime).replace(" ", "0");
+                startTimestamp = Long.parseLong(startTime);
+            }else if(startTime.startsWith("202")){
+                //日期时间
+                startTimestamp = DateUtil.getTimestamp(startTime);
+                logger.info("获取到转换的startTimestamp：{}", startTimestamp);
+            }else if(startTime.substring(0, 3).contains(":") && startTime.length() <= 8){
+                //时间
+                startTimestamp = DateUtil.getTimestamp(liveDate + startTime);
+                logger.info("获取到转换的startTimestamp：{}", startTimestamp);
+            }else{
+                //默认
+                startTimestamp = DateUtil.getTimestamp(startTime);
+                logger.info("获取到转换的startTimestamp：{}", startTimestamp);
+            }
         }
         List<LiveChatData> chatList = liveInfoService.getLiveChatData(liveDate);
         if(CollectionUtils.isEmpty(chatList)){
             logger.warn("所选日期无弹幕数据：{} {}", liveDate, startTime);
             return new Result<>(500, "所选日期无弹幕数据");
+        }
+        if(startTimestamp == 0){
+            //logger.error("传入的 startTime 有误：{} {}", liveDate, startTime);
+            //return new Result<>(500, "传入的 startTime 有误，正确的格式为：2023-01-01 20:40:00");
+            startTimestamp = chatList.get(0).getTimestamp();
+            logger.warn("获取不到startTimestamp，取第一条弹幕的timestamp：{} {}", liveDate, startTimestamp);
         }
         if(config == null){
             config = new BulletConfig();
@@ -156,12 +169,12 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/downloadBulletFile")
-    public ResponseEntity<Object> downloadBulletFile(String liveDate, String startTime, String fontSize){
+    public ResponseEntity<Object> downloadBulletFile(String liveDate, String startTime, Long startTimestamp, String fontSize){
         BulletConfig config = new BulletConfig();
         if(StringUtils.isNotBlank(fontSize)){
             config.setFontSize(Integer.parseInt(fontSize));
         }
-        Result<String> result = downloadBullet(liveDate, startTime, config);
+        Result<String> result = downloadBullet(liveDate, startTime, startTimestamp, config);
         int code = result.getCode();
         if(code != 200 || result.getData() == null){
             return ResponseEntity.status(500).contentType(MediaType.parseMediaType("text/plain; charset=utf-8")).body(result.getMsg());

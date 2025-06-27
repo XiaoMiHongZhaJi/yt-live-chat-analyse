@@ -12,8 +12,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 
-import static com.lwf.ytlivechatanalyse.util.CurlUtil.cookie;
-
 @Component
 public class CmdUtil {
 
@@ -159,7 +157,7 @@ public class CmdUtil {
             }
             return "未发现：" + keyWord;
         }
-        String result = execCmd("pskw " + keyWord);
+        String result = execCmd("ps -ef | grep " + keyWord + " | grep -v grep");
         return result.trim();
     }
 
@@ -167,12 +165,12 @@ public class CmdUtil {
         if(isWin()){
             return ps("chat_downloader");
         }
-        String result = execCmd("pskw chat_downloader " + keyWord);
+        String result = execCmd("ps -ef | grep chat_downloader | grep " + keyWord + " | grep -v grep");
         return result.trim();
     }
 
     public static String chatDownloader(String url, String liveDate, String fileName){
-        String cmd = "chat_downloader ";
+        String cmd = "python -m chat_downloader ";
         if(StringUtils.isNotBlank(proxy)){
             cmd += String.format("--proxy %s ", proxy);
         }
@@ -188,6 +186,7 @@ public class CmdUtil {
 
         return CmdUtil.execCmd(cmd + url, true, false);
     }
+
     public static String kill(String... keywords){
         if(keywords == null || keywords.length == 0 || StringUtils.isBlank(keywords[0])){
             return "";
@@ -196,12 +195,13 @@ public class CmdUtil {
             String result = execCmd("taskkill /f /im " + keywords[0] + ".exe");
             return result;
         }
-        String cmd = "kill9";
+        StringBuilder cmd = new StringBuilder("ps -ef");
         for(String keyword : keywords){
             if(StringUtils.isNotBlank(keyword)){
-                cmd += " " + keyword;
+                cmd.append(" | grep ").append(keyword);
             }
         }
-        return execCmd(cmd, true, true);
+        cmd.append(" | grep -v grep | awk '{print $2}' | xargs kill -12");
+        return execCmd(cmd.toString(), true, true);
     }
 }
