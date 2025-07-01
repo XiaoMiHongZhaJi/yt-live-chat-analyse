@@ -20,6 +20,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class LiveInfoService {
@@ -68,8 +69,11 @@ public class LiveInfoService {
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.orderByDesc("live_date");
-        if(StringUtils.isNotBlank(ids)){
-            queryWrapper.in("id", ids.split(","));
+        if (StringUtils.isNotBlank(ids)) {
+            List<Long> idList = Arrays.stream(ids.split(","))
+                    .map(Long::valueOf)
+                    .collect(Collectors.toList());
+            queryWrapper.in("id", idList);
         }
         return liveInfoMapper.selectList(queryWrapper);
     }

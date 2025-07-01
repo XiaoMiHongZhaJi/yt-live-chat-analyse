@@ -18,7 +18,7 @@ public class EmotesDataService {
         // name is not null
         QueryWrapper<EmotesData> queryWrapper = new QueryWrapper<>();
         queryWrapper.isNotNull("name");
-        queryWrapper.eq("in_use", 1);
+        queryWrapper.eq("in_use", true);
         return emotesDataMapper.selectList(queryWrapper);
     }
 
@@ -26,8 +26,8 @@ public class EmotesDataService {
         // is_custom_emoji = 0 and name is not null
         QueryWrapper<EmotesData> queryWrapper = new QueryWrapper<>();
         queryWrapper.isNotNull("name");
-        queryWrapper.eq("in_use", 1);
-        queryWrapper.eq("is_custom_emoji", 0);
+        queryWrapper.eq("in_use", true);
+        queryWrapper.eq("is_custom_emoji", false);
         return emotesDataMapper.selectList(queryWrapper);
     }
 
