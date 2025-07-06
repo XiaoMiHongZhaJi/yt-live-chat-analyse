@@ -122,13 +122,19 @@ public class LiveInfoController {
                 liveInfo.setLiveDate(liveDate);
                 liveInfo = liveInfoService.selectOne(liveInfo);
                 if(liveInfo != null){
-                    if (LiveInfo.DOWNLOAD_STATUS_NONE.equals(liveInfo.getDownloadStatus())) {
+                    startTimestamp = liveInfo.getStartTimestamp();
+                    Integer liveChatCount = liveInfo.getLiveChatCount();
+                    String downloadStatus = liveInfo.getDownloadStatus();
+                    if (LiveInfo.DOWNLOAD_STATUS_NONE.equals(downloadStatus) || liveChatCount == null || liveChatCount <= 0) {
                         logger.info("弹幕未下载，自动下载：{}", liveDate);
                         startTimestamp = liveInfoService.downloadLiveChat(liveInfo);
-                    } else if (LiveInfo.DOWNLOAD_STATUS_DOWNLOADING.equals(liveInfo.getDownloadStatus())) {
+                    } else if (LiveInfo.DOWNLOAD_STATUS_DOWNLOADING.equals(downloadStatus)) {
                         return new Result<>(500, "弹幕下载中，请稍后再试");
-                    } else if (LiveInfo.DOWNLOAD_STATUS_FILURE.equals(liveInfo.getDownloadStatus())) {
+                    } else if (LiveInfo.DOWNLOAD_STATUS_FILURE.equals(downloadStatus)) {
                         return new Result<>(500, "弹幕获取状态为失败");
+                    }
+                    if (startTimestamp == null || startTimestamp <= 0) {
+                        return new Result<>(500, "获取到的 startTimestamp 为空");
                     }
                 }
                 logger.info("获取到开播信息中的startTimestamp：{}", startTimestamp);
@@ -155,7 +161,7 @@ public class LiveInfoController {
             logger.warn("所选日期无弹幕数据：{} {}", liveDate, startTime);
             return new Result<>(500, "所选日期无弹幕数据");
         }
-        if(startTimestamp == 0){
+        if(startTimestamp == null || startTimestamp == 0){
             //logger.error("传入的 startTime 有误：{} {}", liveDate, startTime);
             //return new Result<>(500, "传入的 startTime 有误，正确的格式为：2023-01-01 20:40:00");
             startTimestamp = chatList.get(0).getTimestamp();
