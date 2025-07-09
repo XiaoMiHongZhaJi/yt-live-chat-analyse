@@ -6,6 +6,7 @@ import com.lwf.ytlivechatanalyse.bean.AuthorInfo;
 import com.lwf.ytlivechatanalyse.dao.AuthorInfoMapper;
 import com.lwf.ytlivechatanalyse.interceptor.DynamicSchemaInterceptor;
 import com.lwf.ytlivechatanalyse.util.Constant;
+import com.lwf.ytlivechatanalyse.util.Result;
 import com.lwf.ytlivechatanalyse.util.WrapperUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -34,11 +35,11 @@ public class AuthorInfoService {
             queryWrapper.and(wrapper -> wrapper
                 .like("last_author_name", keywords)
                 .or()
-                .like("first_author_name", keywords)
+                .like("all_author_names", keywords)
             );
         }
         queryWrapper.orderByDesc("last_timestamp");
-        queryWrapper.select("author_id", "first_author_name", "last_author_name", "author_image");
+        queryWrapper.select("author_id", "first_author_name", "last_author_name", "all_author_names", "author_image");
         queryWrapper.last("limit 5");
         queryWrapper.eq("blocked", 0);
         if(StringUtils.isNotBlank(year) && !year.equals(Constant.DEFAULT_YEAR)){
@@ -63,7 +64,7 @@ public class AuthorInfoService {
             queryWrapper = new QueryWrapper<>();
             queryWrapper.orderByDesc("last_author_name");
             if(StringUtils.isNotBlank(lastAuthorName)){
-                WrapperUtil.keyWordsLike(queryWrapper, lastAuthorName, "first_author_name");
+                WrapperUtil.keyWordsLike(queryWrapper, lastAuthorName, "all_author_names");
             }
             queryWrapper.eq("blocked", 0);
             if(StringUtils.isNotBlank(year) && !year.equals(Constant.DEFAULT_YEAR)){
@@ -74,4 +75,9 @@ public class AuthorInfoService {
         return authorInfoList;
     }
 
+    public AuthorInfo queryAuthorInfo(String authorId, String year) {
+        QueryWrapper<AuthorInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("author_id", authorId);
+        return authorInfoMapper.selectOne(queryWrapper);
+    }
 }

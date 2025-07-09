@@ -31,4 +31,9 @@ public class AuthorInfoController {
         return new Result<>(new PageInfo<>(authorInfoService.selectList(authorInfo, year)));
     }
 
+    @RequestMapping("/queryAuthorInfo")
+    public AuthorInfo queryAuthorInfo(String authorId, String year){
+        return authorInfoService.queryAuthorInfo(authorId, year);
+    }
+
 }

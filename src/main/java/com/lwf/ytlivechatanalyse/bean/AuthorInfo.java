@@ -25,5 +25,8 @@ public class AuthorInfo {
     private String authorImage;
     private Integer messageCount;
     private Date updateTime;//最后更新时间
+    private Integer blocked;
+    private String allAuthorNames;
+    private Integer authorNameCount;
 
 }

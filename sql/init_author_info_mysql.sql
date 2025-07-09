@@ -39,4 +39,4 @@ GROUP BY author_id;
 
 
 # query result
-select * from author_info where blocked != 0;
+select * from author_info;

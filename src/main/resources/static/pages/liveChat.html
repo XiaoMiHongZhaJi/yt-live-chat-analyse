@@ -83,38 +83,31 @@
         const cols = [[
             {field: 'liveDate', width: 125, title: '日期', sort: true, hide: true},
             {field: 'authorName', width: 180, title: '用户名',templet: (d)=>{
-                    if(d.authorImage){
-                        return `<div><img alt="" class="header" src="${d.authorImage}=s32-c-k-c0x00ffffff-no-rj">${d.authorName}</div>`;
-                    }
-                    return `<div><img alt="" class="twitch" src="https://twitch.tv/favicon.ico">${d.authorName}</div>`;
-                }},
+                if(d.authorImage){
+                    return `<div class="authorInfo" data-id="${d.authorId}"><img alt="" class="header" src="${d.authorImage}=s32-c-k-c0x00ffffff-no-rj">${d.authorName}</div>`;
+                }
+                return `<div class="authorInfo" data-id="${d.authorId}"><img alt="" class="twitch" src="https://twitch.tv/favicon.ico">${d.authorName}</div>`;
+            }},
             {field: 'message', minWidth: 180, title: '消息',templet: (d)=>{
-                    let message = d.message || '';
-                    if(d.emotesCount){
-                        message = getEmoteMssage(message);
-                    }
-                    const scInfo = d.scInfo;
-                    if(scInfo){
-                        const index = scInfo.indexOf("#");
-                        if(index > -1){
-                            const color = scInfo.substring(index, index + 7);
-                            if(d.scAmount){
-                                message = '<span style="color: '+ color +'">('+ d.scAmount +') '+ message +'</span>';
-                            }
+                let message = d.message || '';
+                if(d.emotesCount){
+                    message = getEmoteMssage(message);
+                }
+                const scInfo = d.scInfo;
+                if(scInfo){
+                    const index = scInfo.indexOf("#");
+                    if(index > -1){
+                        const color = scInfo.substring(index, index + 7);
+                        if(d.scAmount){
+                            message = '<span style="color: '+ color +'">('+ d.scAmount +') '+ message +'</span>';
                         }
                     }
-                    return message;
-                }},
+                }
+                return message;
+            }},
             {field: 'timeText', width: 90, title: '时间', sort: true, align: "right", templet: (d)=>{
-                    const sendDateTime = formatTime(d.timestamp / 1000);
-                    const title = "发送时间：" + sendDateTime;
-                    const timeText = d.timeText;
-                    if (timeText){
-                        return getUrlTag(getLiveUrl(currentLiveInfo, d.liveDate), timeText, title);
-                    }
-                    const sendTime = sendDateTime.substring(11);
-                    return `<span title="${title}">${sendTime}</span>`;
-                }},
+                return getTimeHtml(d.timestamp, d.timeText, d.liveDate);
+            }},
         ]];
         table.render({
             elem: '#liveChatData',
@@ -123,6 +116,11 @@
             loading: false,
             done: function(res){
                 $("#submit").removeClass("layui-btn-disabled");
+                $(".authorInfo").click(function (){
+                    const authorId = $(this).data("id");
+                    const authorName = $(this).html();
+                    showAuthorInfo(authorId, authorName);
+                })
             },
             page: true,
             limits: [10, 15, 20, 50, 100],
@@ -190,6 +188,60 @@
             showLiveDetailDialog(currentLiveInfo);
             return false;
         })
+
+        function showAuthorInfo(authorId, authorName) {
+            $.ajax({
+                url: '../authorInfo/queryAuthorInfo',
+                data: {
+                    authorId: authorId,
+                    year: layui.data("navInfo")["year"]
+                },
+            }).then((authorInfo) => {
+                let html = [];
+                html.push(`id: ${authorId}`);
+                if (isNaN(authorId)) {
+                    html.push(`昵称: <a target="_blank" href="https://www.youtube.com/channel/${authorId}">${authorInfo.lastAuthorName}</a>`);
+                } else {
+                    html.push(`昵称: ${authorInfo.lastAuthorName}`);
+                }
+
+                let firstTimeHtml = getTimeHtml(authorInfo.firstTimestamp, authorInfo.firstTimeText, authorInfo.firstLiveDate);
+                html.push(`首次发言: ${authorInfo.firstLiveDate} ${firstTimeHtml}`);
+                html.push(`发言内容: ${authorInfo.firstMessage}`);
+
+                let lastTimeHtml = getTimeHtml(authorInfo.lastTimestamp, authorInfo.lastTimeText, authorInfo.lastLiveDate);
+                html.push(`最近发言: ${authorInfo.lastLiveDate} ${lastTimeHtml}`);
+                html.push(`发言内容: ${authorInfo.lastMessage}`);
+
+                html.push(`发言数量: ${authorInfo.messageCount}`);
+                const authorNameCount = authorInfo.authorNameCount;
+                if (authorNameCount > 1) {
+                    html.push(`昵称数量: ${authorNameCount}`);
+                    html.push(`历史昵称: ${authorInfo.allAuthorNames}`);
+                }
+                layer.alert(html.join('<hr>'), {
+                    area: ["500px", null],
+                    title: authorName,
+                    skin: 'layui-layer-rim', //加上边框
+                    shade: 0.3,
+                    shadeClose: true,
+                    btn: [],
+                });
+            })
+        }
+
+        function getTimeHtml(timestamp, timeText, liveDate) {
+            const sendDateTime = formatTime(timestamp / 1000);
+            const title = "发送时间：" + sendDateTime;
+            let timeHtml = '';
+            if (timeText) {
+                const liveInfo = currentLiveInfo.liveDate == liveDate ? currentLiveInfo : null;
+                return getUrlTag(getLiveUrl(liveInfo, liveDate), timeText, title);
+            } else {
+                const sendTime = sendDateTime.substring(11);
+                return `<span title="${title}">${sendTime}</span>`;
+            }
+        }
         //下载弹幕按钮
         dropdown.render({
             elem: '#downloadBullet',
@@ -237,9 +289,17 @@
                     authorInfoList.forEach(authorInfo => {
                         let title = authorInfo.lastAuthorName;
                         let templet = authorInfo.lastAuthorName;
-                        if(authorInfo.lastAuthorName != authorInfo.firstAuthorName){
-                            title = `${authorInfo.lastAuthorName}「${authorInfo.firstAuthorName}」`;
-                            templet = `${authorInfo.lastAuthorName}<span style="color: #5f5f5f;">「${authorInfo.firstAuthorName}」</span>`;
+                        let allAuthorNames = authorInfo.allAuthorNames;
+                        const index = allAuthorNames.indexOf(", ");
+                        if (index > -1) {
+                            allAuthorNames = allAuthorNames.substring(index + 2);
+                        }
+                        if (allAuthorNames.length > 20) {
+                            allAuthorNames = allAuthorNames.substring(0, 17) + "...";
+                        }
+                        if (authorInfo.lastAuthorName != allAuthorNames) {
+                            title = `${authorInfo.lastAuthorName}「${allAuthorNames}」`;
+                            templet = `${authorInfo.lastAuthorName}<span style="color: #5f5f5f;">「${allAuthorNames}」</span>`;
                         }
                         if (authorInfo.authorImage) {
                             templet = `<div><img alt="" class="header" src="${authorInfo.authorImage}=s32-c-k-c0x00ffffff-no-rj">${templet}</div>`;

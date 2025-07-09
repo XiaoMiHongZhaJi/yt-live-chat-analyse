@@ -20,7 +20,9 @@ create table author_info
     last_time_text    varchar(30)  default NULL::character varying,
     last_timestamp    bigint,
     author_image      varchar(200) default NULL::character varying,
-    message_count     bigint,
+    message_count     integer,
+    all_author_names  varchar(600) default NULL::character varying,
+    author_name_count     integer,
     update_time       timestamp with time zone,
     blocked           smallint     default '0'::smallint
 );

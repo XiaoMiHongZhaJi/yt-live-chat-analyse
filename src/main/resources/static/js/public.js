@@ -245,6 +245,9 @@ function getATag(url, title){
     return title;
 }
 function getUrlTag(url, time, title){
+    if(!time){
+        return title;
+    }
     if(!url){
         return time;
     }
