@@ -374,10 +374,18 @@ public class LiveInfoService {
         }
         updateLiveInfo.setLiveChatCount(count);
         logger.info("{} 下载弹幕信息完成，条数：{}", liveDate, count);
-        Integer asyncCount = liveChatDataMapper.asyncLivingChatData(liveDate);
+        int asyncCount = liveChatDataMapper.asyncLivingChatData(liveDate);
         logger.info("{} 同步弹幕信息完成，同步条数：{}", liveDate, asyncCount);
-        Integer updateCount = authorInfoMapper.updateAuthorInfo(liveDate);
+        int updateCount = authorInfoMapper.updateAuthorInfo(liveDate);
         logger.info("{} 更新用户信息完成，更新条数：{}", liveDate, updateCount);
+        int blockedCount = 0;
+        blockedCount += authorInfoMapper.updateAuthorInfoBlockedName();
+        blockedCount += authorInfoMapper.updateAuthorInfoBlockedMessage();
+        blockedCount += authorInfoMapper.updateLiveChatDataBlockedName(liveDate);
+        blockedCount += authorInfoMapper.updateLiveChatDataBlockedMessage(liveDate);
+        blockedCount += authorInfoMapper.updateLivingChatDataBlockedName(liveDate);
+        blockedCount += authorInfoMapper.updateLivingChatDataBlockedMessage(liveDate);
+        logger.info("{} 更新屏蔽信息完成，屏蔽条数：{}", liveDate, blockedCount);
         updateLiveInfo.setLivingChatCount(liveChatDataService.selectCount(liveDate));
         Long startTimestamp = liveChatDataService.selectStartTimestamp(liveDate);
         if(startTimestamp != null){

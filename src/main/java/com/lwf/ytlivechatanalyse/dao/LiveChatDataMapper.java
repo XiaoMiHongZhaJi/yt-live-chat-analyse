@@ -32,7 +32,7 @@ public interface LiveChatDataMapper extends BaseMapper<LiveChatData> {
     LiveChatData selectStartMessage(@Param("liveDate") String liveDate);
 
     @Select("select count(1) from live_chat_data where live_date = #{liveDate}")
-    Integer queryChatCount(@Param("liveDate") String liveDate);
+    int queryChatCount(@Param("liveDate") String liveDate);
 
     @Insert("insert into live_chat_data(live_date, author_image, author_name, author_id, message, sc_info, sc_amount, TIMESTAMP, emotes_count) " +
             "select live_date, author_image, author_name, author_id, message, sc_info, sc_amount, TIMESTAMP, emotes_count " +
@@ -40,5 +40,5 @@ public interface LiveChatDataMapper extends BaseMapper<LiveChatData> {
             " where live_date like #{liveDate} || '%' " +
             "   and not exists (select 1 from live_chat_data b where b.timestamp = a.TIMESTAMP) " +
             " order by TIMESTAMP desc")
-    Integer asyncLivingChatData(@Param("liveDate") String liveDate);
+    int asyncLivingChatData(@Param("liveDate") String liveDate);
 }
