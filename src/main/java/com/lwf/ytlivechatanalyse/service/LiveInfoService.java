@@ -4,10 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.lwf.ytlivechatanalyse.bean.*;
-import com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper;
-import com.lwf.ytlivechatanalyse.dao.LiveInfoLogMapper;
-import com.lwf.ytlivechatanalyse.dao.LiveInfoMapper;
-import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
+import com.lwf.ytlivechatanalyse.dao.*;
 import com.lwf.ytlivechatanalyse.interceptor.DynamicSchemaInterceptor;
 import com.lwf.ytlivechatanalyse.util.*;
 import org.apache.commons.lang3.StringUtils;
@@ -38,6 +35,9 @@ public class LiveInfoService {
 
     @Autowired
     LivingChatDataMapper livingChatDataMapper;
+
+    @Autowired
+    AuthorInfoMapper authorInfoMapper;
 
     @Autowired
     LiveChatDataService liveChatDataService;
@@ -134,6 +134,17 @@ public class LiveInfoService {
         return liveInfoMapper.update(liveInfo, updateWrapper);
     }
 
+    public int updateLiveInfoByUrl(LiveInfo liveInfo){
+        liveInfo.setUpdateTime(new Date());
+        String liveDate = liveInfo.getLiveDate();
+        UpdateWrapper<LiveInfo> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("url", liveInfo.getUrl());
+        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
+        }
+        return liveInfoMapper.update(liveInfo, updateWrapper);
+    }
+
     public String addYoutubeLiveInfo(LiveInfo liveInfo, boolean downLiveChat, boolean getLiveInfo) {
         String url = liveInfo.getUrl();
         liveInfo.setPlatform("y");
@@ -173,8 +184,9 @@ public class LiveInfoService {
         // 判断 url 是否已存在，若已存在，则不再添加
         Long urlCount = getUrlCount(url, liveDate);
         if(urlCount > 0){
-            logger.warn("{} url 已存在，不再添加", url);
-            return "url 已存在";
+            logger.warn("url 已存在，准备更新: {}", liveInfo);
+            updateLiveInfoByUrl(liveInfo);
+            return null;
         }
         // 判断 Title 是否已存在，若已存在，则重命名
         Long titleCount = getTitleCount(liveDate);
@@ -364,6 +376,8 @@ public class LiveInfoService {
         logger.info("{} 下载弹幕信息完成，条数：{}", liveDate, count);
         Integer asyncCount = liveChatDataMapper.asyncLivingChatData(liveDate);
         logger.info("{} 同步弹幕信息完成，同步条数：{}", liveDate, asyncCount);
+        Integer updateCount = authorInfoMapper.updateAuthorInfo(liveDate);
+        logger.info("{} 更新用户信息完成，更新条数：{}", liveDate, updateCount);
         updateLiveInfo.setLivingChatCount(liveChatDataService.selectCount(liveDate));
         Long startTimestamp = liveChatDataService.selectStartTimestamp(liveDate);
         if(startTimestamp != null){

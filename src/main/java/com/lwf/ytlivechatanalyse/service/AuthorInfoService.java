@@ -78,6 +78,9 @@ public class AuthorInfoService {
     public AuthorInfo queryAuthorInfo(String authorId, String year) {
         QueryWrapper<AuthorInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("author_id", authorId);
+        if(StringUtils.isNotBlank(year) && !year.equals(Constant.DEFAULT_YEAR)){
+            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year);
+        }
         return authorInfoMapper.selectOne(queryWrapper);
     }
 }

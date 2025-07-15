@@ -79,7 +79,7 @@ public class LiveInfoController {
         if(StringUtils.isNotBlank(result)){
             return new Result<>(500, result);
         }
-        return new Result<>(200, "新增成功");
+        return new Result<>(200, "新增或更新成功");
     }
 
     @RequestMapping("/downloadBullet")
@@ -128,6 +128,9 @@ public class LiveInfoController {
                     if (LiveInfo.DOWNLOAD_STATUS_NONE.equals(downloadStatus) || liveChatCount == null || liveChatCount <= 0) {
                         logger.info("弹幕未下载，自动下载：{}", liveDate);
                         startTimestamp = liveInfoService.downloadLiveChat(liveInfo);
+                        if (startTimestamp == null || startTimestamp <= 0) {
+                            return new Result<>(500, "获取不到最新弹幕");
+                        }
                     } else if (LiveInfo.DOWNLOAD_STATUS_DOWNLOADING.equals(downloadStatus)) {
                         return new Result<>(500, "弹幕下载中，请稍后再试");
                     } else if (LiveInfo.DOWNLOAD_STATUS_FILURE.equals(downloadStatus)) {
