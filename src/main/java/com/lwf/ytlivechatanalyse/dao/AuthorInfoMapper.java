@@ -12,39 +12,39 @@ public interface AuthorInfoMapper extends BaseMapper<AuthorInfo> {
 
     // 1. author_info.blocked = 2
     @Update("UPDATE author_info a SET blocked = 2 " +
-            "WHERE EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 1 AND a.first_author_name LIKE CONCAT('%', k.keywords, '%')) " +
-            "   OR EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 1 AND a.last_author_name LIKE CONCAT('%', k.keywords, '%')) " +
-            "   OR EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 1 AND a.all_author_names LIKE CONCAT('%', k.keywords, '%') ")
+            "WHERE EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 1 AND a.first_author_name LIKE '%' || k.keywords || '%') " +
+            "   OR EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 1 AND a.last_author_name LIKE '%' || k.keywords || '%') " +
+            "   OR EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 1 AND a.all_author_names LIKE '%' || k.keywords || '%') ")
     int updateAuthorInfoBlockedName();
 
     // 2. author_info.blocked = 1
     @Update("UPDATE author_info a SET blocked = 1 " +
-            "WHERE EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 2 AND a.first_message LIKE CONCAT('%', k.keywords, '%')) " +
-            "OR EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 2 AND a.last_message LIKE CONCAT('%', k.keywords, '%')) ")
+            "WHERE EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 2 AND a.first_message LIKE '%' || k.keywords || '%') " +
+            "OR EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 2 AND a.last_message LIKE '%' || k.keywords || '%') ")
     int updateAuthorInfoBlockedMessage();
 
     // 3. live_chat_data.blocked = 2
     @Update("UPDATE live_chat_data a SET blocked = 2 " +
             "WHERE a.live_date LIKE CONCAT(#{liveDate}, '%') " +
-            "AND EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 1 AND a.author_name LIKE CONCAT('%', k.keywords, '%')) ")
+            "AND EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 1 AND a.author_name LIKE '%' || k.keywords || '%') ")
     int updateLiveChatDataBlockedName(@Param("liveDate") String liveDate);
 
     // 4. live_chat_data.blocked = 1
     @Update("UPDATE live_chat_data a SET blocked = 1 " +
             "WHERE a.live_date LIKE CONCAT(#{liveDate}, '%') " +
-            "AND EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 2 AND a.message LIKE CONCAT('%', k.keywords, '%')) ")
+            "AND EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 2 AND a.message LIKE '%' || k.keywords || '%') ")
     int updateLiveChatDataBlockedMessage(@Param("liveDate") String liveDate);
 
     // 5. living_chat_data.blocked = 2
     @Update("UPDATE living_chat_data a SET blocked = 2 " +
             "WHERE a.live_date LIKE CONCAT(#{liveDate}, '%') " +
-            "AND EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 1 AND a.author_name LIKE CONCAT('%', k.keywords, '%')) ")
+            "AND EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 1 AND a.author_name LIKE '%' || k.keywords || '%') ")
     int updateLivingChatDataBlockedName(@Param("liveDate") String liveDate);
 
     // 6. living_chat_data.blocked = 1
     @Update("UPDATE living_chat_data a SET blocked = 1 " +
             "WHERE a.live_date LIKE CONCAT(#{liveDate}, '%') " +
-            "AND EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 2 AND a.message LIKE CONCAT('%', k.keywords, '%')) ")
+            "AND EXISTS (SELECT 1 FROM blocked_keywords k WHERE k.blocked_type != 2 AND a.message LIKE '%' || k.keywords || '%') ")
     int updateLivingChatDataBlockedMessage(@Param("liveDate") String liveDate);
 
     @Update("WITH affected_authors AS ( " +
