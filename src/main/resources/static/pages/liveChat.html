@@ -235,7 +235,7 @@
             const title = "发送时间：" + sendDateTime;
             let timeHtml = '';
             if (timeText) {
-                const liveInfo = currentLiveInfo.liveDate == liveDate ? currentLiveInfo : null;
+                const liveInfo = currentLiveInfo && currentLiveInfo.liveDate == liveDate ? currentLiveInfo : null;
                 return getUrlTag(getLiveUrl(liveInfo, liveDate), timeText, title);
             } else {
                 const sendTime = sendDateTime.substring(11);
