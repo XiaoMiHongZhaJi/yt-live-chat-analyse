@@ -58,24 +58,24 @@ function openDB() {
 }
 
 // 获取指定名称的表情，若数据未准备好则返回null
-function getEmoteByName(name) {
+async function getEmoteByName(name) {
     if (!db) {
-        return null;  // 如果数据库尚未打开，返回null
+        return null; // 数据库未初始化
     }
-    const transaction = db.transaction(STORE_NAME, "readonly");
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.get(name);  // 获取特定名称的表情
-    let emote = null;
-    // 同步等待数据返回
-    request.onsuccess = (event) => {
-        emote = event.target.result;  // 数据存在，返回表情对象
-    };
-    // 如果查询失败或数据不存在，返回null
-    request.onerror = () => {
-        emote = null;
-    };
-    // 返回数据或者null
-    return emote;
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, "readonly");
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get(name);
+
+        request.onsuccess = (event) => {
+            resolve(event.target.result || null);
+        };
+
+        request.onerror = () => {
+            reject(null);
+        };
+    });
 }
 
 // 向数据库中插入或更新表情数据
@@ -123,46 +123,47 @@ layui.use(['jquery'], function() {
     });
 });
 
-function getEmoteMssage(message){
-    let realMessage;
-    if(message.indexOf(":") > -1){
-        //YouTube
-        realMessage = message.substring(0,message.indexOf(":"));
-        let remain = message.substring(message.indexOf(":") + 1);
-        while(remain && remain.indexOf(":") > -1){
-            const key = remain.substring(0, remain.indexOf(":"));
-            const emote = getEmoteByName(key);
-            if(emote){
-                const emotesId = emote.emotesId;
-                if(emote.isCustomEmoji){
-                    realMessage += '<img alt="" class="emote" src="'+ emote.images +'">';
-                }else{
-                    realMessage += emotesId;
-                }
-            }else if(key.trim()){
-                realMessage += "[" + key + "]";
-            }
-            remain = remain.substring(remain.indexOf(":") + 1);
-        }
-        realMessage += remain;
-        return realMessage;
-    }else{
-        //twitch
-        realMessage = "";
-        const $ = layui.jquery;
-        $(message.split(" ")).each((i,split)=>{
-            const emote = getEmoteByName(split);
-            if(emote){
-                realMessage += '<img class="emote" src="'+ emote.images +'">';
-            }else if(split.trim()){
-                if(/^[a-zA-Z ]+$/.test(split)){
-                    realMessage += "[" + split + "]";
-                }else{
-                    realMessage += " " + split + " ";
+function getEmoteMessage(message) {
+    if (!message) return Promise.resolve("");
+
+    // 判断是 YouTube 风格还是 Twitch 风格
+    const isYouTube = message.indexOf(":") > -1;
+
+    if (isYouTube) {
+        const parts = message.split(":");
+        const first = parts.shift(); // 保留第一个
+        const last = parts.pop();    // 保留最后一个
+        const promises = parts.map(key =>
+            getEmoteByName(key).then(emote => ({ key, emote }))
+        );
+
+        return Promise.all(promises).then(results => {
+            let realMessage = first;
+            for (const { key, emote } of results) {
+                if (emote) {
+                    realMessage += emote.isCustomEmoji ? `<img alt="" class="emote" src="${emote.images}">` : emote.emotesId;
+                } else if (key.trim()) {
+                    realMessage += `[${key}]`;
                 }
             }
-        })
-        return realMessage;
+            // 添加尾部
+            if (last) realMessage += last;
+            return realMessage;
+        });
+    } else {
+        // Twitch 风格
+        const splits = message.split(" ");
+        const promises = splits.map(split =>
+            getEmoteByName(split).then(emote => ({ split, emote })).catch(() => ({ split, emote: null }))
+        );
+
+        return Promise.all(promises).then(results => {
+            return results.map(({ split, emote }) => {
+                if (emote) return `<img class="emote" src="${emote.images}">`;
+                if (split.trim() && /^[a-zA-Z ]+$/.test(split)) return `[${split}]`;
+                return ` ${split} `;
+            }).join("");
+        });
     }
 }
 function getWindowSize(){

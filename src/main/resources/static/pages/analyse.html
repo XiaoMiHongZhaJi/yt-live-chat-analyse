@@ -158,7 +158,12 @@
                         let message = d.messages[i][0];
                         const count = d.messages[i][1];
                         if(message && d.messages[i][2] > 0){
-                            message = getEmoteMssage(message);
+                            const span_id = Math.random().toString(36);
+                            message = '<span id="' + span_id + '">' + message + '</span>';
+                            (async () => {
+                                const realMessage = await getEmoteMessage(d.messages[i][0]);
+                                document.getElementById(span_id).innerHTML = realMessage;
+                            })();
                         }
                         if(count >= 20){
                             message = '<span style="font-weight: bold;color: red;">('+ count +')[' + message + ']</span>';

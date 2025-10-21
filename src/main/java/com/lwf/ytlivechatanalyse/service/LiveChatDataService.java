@@ -209,7 +209,7 @@ public class LiveChatDataService {
         if(id == null){
             id = 0;
         }
-        int startId = id - limit / 4;
+        int startId = id - limit / 2;
         int endId = startId + limit;
         queryWrapper.ge("id", startId);
         queryWrapper.lt("id", endId);

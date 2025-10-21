@@ -26,7 +26,12 @@ function showHotListDetailDialog(liveDate, startTimestamp, intervalMinutes, url,
                     {field: 'message', minWidth: 180, title: '消息',templet: (d)=>{
                         let message = d.message || '';
                         if(d.emotesCount){
-                            message = getEmoteMssage(message);
+                            const span_id = Math.random().toString(36);
+                            message = '<span id="' + span_id + '">' + message + '</span>';
+                            (async () => {
+                                const realMessage = await getEmoteMessage(d.message);
+                                document.getElementById(span_id).innerHTML = realMessage;
+                            })();
                         }
                         const scInfo = d.scInfo
                         if(scInfo){
