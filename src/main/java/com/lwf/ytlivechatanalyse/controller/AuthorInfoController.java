@@ -20,20 +20,19 @@ public class AuthorInfoController {
     AuthorInfoService authorInfoService;
 
     @RequestMapping("/queryListBySelector")
-    public List<AuthorInfo> queryListBySelector(String authorName, String year){
-        return authorInfoService.queryListBySelector(authorName, year);
+    public List<AuthorInfo> queryListBySelector(String authorName, String schema){
+        return authorInfoService.queryListBySelector(authorName, schema);
     }
 
     @RequestMapping("/queryList")
-    public Result queryList(AuthorInfo authorInfo, String year, int limit, int page){
-        limit = Math.min(limit, Constant.MAX_PAGE_SIZE);
+    public Result queryList(AuthorInfo authorInfo, String schema, int limit, int page){
         PageHelper.startPage(page, limit);
-        return new Result<>(new PageInfo<>(authorInfoService.selectList(authorInfo, year)));
+        return new Result<>(new PageInfo<>(authorInfoService.selectList(authorInfo, schema)));
     }
 
     @RequestMapping("/queryAuthorInfo")
-    public AuthorInfo queryAuthorInfo(String authorId, String year){
-        return authorInfoService.queryAuthorInfo(authorId, year);
+    public AuthorInfo queryAuthorInfo(String authorId, String schema){
+        return authorInfoService.queryAuthorInfo(authorId, schema);
     }
 
 }

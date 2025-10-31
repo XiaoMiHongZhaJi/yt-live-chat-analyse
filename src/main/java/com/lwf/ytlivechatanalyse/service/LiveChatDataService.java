@@ -6,12 +6,13 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.lwf.ytlivechatanalyse.bean.EmotesData;
 import com.lwf.ytlivechatanalyse.bean.LiveChatData;
+import com.lwf.ytlivechatanalyse.bean.LiveInfo;
 import com.lwf.ytlivechatanalyse.bean.LivingChatData;
 import com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper;
 import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
-import com.lwf.ytlivechatanalyse.interceptor.DynamicSchemaInterceptor;
 import com.lwf.ytlivechatanalyse.util.Constant;
 import com.lwf.ytlivechatanalyse.util.JsonUtil;
+import com.lwf.ytlivechatanalyse.util.SchemaUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
@@ -74,9 +75,7 @@ public class LiveChatDataService {
         }
         queryWrapper.eq("blocked", 0);
         queryWrapper.orderBy(true, isAsc, "timestamp");
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
+        SchemaUtil.setSchema(liveChatData);
         return liveChatDataMapper.selectList(queryWrapper);
     }
 
@@ -107,17 +106,13 @@ public class LiveChatDataService {
         }
         queryWrapper.eq("blocked", 0);
         queryWrapper.orderBy(true, isAsc, "timestamp");
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
+        SchemaUtil.setSchema(liveChatData);
         return livingChatDataMapper.selectList(queryWrapper);
     }
 
-    public Long selectStartTimestamp(String liveDate){
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
-        LiveChatData liveChatData = liveChatDataMapper.selectStartMessage(liveDate);
+    public Long selectStartTimestamp(LiveInfo liveInfo){
+        SchemaUtil.setSchema(liveInfo);
+        LiveChatData liveChatData = liveChatDataMapper.selectStartMessage(liveInfo.getLiveDate());
         if(liveChatData == null){
             return null;
         }
@@ -129,25 +124,21 @@ public class LiveChatDataService {
         return timestamp - (long)(timeInSeconds.doubleValue() * 1000000);
     }
 
-    public int selectCount(String liveDate){
+    public int selectCount(LiveInfo liveInfo){
         //录像
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
-        queryWrapper.likeRight("live_date", liveDate);
+        queryWrapper.likeRight("live_date", liveInfo.getLiveDate());
         queryWrapper.eq("blocked", 0);
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
+        SchemaUtil.setSchema(liveInfo);
         return Math.toIntExact(liveChatDataMapper.selectCount(queryWrapper));
     }
 
-    public int selectLivingCount(String liveDate){
+    public int selectLivingCount(LiveInfo liveInfo){
         //直播中，直播预告
         QueryWrapper<LivingChatData> queryWrapper = new QueryWrapper<>();
-        queryWrapper.likeRight("live_date", liveDate);
+        queryWrapper.likeRight("live_date", liveInfo.getLiveDate());
         queryWrapper.eq("blocked", 0);
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
+        SchemaUtil.setSchema(liveInfo);
         return Math.toIntExact(livingChatDataMapper.selectCount(queryWrapper));
     }
 
@@ -156,27 +147,14 @@ public class LiveChatDataService {
             return;
         }
         try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
-            String liveDate = batchList.get(0).getLiveDate();
-            if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-                DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-            }
+            LiveChatData liveChatData1 = batchList.get(0);
+            SchemaUtil.setSchema(liveChatData1);
             for (LiveChatData liveChatData : batchList) {
                 sqlSession.insert("com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper.insertNotExists", liveChatData);
             }
             sqlSession.commit();
         } catch (Exception e) {
-            for (LiveChatData liveChatData : batchList) {
-                String liveDate = liveChatData.getLiveDate();
-                if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-                    DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-                }
-                try {
-                    liveChatDataMapper.insertNotExists(liveChatData);
-                } catch (Exception e1) {
-                    logger.error("批量插入出错，已改为单个插入，错误数据：", e1);
-                    logger.error(liveChatData.toString());
-                }
-            }
+            logger.error("批量插入出错", e);
         }
     }
 
@@ -217,9 +195,7 @@ public class LiveChatDataService {
         queryWrapper.last("limit " + limit);
         if(StringUtils.isNotBlank(liveDate)){
             queryWrapper.likeRight("live_date", liveDate);
-            if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
-                DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-            }
+            SchemaUtil.setSchema(liveChatData);
         }
         return liveChatDataMapper.selectList(queryWrapper);
     }
@@ -228,7 +204,7 @@ public class LiveChatDataService {
     /**
      * 从json文件导入弹幕数据
      */
-    public String importJsonFile(MultipartFile file, String liveDate) {
+    public String importJsonFile(MultipartFile file, LiveInfo liveInfo) {
         long startTime = System.currentTimeMillis();   //获取开始时间
         byte[] bytes = null;
         try {
@@ -239,10 +215,12 @@ public class LiveChatDataService {
         String jsonData = new String(bytes);
         JSONArray jsonArray = JSON.parseArray(jsonData);
         List<LiveChatData> batchList = new ArrayList<>();
+        String liveDate = liveInfo.getLiveDate();
         for(int i = 0; i < jsonArray.size(); i++){
             JSONObject jsonObject = (JSONObject) jsonArray.get(i);
             LiveChatData dto = JsonUtil.getLiveChat(jsonObject);
             dto.setLiveDate(liveDate);
+            dto.setSchema(liveInfo.getSchema());
             String message = dto.getMessage();
             if(message == null){
                 logger.error("jsonArray 第" + i + "条数据有误，内容：");
@@ -254,7 +232,7 @@ public class LiveChatDataService {
                 //包含emoji
                 List<EmotesData> emotesDataList = JsonUtil.getEmotes(emotes);
                 for (EmotesData emotesData :  emotesDataList) {
-                    emotesDataService.insertNotExists(emotesData);
+                    emotesDataService.insertNotExists(emotesData, liveInfo.getSchema());
                 }
                 dto.setEmotesCount(emotes.size());
             }
@@ -268,7 +246,7 @@ public class LiveChatDataService {
             this.insertBatch(batchList);
             batchList.clear();
         }
-        int count = selectCount(liveDate);
+        int count = selectCount(liveInfo);
         long time = System.currentTimeMillis() - startTime; //获取结束时间
         return String.format("%s json数据总条数：%d。导入条数：%d。用时：%d秒", liveDate, jsonArray.size(), count, time / 1000);
     }

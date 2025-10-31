@@ -141,7 +141,7 @@ public class BulletXmlUtil {
             message = message.replaceAll("[&<>\u0000-\u0019]","_");
             Integer emotesCount = liveChatData.getEmotesCount();
             if(emotesCount != null && emotesCount > 0){
-                message = getEmoteMssage(message);
+                message = getEmoteMssage(message, liveChatData.getSchema());
             }
             message = "：" + message;
         }
@@ -171,7 +171,7 @@ public class BulletXmlUtil {
         return String.format("<d p=\"%s,%s,%s,%s,0\">%s%s</d>", second, type, FONT_SIZE, fontColor, authorName, message);
     }
 
-    private static String getEmoteMssage(String message) {
+    private static String getEmoteMssage(String message, String schema) {
         int index = message.indexOf(":");
         if(index > -1){
             //YouTube
@@ -181,7 +181,7 @@ public class BulletXmlUtil {
             while(endIndex > 2){
                 String key = remain.substring(1, endIndex);
                 if(emotesMap == null){
-                    initEmoteMap();
+                    initEmoteMap(schema);
                 }
                 String emote = emotesMap.get(key);
                 if(StringUtils.isBlank(emote)){
@@ -203,8 +203,8 @@ public class BulletXmlUtil {
         return message;
     }
 
-    private static void initEmoteMap() {
-        List<EmotesData> emotesData = emotesDataService.selectEmoji();
+    private static void initEmoteMap(String schema) {
+        List<EmotesData> emotesData = emotesDataService.selectEmoji(schema);
         emotesMap = new HashMap<>();
         for(EmotesData emote : emotesData){
             emotesMap.put(emote.getName(), emote.getEmotesId());

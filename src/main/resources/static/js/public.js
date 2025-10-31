@@ -1,31 +1,31 @@
 
-const defaultYear = "2025";
-const yearList = [2024, 2023, 2022, 2021];
+const defaultSchema = "2025";
+const schemaList = ["2025", "2024", "2023", "2022", "2021", "et"];
 let liveInfoDict = {};
 
-function initYearNav() {
+function initSchemaNav() {
     layui.use(['jquery'], function(){
         const $ = layui.jquery;
-        const currentYear = layui.data("navInfo")["year"];
-        if(!currentYear){
+        const currentSchema = layui.data("navInfo")["schema"];
+        if(!currentSchema){
             layui.data("navInfo",{
-                key: "year",
-                value: defaultYear
+                key: "schema",
+                value: defaultSchema
             });
-        }else if(yearList.indexOf(currentYear) > -1){
-            $(".layui-nav").append('<li class="layui-nav-item layui-nav-year" data-year="' + defaultYear + '"><a href="liveChat.html">' + defaultYear + '</a></li>');
+        }else if(schemaList.indexOf(currentSchema) > -1){
+            $(".layui-nav").append('<li class="layui-nav-item layui-nav-schema" data-schema="' + defaultSchema + '"><a href="liveChat.html">' + defaultSchema + '</a></li>');
         }
-        for (let i = 0; i < yearList.length; i++) {
-            const year = yearList[i];
-            if(currentYear != year){
-                $(".layui-nav").append('<li class="layui-nav-item layui-nav-year" data-year="' + year + '"><a href="liveChat.html">' + year + '</a></li>');
+        for (let i = 0; i < schemaList.length; i++) {
+            const schema = schemaList[i];
+            if(currentSchema != schema){
+                $(".layui-nav").append('<li class="layui-nav-item layui-nav-schema" data-schema="' + schema + '"><a href="liveChat.html">' + schema + '</a></li>');
             }
         }
-        $(".layui-nav-year").click((i) => {
-            const year = $(i.target).closest("li").data("year");
+        $(".layui-nav-schema").click((i) => {
+            const schema = $(i.target).closest("li").data("schema");
             layui.data("navInfo",{
-                key: "year",
-                value: year
+                key: "schema",
+                value: schema
             });
         })
     })
@@ -266,12 +266,12 @@ function getUrlTag(url, time, title){
 function initLiveDateSelector(callback, showAll, param){
     const $ = layui.jquery;
     const form = layui.form;
-    const currentYear = layui.data("navInfo")["year"];
-    if(currentYear && currentYear != defaultYear){
+    const currentSchema = layui.data("navInfo")["schema"];
+    if(currentSchema && currentSchema != defaultSchema){
         if(!param){
             param = {};
         }
-        param["liveDate"] = currentYear;
+        param["schema"] = currentSchema;
     }
     $.ajax({url: '../liveInfo/queryListBySelector', data: param}).then((selectorList)=>{
         if(!selectorList || selectorList.length == 0){

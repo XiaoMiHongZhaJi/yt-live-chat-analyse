@@ -6,7 +6,6 @@ import com.github.pagehelper.PageInfo;
 import com.lwf.ytlivechatanalyse.bean.BulletConfig;
 import com.lwf.ytlivechatanalyse.bean.LiveChatData;
 import com.lwf.ytlivechatanalyse.bean.LiveInfo;
-import com.lwf.ytlivechatanalyse.bean.LivingChatData;
 import com.lwf.ytlivechatanalyse.service.LiveChatDataService;
 import com.lwf.ytlivechatanalyse.service.LiveInfoService;
 import com.lwf.ytlivechatanalyse.service.SrtDataService;
@@ -14,14 +13,16 @@ import com.lwf.ytlivechatanalyse.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.*;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -64,7 +65,7 @@ public class LiveInfoController {
             if(file != null){
                 String filename = file.getOriginalFilename();
                 if(filename != null && filename.endsWith("json")){
-                    String importResult = liveChatDataService.importJsonFile(file, liveInfo.getLiveDate());
+                    String importResult = liveChatDataService.importJsonFile(file, liveInfo);
                     return new Result<>(200, importResult);
                 }
             }
@@ -207,8 +208,8 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/queryListBySelector")
-    public List<LiveInfo> queryListBySelector(LiveInfo liveInfo){
-        return liveInfoService.queryListBySelector(liveInfo);
+    public List<LiveInfo> queryListBySelector(LiveInfo liveInfo, String schema){
+        return liveInfoService.queryListBySelector(liveInfo, schema);
     }
 
     @RequestMapping("/queryListById")
@@ -222,12 +223,12 @@ public class LiveInfoController {
             if(LiveInfo.LIVE_STATUS_DONE.equals(liveInfo.getLiveStatus())){
                 //录像
                 if(liveInfo.getLiveChatCount() == null) {
-                    int liveChatCount = liveChatDataService.selectCount(liveDate);
+                    int liveChatCount = liveChatDataService.selectCount(liveInfo);
                     liveInfo.setLiveChatCount(liveChatCount);
                     updateLiveInfo.setLiveChatCount(liveChatCount);
                 }
             }else{
-                int livingChatCount = liveChatDataService.selectLivingCount(liveDate);
+                int livingChatCount = liveChatDataService.selectLivingCount(liveInfo);
                 liveInfo.setLivingChatCount(livingChatCount);
                 updateLiveInfo.setLivingChatCount(livingChatCount);
             }
@@ -237,15 +238,14 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/queryList")
-    public Result<LiveInfo> queryList(HttpServletRequest request, HttpServletResponse response, int page, int limit, String year){
+    public Result<LiveInfo> queryList(HttpServletRequest request, HttpServletResponse response, int page, int limit, String schema){
         if(!AuthUtil.auth(request)){
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
             return new Result<>(500, "认证失败");
         }
-        limit = Math.min(limit, Constant.MAX_PAGE_SIZE);
         PageHelper.startPage(page, limit);
-        return new Result<>(new PageInfo<>(liveInfoService.selectList(year)));
+        return new Result<>(new PageInfo<>(liveInfoService.selectList(schema)));
     }
 
     @RequestMapping("/queryPrevLiveInfo")
@@ -272,15 +272,14 @@ public class LiveInfoController {
         if(liveInfo == null || StringUtils.isBlank(liveInfo.getLiveDate())){
             throw new RuntimeException("更新失败：liveDate 不能为空");
         }
-        String liveDate = liveInfo.getLiveDate();
         if(liveInfo.getId() == null){
             return liveInfoService.updateLiveInfoByDate(liveInfo);
         }
         if(liveInfo.getLiveChatCount() == null){
-            liveInfo.setLiveChatCount(liveChatDataService.selectCount(liveDate));
+            liveInfo.setLiveChatCount(liveChatDataService.selectCount(liveInfo));
         }
         if(liveInfo.getLivingChatCount() == null){
-            liveInfo.setLivingChatCount(liveChatDataService.selectLivingCount(liveDate));
+            liveInfo.setLivingChatCount(liveChatDataService.selectLivingCount(liveInfo));
         }
         return liveInfoService.updateLiveInfoById(liveInfo);
     }
@@ -302,7 +301,7 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/importSrt")
-    public Result importSrt(HttpServletRequest request, HttpServletResponse response, String liveDate, MultipartFile file){
+    public Result importSrt(HttpServletRequest request, HttpServletResponse response, String liveDate, String schema, MultipartFile file){
         if(!AuthUtil.auth(request)){
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
@@ -316,8 +315,8 @@ public class LiveInfoController {
         if(filename == null || !filename.endsWith(".srt")){
             return new Result<>(500, "只能导入srt文件");
         }
-        String errMsg = srtDataService.importSrt(liveDate, file);
-        Long count = srtDataService.selectCount(liveDate);
+        String errMsg = srtDataService.importSrt(liveDate, schema, file);
+        Long count = srtDataService.selectCount(liveDate, schema);
         LiveInfo liveInfo = new LiveInfo();
         liveInfo.setLiveDate(liveDate);
         liveInfo.setSrtCount(count.intValue());
@@ -347,21 +346,28 @@ public class LiveInfoController {
     }
     @RequestMapping("/queryImgUrl")
     public ResponseEntity<String> getRedirectedImageUrl(@RequestParam String originalUrl) {
-        if(StringUtils.isBlank(originalUrl)){
+        if (StringUtils.isBlank(originalUrl)) {
             return ResponseEntity.ok("");
         }
         HttpHeaders headers = new HttpHeaders();
         HttpEntity<String> entity = new HttpEntity<>(headers);
-        RestTemplateBuilder builder = new RestTemplateBuilder();
-        RestTemplate restTemplate = builder.build();
+        CloseableHttpClient httpClient = HttpClientBuilder.create().disableRedirectHandling().build();
+        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
+        RestTemplate restTemplate = new RestTemplate(factory);
 
-        ResponseEntity<Void> response = restTemplate.exchange(originalUrl, HttpMethod.HEAD, entity, Void.class);
-
-        if (response.getStatusCode() == HttpStatus.FOUND || response.getStatusCode() == HttpStatus.MOVED_PERMANENTLY) {
+        ResponseEntity<Void> response;
+        try {
+            response = restTemplate.exchange(originalUrl, HttpMethod.GET, entity, Void.class);
+        } catch (Exception e) {
+            logger.error("获取图片失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error");
+        }
+        if (response.getStatusCode().is3xxRedirection()) {
             String redirectedUrl = response.getHeaders().getLocation().toString();
             return ResponseEntity.ok(redirectedUrl);
         }
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error");
+        logger.error("获取图片失败：{}", response);
+        return ResponseEntity.ok(originalUrl);
     }
 }
 

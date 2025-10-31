@@ -5,10 +5,10 @@ import com.lwf.ytlivechatanalyse.bean.*;
 import com.lwf.ytlivechatanalyse.dao.HotListMapper;
 import com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper;
 import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
-import com.lwf.ytlivechatanalyse.interceptor.DynamicSchemaInterceptor;
 import com.lwf.ytlivechatanalyse.util.Constant;
 import com.lwf.ytlivechatanalyse.util.DateUtil;
 import com.lwf.ytlivechatanalyse.util.MessageUtil;
+import com.lwf.ytlivechatanalyse.util.SchemaUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
@@ -55,9 +55,6 @@ public class AnalyseService {
         }
         //开播日期
         String liveDate = liveInfo.getLiveDate();
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
         //间隔秒数
         int intervalSeconds = intervalMinutes * 60;
         List<HotList> hotListList = new ArrayList<>();
@@ -67,22 +64,27 @@ public class AnalyseService {
             queryWrapper.eq("interval_seconds", intervalSeconds);
             queryWrapper.orderByAsc("id");
             // 查询缓存
+            SchemaUtil.setSchema(liveInfo);
             hotListList = hotListMapper.selectList(queryWrapper);
             if(!CollectionUtils.isEmpty(hotListList)){
                 return hotListList;
             }
         }
+        String schema = liveInfo.getSchema();
         liveInfo = liveInfoService.selectOne(liveInfo);
         if(liveInfo == null){
             return hotListList;
         }
         //直播状态
         String liveStatus = liveInfo.getLiveStatus();
+        //弹幕状态
+        String downloadStatus = liveInfo.getDownloadStatus();
         //开始时间戳
         Long startTimestamp = liveInfo.getStartTimestamp();
         LiveChatData liveChatData = new LiveChatData();
         liveChatData.setLiveDate(liveDate);
         liveChatData.setMessage(keyword);
+        liveChatData.setSchema(schema);
         List<LiveChatData> liveChatAll = liveChatDataService.selectList(liveChatData, true);
         if(CollectionUtils.isEmpty(liveChatAll)){
             liveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_NONE);
@@ -125,42 +127,20 @@ public class AnalyseService {
             }
             liveChatList.add(liveChat);
         }
-        if(StringUtils.isBlank(keyword) &&
+        if(StringUtils.isBlank(keyword) && !hotListList.isEmpty() &&
                 LiveInfo.LIVE_STATUS_DONE.equals(liveStatus) &&
-                LiveInfo.DOWNLOAD_STATUS_DONE.equals(liveInfo.getDownloadStatus())){
-            batchInsertHotList(hotListList);
+                LiveInfo.DOWNLOAD_STATUS_DONE.equals(downloadStatus)) {
+            try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
+                SchemaUtil.setSchema(liveInfo);
+                for (HotList hotList : hotListList) {
+                    sqlSession.insert("com.lwf.ytlivechatanalyse.dao.HotListMapper.insert", hotList);
+                }
+                sqlSession.commit();
+            } catch (Exception e) {
+                logger.error("批量插入出错", e);
+            }
         }
         return hotListList;
-    }
-
-    private void batchInsertHotList(List<HotList> hotListList) {
-        if (CollectionUtils.isEmpty(hotListList)) {
-            return;
-        }
-        try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
-            String liveDate = hotListList.get(0).getLiveDate();
-            if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-                DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-            }
-            for (HotList hotList : hotListList) {
-                sqlSession.insert("com.lwf.ytlivechatanalyse.dao.HotListMapper.insert", hotList);
-            }
-            sqlSession.commit();
-        } catch (Exception e) {
-            logger.error("批量插入出错", e);
-            for (HotList hotList : hotListList) {
-                String liveDate = hotList.getLiveDate();
-                if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-                    DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-                }
-                try {
-                    hotListMapper.insert(hotList);
-                } catch (Exception e1) {
-                    logger.error("批量插入出错，已改为单个插入，错误数据：", e1);
-                    logger.error(hotList.toString());
-                }
-            }
-        }
     }
 
     private HotList getHotList(int startSecond, int intervalSeconds, List<LiveChatData> liveChatList){
@@ -278,16 +258,14 @@ public class AnalyseService {
         return hotList;
     }
 
-    public List queryHotListDetail(String liveDate, Long startTimestamp, Integer intervalMinutes){
+    public List queryHotListDetail(String liveDate, String schema, Long startTimestamp, Integer intervalMinutes){
         Long endTimestamp = startTimestamp + intervalMinutes * 60 * 1000000;
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
         queryWrapper.likeRight("live_date", liveDate);
         queryWrapper.ge("timestamp", startTimestamp);
         queryWrapper.lt("timestamp", endTimestamp);
         queryWrapper.orderByAsc("timestamp");
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
+        SchemaUtil.setSchema(schema);
         List liveChatAll = liveChatDataMapper.selectList(queryWrapper);
         LiveInfo queryInfo = new LiveInfo();
         queryInfo.setLiveDate(liveDate);

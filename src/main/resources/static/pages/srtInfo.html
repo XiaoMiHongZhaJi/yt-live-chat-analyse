@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes" />
     <title>弹幕统计分析</title>
-    <link rel="stylesheet" href="../modules/layui/css/layui.css?t=2025_03_11">
+    <link rel="stylesheet" href="../modules/layui/css/layui.css">
     <link rel="stylesheet" href="../css/public.css">
-    <script src="../modules/layui/layui.js?t=2025_03_11"></script>
-    <script src="../js/public.js?t=2025_03_20"></script>
-    <script src="dialog/liveDetail.js?t=2025_03_20"></script>
+    <script src="../modules/layui/layui.js"></script>
+    <script src="../js/public.js?t=2025_10_31"></script>
+    <script src="dialog/liveDetail.js?t=2025_10_31"></script>
     <script src="../js/marked.min.js"></script>
-    <script src="dialog/srtDetail.js?t=2025_04_09"></script>
+    <script src="dialog/srtDetail.js?t=2025_10_31"></script>
 </head>
 <body>
 <ul class="layui-nav layui-bg-cyan" lay-filter="demo">
@@ -136,11 +136,12 @@
                 loading: true,
                 url: '../srtInfo/queryList',
                 where: {
-                    liveDate: info.liveDate
+                    liveDate: info.liveDate,
+                    schema: layui.data("navInfo")["schema"]
                 }
             });
         }, true, {srtCount: 1})
-        initYearNav();
+        initSchemaNav();
     });
 </script>
 </body>

@@ -31,7 +31,6 @@ public class LiveChatController {
 
     @RequestMapping("/queryList")
     public Result queryList(LiveChatData liveChatData, String liveStatus, int limit, int page){
-        limit = Math.min(limit, Constant.MAX_PAGE_SIZE);
         if(liveStatus == null || LiveInfo.LIVE_STATUS_DONE.equals(liveStatus)){
             PageHelper.startPage(page, limit);
             List<LiveChatData> liveChatList = liveChatDataService.selectList(liveChatData, false);
@@ -49,7 +48,7 @@ public class LiveChatController {
     }
 
     @RequestMapping("/queryEmotes")
-    public List<EmotesData> queryEmotes(){
-        return emotesDataService.selectAll();
+    public List<EmotesData> queryEmotes(String schema){
+        return emotesDataService.selectAll(schema);
     }
 }

@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes" />
     <title>弹幕统计分析</title>
-    <link rel="stylesheet" href="../modules/layui/css/layui.css?t=2025_03_11">
+    <link rel="stylesheet" href="../modules/layui/css/layui.css">
     <link rel="stylesheet" href="../css/public.css">
-    <script src="../modules/layui/layui.js?t=2025_03_11"></script>
-    <script src="../js/public.js?t=2025_03_20"></script>
-    <script src="dialog/hotListDetail.js?t=2025_03_20"></script>
-    <script src="dialog/liveDetail.js?t=2025_03_20"></script>
+    <script src="../modules/layui/layui.js"></script>
+    <script src="../js/public.js?t=2025_10_31"></script>
+    <script src="dialog/hotListDetail.js?t=2025_10_31"></script>
+    <script src="dialog/liveDetail.js?t=2025_10_31"></script>
     <script src="../js/marked.min.js"></script>
     </head>
 <body>
@@ -114,7 +114,8 @@
                     liveDate: info.liveDate,
                     liveStatus: info.liveStatus,
                     downloadStatus: info.downloadStatus,
-                    intervalMinutes: $("#intervalMinutes").val()
+                    intervalMinutes: $("#intervalMinutes").val(),
+                    schema: layui.data("navInfo")["schema"]
                 }
             });
         })
@@ -160,10 +161,7 @@
                         if(message && d.messages[i][2] > 0){
                             const span_id = Math.random().toString(36);
                             message = '<span id="' + span_id + '">' + message + '</span>';
-                            (async () => {
-                                const realMessage = await getEmoteMessage(d.messages[i][0]);
-                                document.getElementById(span_id).innerHTML = realMessage;
-                            })();
+                            getEmoteMessage(d.messages[i][0]).then(result => document.getElementById(span_id).innerHTML = result);
                         }
                         if(count >= 20){
                             message = '<span style="font-weight: bold;color: red;">('+ count +')[' + message + ']</span>';
@@ -212,6 +210,7 @@
             //执行搜索重载
             const queryInfo = data.field;
             queryInfo.liveStatus = liveInfo.liveStatus;
+            queryInfo.schema = layui.data("navInfo")["schema"];
             table.reload('table-list', {where: queryInfo});
             //加载中
             echartsDensity.showLoading({text: "数据正在加载中", textColor: "#666"});
@@ -225,6 +224,7 @@
             liveInfo = $("#liveDate option:selected").data("liveInfo");
             const data = form.val("search-form");
             data.liveStatus = liveInfo.liveStatus;
+            data.schema = layui.data("navInfo")["schema"];
             table.reload('table-list', {where: data});
             echartsDensity.showLoading({text: "数据正在加载中", textColor: "#666"});
         })
@@ -332,7 +332,10 @@
             echartsCompare.setOption(optionDensity);
             echartsCompare.hideLoading();
             //上期
-            $.ajax({url: '../liveInfo/queryPrevLiveInfo', data: {liveDate: liveDate}}).then((lastLiveDate) => {
+            $.ajax({url: '../liveInfo/queryPrevLiveInfo', data: {
+                    liveDate: liveDate,
+                    schema: layui.data("navInfo")["schema"]}
+            }).then((lastLiveDate) => {
                 if(!lastLiveDate){
                     return ;
                 }
@@ -343,7 +346,8 @@
                         keyword: $('input[name="keyword"]').val(),
                         liveStatus: "2",
                         downloadStatus: "2",
-                        intervalMinutes: $("#intervalMinutes").val()
+                        intervalMinutes: $("#intervalMinutes").val(),
+                        schema: layui.data("navInfo")["schema"]
                     }
                 }).then((lastData) => {
                     echartsData1 = lastData.data;
@@ -358,7 +362,11 @@
                     optionDensity.legend.data.push(lastLiveDate);
                     echartsCompare.setOption(optionDensity);
                     //上上期
-                    $.ajax({url: '../liveInfo/queryPrevLiveInfo', data: {liveDate: lastLiveDate}}).then((lastLiveDate) => {
+                    $.ajax({url: '../liveInfo/queryPrevLiveInfo',
+                        data: {
+                            liveDate: lastLiveDate,
+                            schema: layui.data("navInfo")["schema"]
+                    }}).then((lastLiveDate) => {
                         if(!lastLiveDate){
                             return ;
                         }
@@ -369,7 +377,8 @@
                                 keyword: $('input[name="keyword"]').val(),
                                 liveStatus: "2",
                                 downloadStatus: "2",
-                                intervalMinutes: $("#intervalMinutes").val()
+                                intervalMinutes: $("#intervalMinutes").val(),
+                                schema: layui.data("navInfo")["schema"]
                             }
                         }).then((lastData) => {
                             echartsData2 = lastData.data;
@@ -392,7 +401,7 @@
             showLiveDetailDialog(liveInfo);
             return false;
         })
-        initYearNav();
+        initSchemaNav();
     });
 </script>
 </body>

@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.lwf.ytlivechatanalyse.bean.*;
 import com.lwf.ytlivechatanalyse.dao.*;
-import com.lwf.ytlivechatanalyse.interceptor.DynamicSchemaInterceptor;
 import com.lwf.ytlivechatanalyse.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -43,14 +42,11 @@ public class LiveInfoService {
     LiveChatDataService liveChatDataService;
 
     public void insertLiveInfo(LiveInfo liveInfo) {
-        String liveDate = liveInfo.getLiveDate();
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
+        SchemaUtil.setSchema(liveInfo);
         liveInfoMapper.insert(liveInfo);
     }
 
-    public List<LiveInfo> queryListBySelector(LiveInfo liveInfo){
+    public List<LiveInfo> queryListBySelector(LiveInfo liveInfo, String schema){
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.orderByDesc("live_date");
@@ -58,10 +54,7 @@ public class LiveInfoService {
         if(liveInfo.getSrtCount() != null && liveInfo.getSrtCount() > 0){
             queryWrapper.gt("srt_count", 0);
         }
-        String liveDate = liveInfo.getLiveDate();
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
+        SchemaUtil.setSchema(schema);
         return liveInfoMapper.selectList(queryWrapper);
     }
 
@@ -92,56 +85,39 @@ public class LiveInfoService {
         }
         queryWrapper.last("limit 1");
         queryWrapper.orderByDesc("live_date");
-        String liveDate = liveInfo.getLiveDate();
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
+        SchemaUtil.setSchema(liveInfo);
         return liveInfoMapper.selectOne(queryWrapper);
     }
 
-    public List<LiveInfo> selectList(String year){
+    public List<LiveInfo> selectList(String schema){
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
-        if(StringUtils.isNotBlank(year)){
-            queryWrapper.likeRight("live_date", year);
-        }
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.orderByDesc("live_date");
         queryWrapper.select("id", "live_date", "title", "url", "live_status", "download_status", "view_count", "like_count", "srt_count", "live_chat_count", "living_chat_count", "platform", "start_timestamp");
-        if(StringUtils.isNotBlank(year) && !year.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + year.substring(0, 4));
-        }
+        SchemaUtil.setSchema(schema);
         List<LiveInfo> liveInfoList = liveInfoMapper.selectList(queryWrapper);
         return liveInfoList;
     }
 
     public int updateLiveInfoById(LiveInfo liveInfo){
         liveInfo.setUpdateTime(new Date());
-        String liveDate = liveInfo.getLiveDate();
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
+        SchemaUtil.setSchema(liveInfo);
         return liveInfoMapper.updateById(liveInfo);
     }
 
     public int updateLiveInfoByDate(LiveInfo liveInfo){
         liveInfo.setUpdateTime(new Date());
-        String liveDate = liveInfo.getLiveDate();
         UpdateWrapper<LiveInfo> updateWrapper = new UpdateWrapper<>();
-        updateWrapper.eq("live_date", liveDate);
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
+        updateWrapper.eq("live_date", liveInfo.getLiveDate());
+        SchemaUtil.setSchema(liveInfo);
         return liveInfoMapper.update(liveInfo, updateWrapper);
     }
 
     public int updateLiveInfoByUrl(LiveInfo liveInfo){
         liveInfo.setUpdateTime(new Date());
-        String liveDate = liveInfo.getLiveDate();
         UpdateWrapper<LiveInfo> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("url", liveInfo.getUrl());
-        if(StringUtils.isNotBlank(liveDate) && !liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
+        SchemaUtil.setSchema(liveInfo);
         return liveInfoMapper.update(liveInfo, updateWrapper);
     }
 
@@ -182,14 +158,14 @@ public class LiveInfoService {
         }
         String liveDate = liveInfo.getLiveDate();
         // 判断 url 是否已存在，若已存在，则不再添加
-        Long urlCount = getUrlCount(url, liveDate);
+        Long urlCount = getUrlCount(url, liveInfo);
         if(urlCount > 0){
             logger.warn("url 已存在，准备更新: {}", liveInfo);
             updateLiveInfoByUrl(liveInfo);
             return null;
         }
         // 判断 Title 是否已存在，若已存在，则重命名
-        Long titleCount = getTitleCount(liveDate);
+        Long titleCount = getTitleCount(liveInfo);
         int i = 0;
         while (titleCount > 0){
             i ++;
@@ -200,7 +176,7 @@ public class LiveInfoService {
             logger.warn("{} Title 已存在，尝试更换", liveDate);
             liveDate = String.format("%s_0%s", liveInfo.getLiveDate(), i);
             liveInfo.setLiveDate(liveDate);
-            titleCount = getTitleCount(liveDate);
+            titleCount = getTitleCount(liveInfo);
         }
         insertLiveInfo(liveInfo);
         if(downLiveChat){
@@ -224,9 +200,8 @@ public class LiveInfoService {
         if(StringUtils.isBlank(liveInfo.getTitle())){
             liveInfo.setTitle(url.substring(url.lastIndexOf("/") + 1));
         }
-        String liveDate = liveInfo.getLiveDate();
         // 判断 Title 是否已存在，若已存在，则不再添加
-        Long titleCount = getTitleCount(liveDate);
+        Long titleCount = getTitleCount(liveInfo);
         if (titleCount == 0){
             insertLiveInfo(liveInfo);
         }
@@ -236,23 +211,19 @@ public class LiveInfoService {
         return null;
     }
 
-    private Long getUrlCount(String url, String liveDate) {
+    private Long getUrlCount(String url, LiveInfo liveInfo) {
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.eq("url", url);
-        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
+        SchemaUtil.setSchema(liveInfo);
         return liveInfoMapper.selectCount(queryWrapper);
     }
 
-    private Long getTitleCount(String liveDate) {
+    private Long getTitleCount(LiveInfo liveInfo) {
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
-        queryWrapper.eq("live_date", liveDate);
-        if(!liveDate.startsWith(Constant.DEFAULT_YEAR)){
-            DynamicSchemaInterceptor.setSchema(Constant.DEFAULT_SCHEMA + "_" + liveDate.substring(0, 4));
-        }
+        queryWrapper.eq("live_date", liveInfo.getLiveDate());
+        SchemaUtil.setSchema(liveInfo);
         return liveInfoMapper.selectCount(queryWrapper);
     }
 
@@ -279,7 +250,7 @@ public class LiveInfoService {
                 updateLiveInfoById(updateLiveInfo);
                 String fileName = DateUtil.getNowDateTime() + "_t_living.json";
                 CmdUtil.chatDownloader(url, liveDate, fileName);
-                updateLiveInfo.setLivingChatCount(liveChatDataService.selectLivingCount(finalLiveInfo.getLiveDate()));
+                updateLiveInfo.setLivingChatCount(liveChatDataService.selectLivingCount(finalLiveInfo));
                 updateLiveInfo.setLiveStatus(LiveInfo.LIVE_STATUS_DONE);
                 updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DONE);
                 updateLiveInfoById(updateLiveInfo);
@@ -302,7 +273,7 @@ public class LiveInfoService {
                     Map<String, String> newInfo = CurlUtil.getLiveInfo(url);
                     String newLiveStatus = newInfo.get("liveStatus");
                     updateLiveInfo.setLiveStatus(newLiveStatus);
-                    updateLiveInfo.setLivingChatCount(liveChatDataService.selectLivingCount(liveInfo.getLiveDate()));
+                    updateLiveInfo.setLivingChatCount(liveChatDataService.selectLivingCount(liveInfo));
                     addLiveInfoLog(url, newInfo);
                     if(StringUtils.isBlank(newLiveStatus)){
                         logger.error("youtube 获取直播信息失败。当前时间：" + DateUtil.getNowDateTime());
@@ -365,7 +336,7 @@ public class LiveInfoService {
         updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_DOWNLOADING);
         updateLiveInfoById(updateLiveInfo);
         CmdUtil.chatDownloader(url, liveDate, liveDate + ".json");
-        int count = liveChatDataService.selectCount(liveDate);
+        int count = liveChatDataService.selectCount(liveInfo);
         if(count == 0){
             logger.error("{} 下载弹幕信息失败，条数为0，url：{}", liveDate, url);
             updateLiveInfo.setDownloadStatus(LiveInfo.DOWNLOAD_STATUS_FILURE);
@@ -386,8 +357,8 @@ public class LiveInfoService {
         blockedCount += authorInfoMapper.updateLivingChatDataBlockedName(liveDate);
         blockedCount += authorInfoMapper.updateLivingChatDataBlockedMessage(liveDate);
         logger.info("{} 更新屏蔽信息完成，屏蔽条数：{}", liveDate, blockedCount);
-        updateLiveInfo.setLivingChatCount(liveChatDataService.selectCount(liveDate));
-        Long startTimestamp = liveChatDataService.selectStartTimestamp(liveDate);
+        updateLiveInfo.setLivingChatCount(liveChatDataService.selectCount(liveInfo));
+        Long startTimestamp = liveChatDataService.selectStartTimestamp(liveInfo);
         if(startTimestamp != null){
             updateLiveInfo.setStartTimestamp(startTimestamp);
         }
@@ -432,7 +403,6 @@ public class LiveInfoService {
         if(StringUtils.isNumeric(livingViewCount)){
             liveInfoLog.setLivingViewCount(Integer.parseInt(livingViewCount));
         }
-        liveInfoLog.setLivingChatCount(liveChatDataService.selectLivingCount(liveDate));
         liveInfoLog.setPlatform(url.contains("youtube") ? "y" : "t");
         liveInfoLog.setUpdateTimestamp(DateUtil.getNowTimestamp());
         liveInfoLog.setUpdateTime(new Date());

@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes" />
     <title>弹幕统计分析</title>
-    <link rel="stylesheet" href="../modules/layui/css/layui.css?t=2025_03_11">
-    <link rel="stylesheet" href="../css/public.css?t=2025_03_03">
-    <script src="../modules/layui/layui.js?t=2025_03_11"></script>
-    <script src="../js/public.js?t=2025_03_20"></script>
-    <script src="dialog/liveDetail.js?t=2025_03_20"></script>
-    <script src="dialog/liveChatDetail.js?t=2025_04_09"></script>
+    <link rel="stylesheet" href="../modules/layui/css/layui.css">
+    <link rel="stylesheet" href="../css/public.css">
+    <script src="../modules/layui/layui.js"></script>
+    <script src="../js/public.js?t=2025_10_31"></script>
+    <script src="dialog/liveDetail.js?t=2025_10_31"></script>
+    <script src="dialog/liveChatDetail.js?t=2025_10_31"></script>
     <script src="../js/marked.min.js"></script>
-    <script src="dialog/downloadBullet.js?t=2025_01_10"></script>
+    <script src="dialog/downloadBullet.js?t=2025_10_31"></script>
 </head>
 <body>
 <ul class="layui-nav layui-bg-cyan" lay-filter="demo">
@@ -93,10 +93,7 @@
                 if(d.emotesCount){
                     const span_id = Math.random().toString(36);
                     message = '<span id="' + span_id + '">' + message + '</span>';
-                    (async () => {
-                        const realMessage = await getEmoteMessage(d.message);
-                        document.getElementById(span_id).innerHTML = realMessage;
-                    })();
+                    getEmoteMessage(d.message).then(result => document.getElementById(span_id).innerHTML = result);
                 }
                 const scInfo = d.scInfo;
                 if(scInfo){
@@ -144,9 +141,9 @@
             $("#submit").addClass("layui-btn-disabled");
             //执行搜索重载
             const queryInfo = data.field;
-            const currentYear = layui.data("navInfo")["year"];
-            if(!queryInfo.liveDate && defaultYear != currentYear){
-                queryInfo.liveDate = currentYear;
+            const currentSchema = layui.data("navInfo")["schema"];
+            if(!queryInfo.schema && defaultSchema != currentSchema){
+                queryInfo.schema = currentSchema;
             }
             if(currentLiveInfo){
                 queryInfo.liveStatus = currentLiveInfo.liveStatus;
@@ -179,9 +176,9 @@
             }else{
                 cols[0][0]["hide"] = false;
             }
-            const currentYear = layui.data("navInfo")["year"];
-            if(!data.liveDate && defaultYear != currentYear){
-                data.liveDate = currentYear;
+            const currentSchema = layui.data("navInfo")["schema"];
+            if(!data.schema && defaultSchema != currentSchema){
+                data.schema = currentSchema;
             }
             table.reload('liveChatData', {
                 page: {curr: 1},
@@ -199,7 +196,7 @@
                 url: '../authorInfo/queryAuthorInfo',
                 data: {
                     authorId: authorId,
-                    year: layui.data("navInfo")["year"]
+                    schema: layui.data("navInfo")["schema"]
                 },
             }).then((authorInfo) => {
                 let html = [];
@@ -351,7 +348,8 @@
             $("#downloadBullet span").text("下载中...");
             let data = {
                 fileType: "ass",
-                liveDate: currentLiveInfo.liveDate
+                liveDate: currentLiveInfo.liveDate,
+                schema: layui.data("navInfo")["schema"]
             }
             if(config != null){
                 $.extend(data, config);
@@ -411,7 +409,8 @@
                 url: '../liveChat/queryList',
                 where: {
                     liveDate: info.liveDate,
-                    liveStatus: info.liveStatus
+                    liveStatus: info.liveStatus,
+                    schema: layui.data("navInfo")["schema"]
                 }
             });
             if(currentLiveInfo && currentLiveInfo.liveStatus == "1"){
@@ -430,7 +429,7 @@
                 }
             }, 8000)
         }
-        initYearNav();
+        initSchemaNav();
     });
 </script>
 </body>

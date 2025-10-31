@@ -32,7 +32,8 @@ function showLiveDetailEditDialog(liveInfo){
     $.ajax('../liveInfo/queryLiveInfo', {
         data: {
             id: liveInfo.id,
-            liveDate: liveInfo.liveDate
+            liveDate: liveInfo.liveDate,
+            schema: layui.data("navInfo")["schema"]
         }
     }).then(data => {
         if(size[1] < 650){

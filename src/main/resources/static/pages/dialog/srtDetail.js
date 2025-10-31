@@ -35,7 +35,8 @@ function showSrtDetailDialog(liveDate, serial, currentLiveInfo){
                 url: '../srtInfo/querySrtDetail',
                 where: {
                     liveDate: liveDate,
-                    serial: serial
+                    serial: serial,
+                    schema: layui.data("navInfo")["schema"]
                 },
                 done: function(res){
                     $("#srtDetailArea span.selected").closest("tr").css("background-color", "#ddd");
@@ -50,7 +51,8 @@ function showSrtDetailDialog(liveDate, serial, currentLiveInfo){
                 table.reload('srtDetail', {
                     where: {
                         liveDate: liveDate,
-                        serial: serial
+                        serial: serial,
+                        schema: layui.data("navInfo")["schema"]
                     }
                 });
                 return false;

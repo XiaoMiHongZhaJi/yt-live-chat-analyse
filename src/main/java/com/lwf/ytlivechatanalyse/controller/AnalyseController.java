@@ -32,8 +32,8 @@ public class AnalyseController {
     }
 
     @RequestMapping("/queryHotListDetail")
-    public Result queryHotListDetail(String liveDate, Long startTimestamp, Integer intervalMinutes){
-        List hotListDetail = analyseService.queryHotListDetail(liveDate, startTimestamp, intervalMinutes);
+    public Result queryHotListDetail(String liveDate, String schema, Long startTimestamp, Integer intervalMinutes){
+        List hotListDetail = analyseService.queryHotListDetail(liveDate, schema, startTimestamp, intervalMinutes);
         return new Result<>(hotListDetail);
     }
 

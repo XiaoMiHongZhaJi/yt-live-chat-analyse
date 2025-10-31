@@ -28,10 +28,7 @@ function showLiveChatDetailDialog(liveDate, id, currentLiveInfo){
                         if(d.emotesCount){
                             const span_id = Math.random().toString(36);
                             message = '<span id="' + span_id + '">' + message + '</span>';
-                            (async () => {
-                                const realMessage = await getEmoteMessage(d.message);
-                                document.getElementById(span_id).innerHTML = realMessage;
-                            })();
+                            getEmoteMessage(d.message).then(result => document.getElementById(span_id).innerHTML = result);
                         }
                         const scInfo = d.scInfo;
                         if(scInfo){
@@ -64,7 +61,8 @@ function showLiveChatDetailDialog(liveDate, id, currentLiveInfo){
                 url: '../liveChat/queryLiveChatDetail',
                 where: {
                     liveDate: liveDate,
-                    id: id
+                    id: id,
+                    schema: layui.data("navInfo")["schema"]
                 },
                 done: function(res){
                     $("#liveChatDetailArea span.selected").closest("tr").css("background-color", "#ddd");
@@ -79,7 +77,8 @@ function showLiveChatDetailDialog(liveDate, id, currentLiveInfo){
                 table.reload('liveChatDetail', {
                     where: {
                         liveDate: liveDate,
-                        id: id
+                        id: id,
+                        schema: layui.data("navInfo")["schema"]
                     }
                 });
                 return false;

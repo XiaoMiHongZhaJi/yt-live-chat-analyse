@@ -25,5 +25,7 @@ public class LiveChatData {
     private Integer emotesCount;
 
     @TableField(exist = false)
+    private String schema;
+    @TableField(exist = false)
     private Integer count;
 }

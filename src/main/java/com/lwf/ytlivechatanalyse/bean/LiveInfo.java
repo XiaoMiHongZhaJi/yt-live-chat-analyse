@@ -1,6 +1,7 @@
 package com.lwf.ytlivechatanalyse.bean;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
@@ -29,6 +30,9 @@ public class LiveInfo {
     private String liveStatus;
     private String downloadStatus;
     private Date updateTime;//最后更新时间
+
+    @TableField(exist = false)
+    private String schema;
 
     //直播状态
     public static final String LIVE_STATUS_PREVIEW = "0";//直播预告

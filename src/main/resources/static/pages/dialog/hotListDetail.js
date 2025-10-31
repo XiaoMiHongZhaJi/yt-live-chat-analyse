@@ -28,10 +28,7 @@ function showHotListDetailDialog(liveDate, startTimestamp, intervalMinutes, url,
                         if(d.emotesCount){
                             const span_id = Math.random().toString(36);
                             message = '<span id="' + span_id + '">' + message + '</span>';
-                            (async () => {
-                                const realMessage = await getEmoteMessage(d.message);
-                                document.getElementById(span_id).innerHTML = realMessage;
-                            })();
+                            getEmoteMessage(d.message).then(result => document.getElementById(span_id).innerHTML = result);
                         }
                         const scInfo = d.scInfo
                         if(scInfo){
@@ -58,7 +55,12 @@ function showHotListDetailDialog(liveDate, startTimestamp, intervalMinutes, url,
 
                 },
                 url: '../analyse/queryHotListDetail',
-                where: {liveDate, startTimestamp, intervalMinutes}
+                where: {
+                    liveDate,
+                    startTimestamp,
+                    intervalMinutes,
+                    schema: layui.data("navInfo")["schema"]
+                }
             });
         },
         btn: ["关闭"]
