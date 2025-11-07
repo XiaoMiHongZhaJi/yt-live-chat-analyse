@@ -7,7 +7,6 @@ import com.lwf.ytlivechatanalyse.bean.SrtData;
 import com.lwf.ytlivechatanalyse.dao.SrtDataMapper;
 import com.lwf.ytlivechatanalyse.interceptor.DynamicSchemaInterceptor;
 import com.lwf.ytlivechatanalyse.util.Constant;
-import com.lwf.ytlivechatanalyse.util.SchemaUtil;
 import com.lwf.ytlivechatanalyse.util.SrtUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.ExecutorType;
@@ -33,11 +32,10 @@ public class SrtDataService {
     @Autowired
     SqlSessionFactory sqlSessionFactory;
 
-    public String batchInsert(String liveDate, String schema, List<SrtData> srtList) {
+    public String batchInsert(String liveDate, List<SrtData> srtList) {
         SqlSession sqlSession = null;
         try {
             sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH);
-            SchemaUtil.setSchema(schema);
             for (SrtData srtData : srtList) {
                 srtData.setLiveDate(liveDate);
                 sqlSession.insert("com.lwf.ytlivechatanalyse.dao.SrtDataMapper.insert", srtData);
@@ -55,19 +53,17 @@ public class SrtDataService {
         return "";
     }
 
-    public String importSrt(String liveDate, String schema, MultipartFile file) {
+    public String importSrt(String liveDate, MultipartFile file) {
         List<SrtData> srtList = SrtUtil.fileToSrt(file);
         if (CollectionUtils.isNotEmpty(srtList)) {
-            SchemaUtil.setSchema(schema);
             QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("live_date", liveDate);
             srtDataMapper.delete(queryWrapper);
         }
-        return batchInsert(liveDate, schema, srtList);
+        return batchInsert(liveDate, srtList);
     }
 
-    public Long selectCount(String liveDate, String schema) {
-        SchemaUtil.setSchema(schema);
+    public Long selectCount(String liveDate) {
         QueryWrapper<SrtData> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("live_date", liveDate);
         return srtDataMapper.selectCount(queryWrapper);
@@ -88,7 +84,6 @@ public class SrtDataService {
         }
         queryWrapper.orderByDesc("live_date");
         queryWrapper.orderByAsc("id");
-        SchemaUtil.setSchema(srtData);
         return srtDataMapper.selectList(queryWrapper);
     }
 
@@ -108,7 +103,6 @@ public class SrtDataService {
         if(StringUtils.isNotBlank(liveDate)){
             queryWrapper.likeRight("live_date", liveDate);
         }
-        SchemaUtil.setSchema(srtData);
         return srtDataMapper.selectList(queryWrapper);
     }
 }

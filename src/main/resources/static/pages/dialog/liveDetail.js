@@ -6,7 +6,7 @@ function showLiveDetailDialog(liveInfo){
     const form = layui.form;
     let height = null;
     let width = null;
-    $.ajax({url: '../liveInfo/queryLiveInfo',
+    $.ajax({url: '../api/liveInfo/queryLiveInfo',
         data: {
             id: liveInfo.id,
             liveDate: liveInfo.liveDate,
@@ -61,7 +61,7 @@ function showLiveDetailDialog(liveInfo){
                 $(".summary img").each((i, e) => {
                     const originalUrl = $(e).data("src");
                     $.ajax({
-                        url: "../liveInfo/queryImgUrl",
+                        url: "../api/liveInfo/queryImgUrl",
                         data: { originalUrl: originalUrl },
                         success: function (url) {
                             if(url){

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes" />
     <title>弹幕统计分析</title>
     <link rel="stylesheet" href="../modules/layui/css/layui.css">
-    <link rel="stylesheet" href="../css/public.css">
+    <link rel="stylesheet" href="../css/public.css?t=2025_10_31">
     <script src="../modules/layui/layui.js"></script>
     <script src="../js/public.js?t=2025_10_31"></script>
     <script src="dialog/liveDetail.js?t=2025_10_31"></script>
@@ -134,7 +134,7 @@
             currentLiveInfo = info;
             table.reload('srtData', {
                 loading: true,
-                url: '../srtInfo/queryList',
+                url: '../api/srtInfo/queryList',
                 where: {
                     liveDate: info.liveDate,
                     schema: layui.data("navInfo")["schema"]

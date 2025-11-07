@@ -13,10 +13,10 @@ public class YTApiUtil {
 
     public static void main(String[] args) throws Exception {
         // 设置 SOCKS5 代理
-//        System.setProperty("socksProxyHost", "127.0.0.1");
-//        System.setProperty("socksProxyPort", "7890");
+        System.setProperty("socksProxyHost", "127.0.0.1");
+        System.setProperty("socksProxyPort", "7890");
 
-        String apiKey = "apiKey";
+        String apiKey = "AIzaSyD-5k93gNMvsiKGWoUY5px42he-wENEqT4";
 
         List<String> ids = Arrays.asList("_I0PpMs_NTk", "oQ5NK0_mWm8");
         List<String> parts = Arrays.asList("status", "contentDetails");

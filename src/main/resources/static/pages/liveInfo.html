@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes" />
     <title>弹幕统计分析</title>
     <link rel="stylesheet" href="../modules/layui/css/layui.css">
-    <link rel="stylesheet" href="../css/public.css">
+    <link rel="stylesheet" href="../css/public.css?t=2025_10_31">
     <script src="../modules/layui/layui.js"></script>
     <script src="../js/public.js?t=2025_10_31"></script>
     <script src="dialog/liveDetailEdit.js?t=2025_10_31"></script>
@@ -21,6 +21,7 @@
     <li class="layui-nav-item"><a href="analyse.html">弹幕统计</a></li>
     <li class="layui-nav-item"><a href="srtInfo.html">字幕数据</a></li>
     <li class="layui-nav-item layui-this"><a href="liveInfo.html">数据管理</a></li>
+    <li class="layui-nav-item"><a href="userManage.html">用户管理</a></li>
 </ul>
 <div class="layuimini-container layuimini-page-anim">
     <div class="layuimini-main">
@@ -28,7 +29,7 @@
     </div>
     <div class="layuimini-main">
         <fieldset class="table-search-fieldset">
-            <legend>新增条目</legend>
+            <legend>新增直播</legend>
             <form class="layui-form layui-form-pane" lay-filter="search-form" action="" method="post" enctype="multipart/form-data" role="form">
                 <div class="layui-form-item">
                     <div class="layui-inline">
@@ -60,17 +61,6 @@
                             </select>
                         </div>
                     </div>
-                    <!--<div class="layui-inline">
-                        <label class="layui-form-label">Json文件</label>
-                        <div class="layui-input-inline">
-                            <input type="file" name="file" id="file" autocomplete="off" style="line-height: 38px;">
-                        </div>
-                    </div>
-                    <div class="layui-inline">
-                        <div class="layui-text">
-                            <p style="margin: 0">* 以2万条弹幕数据为例，提交预计需要1-2分钟，请耐心等待</p>
-                        </div>
-                    </div>-->
                     <div class="layui-inline">
                         <label class="layui-form-label">补全信息</label>
                         <div class="layui-input-block">
@@ -119,7 +109,6 @@
         let downloadingIdList = [];
         let interval = null;
         const liveStatusDict = ["直播预告", "直播中", "已结束"];
-        const currentSchema = layui.data("navInfo")["schema"];
         table.render({
             elem: '#liveInfo',
             method:'post',
@@ -148,8 +137,7 @@
                 {title: '操作', width: 100, toolbar: '#currentTableBar', align: 'center'}
             ]],
             loading: true,
-            url: '../liveInfo/queryList',
-            where: {schema: currentSchema},
+            url: '../api/liveInfo/queryList',
             page: true,
             limits: [10, 15, 35, 50, 100],
             limit: 10,
@@ -181,7 +169,7 @@
                     $(el).prev().find(".icon").addClass("layui-hide");
                     $(el).prev().find(".loading").removeClass("layui-hide");
                     $.ajax({
-                        url: '../liveInfo/importSrt',
+                        url: '../api/liveInfo/importSrt',
                         data: form,
                         processData: false,
                         contentType: false,
@@ -216,7 +204,7 @@
                     })
                 }else if(data.downloadStatus == "1"){
                     $.ajax({
-                        url: '../liveInfo/stopDownload',
+                        url: '../api/liveInfo/stopDownload',
                         data: {
                             id: data.id,
                             url: data.url
@@ -247,7 +235,7 @@
                         liveStatus: "4"
                     };
                     $.ajax({
-                        url: '../liveInfo/updateLiveInfo',
+                        url: '../api/liveInfo/updateLiveInfo',
                         data: delInfo,
                         method: 'post'
                     }).then(() => {
@@ -271,12 +259,8 @@
             liveInfo.title = $.trim(liveInfo.title);
             liveInfo.downLiveChat = $("input[name='downLiveChat']").prop("checked");
             liveInfo.getLiveInfo = $("input[name='getLiveInfo']").prop("checked");
-            // const file = $("#file").files[0];
-            // let form = new FormData();
-            // form.append("file", file);
-            // form.append("liveInfo", liveInfo);
             $.ajax({
-                url: '../liveInfo/addLiveInfo',
+                url: '../api/liveInfo/addLiveInfo',
                 data: liveInfo,
                 method: 'post',
                 // processData: false,
@@ -345,7 +329,7 @@
             }
             interval = setInterval(()=>{
                 $.ajax({
-                    url: '../liveInfo/queryListById',
+                    url: '../api/liveInfo/queryListById',
                     data: {ids: downloadingIdList.join(",")},
                     method: 'post'
                 }).then((result) => {
@@ -372,9 +356,8 @@
         function downloadChatData(data, tr){
             updateStatus(tr, {downloadStatus: "1"});
             data["updateTime"] = undefined;
-            data["schema"] = layui.data("navInfo")["schema"];
             $.ajax({
-                url: '../liveInfo/downloadChatData',
+                url: '../api/liveInfo/downloadChatData',
                 data: data,
                 method: 'post'
             }).then((result) => {

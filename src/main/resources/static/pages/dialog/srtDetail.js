@@ -32,7 +32,7 @@ function showSrtDetailDialog(liveDate, serial, currentLiveInfo){
                 method:'post',
                 cols: cols,
                 loading: true,
-                url: '../srtInfo/querySrtDetail',
+                url: '../api/srtInfo/querySrtDetail',
                 where: {
                     liveDate: liveDate,
                     serial: serial,

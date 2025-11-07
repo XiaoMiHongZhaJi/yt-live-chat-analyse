@@ -58,7 +58,7 @@ function showLiveChatDetailDialog(liveDate, id, currentLiveInfo){
                 method:'post',
                 cols: cols,
                 loading: true,
-                url: '../liveChat/queryLiveChatDetail',
+                url: '../api/liveChat/queryLiveChatDetail',
                 where: {
                     liveDate: liveDate,
                     id: id,

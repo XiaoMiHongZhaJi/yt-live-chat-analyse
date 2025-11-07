@@ -8,7 +8,6 @@ import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
 import com.lwf.ytlivechatanalyse.util.Constant;
 import com.lwf.ytlivechatanalyse.util.DateUtil;
 import com.lwf.ytlivechatanalyse.util.MessageUtil;
-import com.lwf.ytlivechatanalyse.util.SchemaUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
@@ -64,7 +63,6 @@ public class AnalyseService {
             queryWrapper.eq("interval_seconds", intervalSeconds);
             queryWrapper.orderByAsc("id");
             // 查询缓存
-            SchemaUtil.setSchema(liveInfo);
             hotListList = hotListMapper.selectList(queryWrapper);
             if(!CollectionUtils.isEmpty(hotListList)){
                 return hotListList;
@@ -113,17 +111,21 @@ public class AnalyseService {
             double sendtime = Double.parseDouble(timeInSeconds.toString());
             while (sendtime >  startSecond + intervalSeconds){
                 //超出时间段
+                startSecond += intervalSeconds;
+                int liveChatSize = liveChatList.size();
+                if (liveChatSize == 0){
+                    continue;
+                }
                 HotList hotList = getHotList(startSecond, intervalSeconds, liveChatList);
-                totalCount += liveChatList.size();
+                totalCount += liveChatSize;
                 hotList.setTotalCount(totalCount);
-                if(liveChatList.size() > 0){
+                if(liveChatSize > 0){
                     hotList.setStartTimestamp(liveChatList.get(0).getTimestamp());
                 }
                 hotList.setIntervalSeconds(intervalSeconds);
                 hotList.setLiveDate(liveDate);
                 hotListList.add(hotList);
                 liveChatList.clear();
-                startSecond += intervalSeconds;
             }
             liveChatList.add(liveChat);
         }
@@ -131,7 +133,6 @@ public class AnalyseService {
                 LiveInfo.LIVE_STATUS_DONE.equals(liveStatus) &&
                 LiveInfo.DOWNLOAD_STATUS_DONE.equals(downloadStatus)) {
             try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
-                SchemaUtil.setSchema(liveInfo);
                 for (HotList hotList : hotListList) {
                     sqlSession.insert("com.lwf.ytlivechatanalyse.dao.HotListMapper.insert", hotList);
                 }
@@ -258,14 +259,13 @@ public class AnalyseService {
         return hotList;
     }
 
-    public List queryHotListDetail(String liveDate, String schema, Long startTimestamp, Integer intervalMinutes){
+    public List queryHotListDetail(String liveDate, Long startTimestamp, Integer intervalMinutes){
         Long endTimestamp = startTimestamp + intervalMinutes * 60 * 1000000;
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
         queryWrapper.likeRight("live_date", liveDate);
         queryWrapper.ge("timestamp", startTimestamp);
         queryWrapper.lt("timestamp", endTimestamp);
         queryWrapper.orderByAsc("timestamp");
-        SchemaUtil.setSchema(schema);
         List liveChatAll = liveChatDataMapper.selectList(queryWrapper);
         LiveInfo queryInfo = new LiveInfo();
         queryInfo.setLiveDate(liveDate);

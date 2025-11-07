@@ -29,7 +29,7 @@ function showLiveDetailEditDialog(liveInfo){
     const form = layui.form;
     const laydate = layui.laydate;
     let height = null;
-    $.ajax('../liveInfo/queryLiveInfo', {
+    $.ajax('../api/liveInfo/queryLiveInfo', {
         data: {
             id: liveInfo.id,
             liveDate: liveInfo.liveDate,
@@ -55,7 +55,7 @@ function showLiveDetailEditDialog(liveInfo){
                         return;
                     }
                     $.ajax({
-                        url: '../liveInfo/getLiveInfo',
+                        url: '../api/liveInfo/getLiveInfo',
                         data: {
                             url: url,
                             cookie: cookie
@@ -101,7 +101,7 @@ function showLiveDetailEditDialog(liveInfo){
                     liveInfo.startTimestamp = new Date(liveInfo.startTime) * 1000;
                 }
                 $.ajax({
-                    url: '../liveInfo/updateLiveInfo',
+                    url: '../api/liveInfo/updateLiveInfo',
                     data: liveInfo,
                     method: 'post'
                 }).then(() => {

@@ -23,7 +23,7 @@ create table author_info
     message_count     integer,
     all_author_names  varchar(600) default NULL::character varying,
     author_name_count     integer,
-    update_time       timestamp with time zone,
+    update_time       timestamp without time zone,
     blocked           smallint     default '0'::smallint
 );
 
@@ -70,7 +70,7 @@ create table blocked_keywords
     id           bigserial   not null,
     keywords     varchar(30) not null,
     blocked_type smallint                 default '0'::smallint,
-    update_time  timestamp with time zone default CURRENT_TIMESTAMP
+    update_time  timestamp without time zone default CURRENT_TIMESTAMP
 );
 
 comment on table blocked_keywords is '屏蔽词信息';
@@ -231,7 +231,7 @@ create table live_info
     duration_time     varchar(10)  default NULL::character varying,
     live_status       varchar(1)   default '0'::character varying,
     download_status   varchar(1)   default '0'::character varying,
-    update_time       timestamp with time zone
+    update_time       timestamp without time zone
 );
 
 comment on column live_info.id is '主键id';
@@ -289,7 +289,7 @@ create table live_info_log
     platform          varchar(1)   default NULL::character varying,
     update_timestamp  bigint,
     live_status       varchar(1)   default '0'::character varying,
-    update_time       timestamp with time zone
+    update_time       timestamp without time zone
 );
 
 comment on column live_info_log.id is '主键id';
@@ -412,7 +412,7 @@ create table video_info
     like_count       varchar(10)  default NULL::character varying,
     platform         varchar(1)   default NULL::character varying,
     duration_time    varchar(10)  default NULL::character varying,
-    update_time      timestamp with time zone,
+    update_time      timestamp without time zone,
     comment_count    bigint,
     down_song_status varchar(1)   default '0'::character varying
 );
@@ -445,3 +445,50 @@ comment on column video_info.down_song_status is '下歌曲下载状态，0：�
 
 alter table video_info owner to root;
 
+
+CREATE TABLE user_entity (
+     id BIGSERIAL PRIMARY KEY,
+     user_id VARCHAR(100) NOT NULL,
+     user_name VARCHAR(100) NOT NULL,
+     password VARCHAR(255) NOT NULL,
+     status VARCHAR(1) NOT NULL DEFAULT 1,
+     create_time TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+     update_time TIMESTAMP WITHOUT TIME ZONE,
+     last_login_time TIMESTAMP WITHOUT TIME ZONE
+);
+
+comment on table user_entity is '用户信息表';
+comment on column user_entity.id is '主键id';
+comment on column user_entity.user_id is '用户id';
+comment on column user_entity.user_name is '用户名';
+comment on column user_entity.password is '用户密码';
+comment on column user_entity.status is '用户状态 1-正常，0-禁用';
+comment on column user_entity.create_time is '创建时间';
+comment on column user_entity.last_login_time is '上次登录时间';
+
+CREATE TABLE log_entity (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(100),
+    user_name VARCHAR(100),
+    ip VARCHAR(45),
+    method VARCHAR(10),
+    url VARCHAR(500),
+    params TEXT,
+    return_count INT,
+    return_content TEXT,
+    spend_time BIGINT,
+    create_time TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+comment on table log_entity is '日志表';
+comment on column log_entity.id is '主键id';
+comment on column log_entity.user_id is '用户id';
+comment on column log_entity.user_name is '用户名';
+comment on column log_entity.ip is 'IP地址';
+comment on column log_entity.method is '请求方法';
+comment on column log_entity.url is '请求地址';
+comment on column log_entity.params is '请求参数';
+comment on column log_entity.return_count is '返回条数';
+comment on column log_entity.return_content is '返回内容';
+comment on column log_entity.spend_time is '响应耗时';
+comment on column log_entity.create_time is '访问时间';

@@ -13,26 +13,26 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/authorInfo")
+@RequestMapping("/api/authorInfo")
 public class AuthorInfoController {
 
     @Autowired
     AuthorInfoService authorInfoService;
 
     @RequestMapping("/queryListBySelector")
-    public List<AuthorInfo> queryListBySelector(String authorName, String schema){
-        return authorInfoService.queryListBySelector(authorName, schema);
+    public List<AuthorInfo> queryListBySelector(String authorName){
+        return authorInfoService.queryListBySelector(authorName);
     }
 
     @RequestMapping("/queryList")
-    public Result queryList(AuthorInfo authorInfo, String schema, int limit, int page){
+    public Result queryList(AuthorInfo authorInfo, int limit, int page){
         PageHelper.startPage(page, limit);
-        return new Result<>(new PageInfo<>(authorInfoService.selectList(authorInfo, schema)));
+        return new Result<>(new PageInfo<>(authorInfoService.selectList(authorInfo)));
     }
 
     @RequestMapping("/queryAuthorInfo")
-    public AuthorInfo queryAuthorInfo(String authorId, String schema){
-        return authorInfoService.queryAuthorInfo(authorId, schema);
+    public AuthorInfo queryAuthorInfo(String authorId){
+        return authorInfoService.queryAuthorInfo(authorId);
     }
 
 }

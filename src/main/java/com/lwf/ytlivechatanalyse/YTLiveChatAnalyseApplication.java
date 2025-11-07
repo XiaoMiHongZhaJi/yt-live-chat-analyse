@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@MapperScan("com.lwf.ytlivechatanalyse.dao")
+@MapperScan({"com.lwf.ytlivechatanalyse.dao", "com.lwf.ytlivechatanalyse.auth.dao"})
 public class YTLiveChatAnalyseApplication {
 
     public static void main(String[] args){

@@ -38,3 +38,38 @@ a{
     cursor: pointer;
     color: green;
 }
+.layui-nav .layui-nav-item.layui-nav-avatar {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 200;
+}
+.layui-nav-avatar .layui-nav-child {
+    left: auto;
+    right: -6px;
+    top: 60px;
+}
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: #fff;
+    font-weight: bold;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.2s ease;
+}
+.avatar-circle:hover {
+    transform: scale(1.05);
+}
+.username-item {
+    cursor: default;
+}
+.username-item:hover {
+    background: none;
+}

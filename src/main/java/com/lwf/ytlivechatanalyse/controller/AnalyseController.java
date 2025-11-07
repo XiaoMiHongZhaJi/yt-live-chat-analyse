@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/analyse")
+@RequestMapping("/api/analyse")
 public class AnalyseController {
 
     @Autowired
@@ -32,8 +32,8 @@ public class AnalyseController {
     }
 
     @RequestMapping("/queryHotListDetail")
-    public Result queryHotListDetail(String liveDate, String schema, Long startTimestamp, Integer intervalMinutes){
-        List hotListDetail = analyseService.queryHotListDetail(liveDate, schema, startTimestamp, intervalMinutes);
+    public Result queryHotListDetail(String liveDate, Long startTimestamp, Integer intervalMinutes){
+        List hotListDetail = analyseService.queryHotListDetail(liveDate, startTimestamp, intervalMinutes);
         return new Result<>(hotListDetail);
     }
 

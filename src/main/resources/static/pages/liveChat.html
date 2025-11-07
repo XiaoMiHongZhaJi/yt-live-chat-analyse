@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes" />
     <title>弹幕统计分析</title>
     <link rel="stylesheet" href="../modules/layui/css/layui.css">
-    <link rel="stylesheet" href="../css/public.css">
+    <link rel="stylesheet" href="../css/public.css?t=2025_10_31">
     <script src="../modules/layui/layui.js"></script>
     <script src="../js/public.js?t=2025_10_31"></script>
     <script src="dialog/liveDetail.js?t=2025_10_31"></script>
@@ -141,10 +141,6 @@
             $("#submit").addClass("layui-btn-disabled");
             //执行搜索重载
             const queryInfo = data.field;
-            const currentSchema = layui.data("navInfo")["schema"];
-            if(!queryInfo.schema && defaultSchema != currentSchema){
-                queryInfo.schema = currentSchema;
-            }
             if(currentLiveInfo){
                 queryInfo.liveStatus = currentLiveInfo.liveStatus;
             }
@@ -176,10 +172,6 @@
             }else{
                 cols[0][0]["hide"] = false;
             }
-            const currentSchema = layui.data("navInfo")["schema"];
-            if(!data.schema && defaultSchema != currentSchema){
-                data.schema = currentSchema;
-            }
             table.reload('liveChatData', {
                 page: {curr: 1},
                 where: data,
@@ -193,10 +185,9 @@
 
         function showAuthorInfo(authorId, authorName) {
             $.ajax({
-                url: '../authorInfo/queryAuthorInfo',
+                url: '../api/authorInfo/queryAuthorInfo',
                 data: {
                     authorId: authorId,
-                    schema: layui.data("navInfo")["schema"]
                 },
             }).then((authorInfo) => {
                 let html = [];
@@ -281,7 +272,7 @@
         });
         function refreshAuthorDropdown(authorName){
             $.ajax({
-                url: '../authorInfo/queryListBySelector',
+                url: '../api/authorInfo/queryListBySelector',
                 data: {
                     authorName: authorName
                 },
@@ -349,13 +340,12 @@
             let data = {
                 fileType: "ass",
                 liveDate: currentLiveInfo.liveDate,
-                schema: layui.data("navInfo")["schema"]
             }
             if(config != null){
                 $.extend(data, config);
             }
             $.ajax({
-                url: '../liveInfo/downloadBullet',
+                url: '../api/liveInfo/downloadBullet',
                 data: data,
                 method: 'post'
             }).then((result) => {
@@ -406,11 +396,10 @@
             currentLiveInfo = info;
             table.reload('liveChatData', {
                 loading: true,
-                url: '../liveChat/queryList',
+                url: '../api/liveChat/queryList',
                 where: {
                     liveDate: info.liveDate,
                     liveStatus: info.liveStatus,
-                    schema: layui.data("navInfo")["schema"]
                 }
             });
             if(currentLiveInfo && currentLiveInfo.liveStatus == "1"){

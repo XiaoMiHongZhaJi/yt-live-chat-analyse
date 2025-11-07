@@ -42,11 +42,10 @@ public class LiveInfoService {
     LiveChatDataService liveChatDataService;
 
     public void insertLiveInfo(LiveInfo liveInfo) {
-        SchemaUtil.setSchema(liveInfo);
         liveInfoMapper.insert(liveInfo);
     }
 
-    public List<LiveInfo> queryListBySelector(LiveInfo liveInfo, String schema){
+    public List<LiveInfo> queryListBySelector(LiveInfo liveInfo){
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.orderByDesc("live_date");
@@ -54,7 +53,6 @@ public class LiveInfoService {
         if(liveInfo.getSrtCount() != null && liveInfo.getSrtCount() > 0){
             queryWrapper.gt("srt_count", 0);
         }
-        SchemaUtil.setSchema(schema);
         return liveInfoMapper.selectList(queryWrapper);
     }
 
@@ -85,23 +83,20 @@ public class LiveInfoService {
         }
         queryWrapper.last("limit 1");
         queryWrapper.orderByDesc("live_date");
-        SchemaUtil.setSchema(liveInfo);
         return liveInfoMapper.selectOne(queryWrapper);
     }
 
-    public List<LiveInfo> selectList(String schema){
+    public List<LiveInfo> selectList(){
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.orderByDesc("live_date");
         queryWrapper.select("id", "live_date", "title", "url", "live_status", "download_status", "view_count", "like_count", "srt_count", "live_chat_count", "living_chat_count", "platform", "start_timestamp");
-        SchemaUtil.setSchema(schema);
         List<LiveInfo> liveInfoList = liveInfoMapper.selectList(queryWrapper);
         return liveInfoList;
     }
 
     public int updateLiveInfoById(LiveInfo liveInfo){
         liveInfo.setUpdateTime(new Date());
-        SchemaUtil.setSchema(liveInfo);
         return liveInfoMapper.updateById(liveInfo);
     }
 
@@ -109,7 +104,6 @@ public class LiveInfoService {
         liveInfo.setUpdateTime(new Date());
         UpdateWrapper<LiveInfo> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("live_date", liveInfo.getLiveDate());
-        SchemaUtil.setSchema(liveInfo);
         return liveInfoMapper.update(liveInfo, updateWrapper);
     }
 
@@ -117,7 +111,6 @@ public class LiveInfoService {
         liveInfo.setUpdateTime(new Date());
         UpdateWrapper<LiveInfo> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("url", liveInfo.getUrl());
-        SchemaUtil.setSchema(liveInfo);
         return liveInfoMapper.update(liveInfo, updateWrapper);
     }
 
@@ -215,7 +208,6 @@ public class LiveInfoService {
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.eq("url", url);
-        SchemaUtil.setSchema(liveInfo);
         return liveInfoMapper.selectCount(queryWrapper);
     }
 
@@ -223,7 +215,6 @@ public class LiveInfoService {
         QueryWrapper<LiveInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.notIn("live_status", LiveInfo.LIVE_STATUS_DISABLE);
         queryWrapper.eq("live_date", liveInfo.getLiveDate());
-        SchemaUtil.setSchema(liveInfo);
         return liveInfoMapper.selectCount(queryWrapper);
     }
 

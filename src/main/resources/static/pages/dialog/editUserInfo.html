@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<div style="padding:20px;">
+    <form class="layui-form" lay-filter="user-info-form" style="padding-bottom: 20px;">
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户名</label>
+            <div class="layui-input-block">
+                <input type="hidden" name="id" id="id">
+                <input type="text" name="userName" id="userName" placeholder="请输入用户名" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户状态</label>
+            <div class="layui-input-inline live-detail-div">
+                <select name="status" id="status" lay-verify="">
+                    <option value="1">正常</option>
+                    <option value="0">禁用</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">新密码</label>
+            <div class="layui-input-block">
+                <input type="text" name="password" id="password" placeholder="请输入新密码" class="layui-input">
+            </div>
+        </div>
+    </form>
+</div>

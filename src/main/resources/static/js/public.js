@@ -2,40 +2,134 @@
 const defaultSchema = "2025";
 const schemaList = ["2025", "2024", "2023", "2022", "2021", "et"];
 let liveInfoDict = {};
+const DB_NAME = "emoteDB";
+const DB_VERSION = 1;
+const STORE_NAME = "emotes";
+
+var auth_user = localStorage.getItem("auth_user");
 
 function initSchemaNav() {
-    layui.use(['jquery'], function(){
+    layui.use(['jquery'], function () {
         const $ = layui.jquery;
-        const currentSchema = layui.data("navInfo")["schema"];
-        if(!currentSchema){
-            layui.data("navInfo",{
-                key: "schema",
-                value: defaultSchema
-            });
-        }else if(schemaList.indexOf(currentSchema) > -1){
-            $(".layui-nav").append('<li class="layui-nav-item layui-nav-schema" data-schema="' + defaultSchema + '"><a href="liveChat.html">' + defaultSchema + '</a></li>');
+        const element = layui.element;
+        let currentSchema = layui.data("navInfo")["schema"];
+        if (!currentSchema) {
+            layui.data("navInfo", {key: "schema", value: defaultSchema});
+            currentSchema = defaultSchema;
         }
         for (let i = 0; i < schemaList.length; i++) {
             const schema = schemaList[i];
-            if(currentSchema != schema){
+            if (currentSchema != schema) {
                 $(".layui-nav").append('<li class="layui-nav-item layui-nav-schema" data-schema="' + schema + '"><a href="liveChat.html">' + schema + '</a></li>');
             }
         }
         $(".layui-nav-schema").click((i) => {
             const schema = $(i.target).closest("li").data("schema");
-            layui.data("navInfo",{
-                key: "schema",
-                value: schema
-            });
+            layui.data("navInfo", {key: "schema", value: schema});
         })
-    })
-    bindTripleClick();
+
+        // ========== 新增：右侧头像 + 下拉菜单 ==========
+        const username = auth_user || "User";
+        const firstLetter = username.charAt(0).toUpperCase();
+        const bgColor = getColorFromUsername(username);
+        let extraMenu = "";
+        if (username.toLowerCase() === "admin") {
+            extraMenu = `
+                <dd><a href="liveInfo.html" class="live-info">数据管理</a></dd>
+                <dd><a href="userManage.html" class="user-manage">用户管理</a></dd>
+            `;
+        }
+
+        // 移除旧头像项
+        $(".layui-nav-avatar").remove();
+
+        // 添加 Layui 下拉结构
+        $(".layui-nav").append(`
+            <li class="layui-nav-item layui-nav-avatar">
+                <div class="avatar-circle" style="background-color: ${bgColor};">${firstLetter}</div>
+                <dl class="layui-nav-child">
+                    <dd><a href="javascript:;" class="username-item" style="color: ${bgColor};">${username}</a></dd>
+                    ${extraMenu}
+                    <dd><a href="javascript:;" class="change-pwd">修改密码</a></dd>
+                    <dd><a href="javascript:;" class="logout">退出登录</a></dd>
+                </dl>
+            </li>
+        `);
+
+        element.render('nav');
+
+        // 修改密码事件
+        $(".layui-nav-avatar .change-pwd").on("click", function () {
+            showDialog("dialog/changePassword.html", {
+                title: "修改密码",
+                shadeClose: false,
+                btn: ["提交", "取消"],
+                success: function (layero){
+                    $(layero).find("#userName").val(username);
+                },
+                yes: function (index, layero){
+                    const btn = $(layero).find(".layui-layer-btn0");
+                    const newPassword = $("#newPassword").val();
+                    const newPasswordRepeat = $("#newPasswordRepeat").val();
+                    const pwdRule = /^[\x00-\x7F]{5,}$/; // ASCII字符 0~127，长度≥5
+                    if (!newPassword || !pwdRule.test(newPassword) || newPassword.length < 5) {
+                        layer.msg("请输入5位以上的字母、数字、符号", {offset: '200px'});
+                        return;
+                    }
+                    if (newPassword != newPasswordRepeat) {
+                        layer.msg("两次密码输入不一致", {offset: '200px'});
+                        return;
+                    }
+                    btn.text("正在提交...");
+                    const load = layer.load(0);
+                    $.ajax({
+                        url: '../api/auth/changePassword',
+                        method: 'post',
+                        data: {newPassword}
+                    }).then(result => {
+                        const code = result.code;
+                        const msg = result.msg;
+                        if(code != 200){
+                            layer.msg("操作失败: " + msg);
+                            btn.text("提交");
+                            layer.close(load);
+                            return;
+                        }
+                        layer.closeAll();
+                        layer.msg("修改密码成功");
+                    }, () => {
+                        layer.msg("操作失败");
+                        btn.text("提交");
+                        layer.close(load);
+                    });
+                }
+            })
+        });
+        // 退出登录事件
+        $(".layui-nav-avatar .logout").on("click", function () {
+            localStorage.clear();
+            indexedDB.deleteDatabase(DB_NAME);
+            layer.msg("已退出登录", { time: 1000 }, function () {
+                location.href = "../index.html";
+            });
+        });
+    });
+}
+
+function getColorFromUsername(username) {
+    const colors = [
+        "#1abc9c", "#3498db", "#9b59b6", // 绿松石 蓝 紫
+        "#e67e22", "#e74c3c", "#2ecc71", "#f1c40f" // 橙 红 绿 黄
+    ];
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash % colors.length);
+    return colors[index];
 }
 
 let db;
-const DB_NAME = "emoteDB";
-const DB_VERSION = 1;
-const STORE_NAME = "emotes";
 
 // 打开IndexedDB
 function openDB() {
@@ -97,6 +191,60 @@ function saveEmote(emote) {
 layui.use(['jquery'], function() {
     const $ = layui.jquery;
     const layer = layui.layer;
+    if (!auth_user) {
+        // 登录
+        showDialog("dialog/login.html", {
+            title: "请先登录",
+            shadeClose: false,
+            shade: 0.5,
+            btn: ["登录"],
+            yes: function (index, layero){
+                const btn = $(layero).find(".layui-layer-btn0");
+                const userName = $(layero).find("#userName").val();
+                const password = $(layero).find("#password").val();
+                if (!userName || !password) {
+                    layer.msg("请输入用户名和密码", {time: 1000});
+                    return;
+                }
+                btn.text("正在登录...");
+                const load = layer.load(0);
+                $(".errorInfo").addClass("layui-hide");
+                $.ajax({
+                    url: '../api/auth/login',
+                    method: 'post',
+                    data: {userName, password}
+                }).then(result => {
+                    const code = result.code;
+                    const msg = result.msg;
+                    if(code != 200){
+                        layer.msg("登录失败: " + msg, {time: 1000});
+                        $(".errorInfo").text("登录失败: " + msg);
+                        $(".errorInfo").removeClass("layui-hide");
+                        btn.text("登录");
+                        layer.close(load);
+                        return;
+                    }
+                    layer.closeAll();
+                    localStorage.setItem('auth_token', msg);
+                    localStorage.setItem('auth_user', userName);
+                    layer.msg("登录成功");
+                    location.href = "../index.html";
+                }, () => {
+                    btn.text("登录");
+                    layer.close(load);
+                    $(".errorInfo").text("登录失败");
+                    $(".errorInfo").removeClass("layui-hide");
+                });
+            }
+        })
+        return;
+    }
+    $.ajaxSetup({
+        headers: {
+            "Authorization": "Bearer " + localStorage.getItem("auth_token"),
+            "X-Schema": layui.data("navInfo")["schema"],
+        }
+    });
     openDB().then(() => {
         // 获取数据字典
         let emoteDict = {};
@@ -104,7 +252,7 @@ layui.use(['jquery'], function() {
         let storageOkEmote = layui.data("emoteDict");
         if (!storageOkEmote || !storageOkEmote["STORAGE_OK"] || storageOkEmote["STORAGE_OK"] != "2") {
             // 如果没有STORAGE_OK标记，则进行ajax请求获取数据
-            $.ajax({url: '../liveChat/queryEmotes'}).then(data => {
+            $.ajax({url: '../api/liveChat/queryEmotes'}).then(data => {
                 $(data).each((i, emote) => {
                     emoteDict[emote.name] = emote;
                     saveEmote(emote);  // 存储到IndexedDB
@@ -266,14 +414,10 @@ function getUrlTag(url, time, title){
 function initLiveDateSelector(callback, showAll, param){
     const $ = layui.jquery;
     const form = layui.form;
-    const currentSchema = layui.data("navInfo")["schema"];
-    if(currentSchema && currentSchema != defaultSchema){
-        if(!param){
-            param = {};
-        }
-        param["schema"] = currentSchema;
+    if (!auth_user) {
+        return;
     }
-    $.ajax({url: '../liveInfo/queryListBySelector', data: param}).then((selectorList)=>{
+    $.ajax({url: '../api/liveInfo/queryListBySelector'}).then((selectorList)=>{
         if(!selectorList || selectorList.length == 0){
             layer.msg("暂无弹幕数据");
             return;
@@ -302,8 +446,16 @@ function initLiveDateSelector(callback, showAll, param){
                 callback(selectorList[0]);
             }
         }
-    }, () => {
-        layer.msg("系统出错，请检查数据库连接状态是否正常");
+    }, (res) => {
+        if (res.status == 401) {
+            localStorage.clear();
+            indexedDB.deleteDatabase(DB_NAME);
+            layer.msg("登录状态已过期，请重新登录", {time: 2500}, () => {
+                location.href = "../index.html"
+            });
+            return;
+        }
+        layer.msg("系统出错: " + res.statusText);
     })
 }
 function formatNum(string){
@@ -350,29 +502,6 @@ function formatTime(timestamp, offsetStr) {
     const pad = n => String(n).padStart(2, '0');
     return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())} ` +
         `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-}
-function bindTripleClick(element, callback, interval = 500) {
-    const dateLabel = document.getElementById('date-label');
-    if(!dateLabel){
-        return;
-    }
-    let clickCount = 0; // 点击次数
-    let lastClickTime = 0; // 上次点击时间
-    dateLabel.addEventListener('click', () => {
-        const currentTime = Date.now();
-        // 如果时间间隔超过设定值，重置计数器
-        if (currentTime - lastClickTime > interval) {
-            clickCount = 0;
-        }
-        clickCount++;
-        lastClickTime = currentTime;
-        // 当达到三次点击时，触发回调
-        if (clickCount === 3) {
-            clickCount = 0; // 重置计数器
-            layui.layer.msg('你触发了三击事件！');
-            location.href = "liveInfo.html";
-        }
-    });
 }
 // 支持拖动文件到文本框
 function dragFile(textarea) {

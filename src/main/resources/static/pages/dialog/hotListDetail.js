@@ -54,7 +54,7 @@ function showHotListDetailDialog(liveDate, startTimestamp, intervalMinutes, url,
                 done: function(res){
 
                 },
-                url: '../analyse/queryHotListDetail',
+                url: '../api/analyse/queryHotListDetail',
                 where: {
                     liveDate,
                     startTimestamp,

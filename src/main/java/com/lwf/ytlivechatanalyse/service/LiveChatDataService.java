@@ -12,7 +12,6 @@ import com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper;
 import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
 import com.lwf.ytlivechatanalyse.util.Constant;
 import com.lwf.ytlivechatanalyse.util.JsonUtil;
-import com.lwf.ytlivechatanalyse.util.SchemaUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
@@ -75,7 +74,6 @@ public class LiveChatDataService {
         }
         queryWrapper.eq("blocked", 0);
         queryWrapper.orderBy(true, isAsc, "timestamp");
-        SchemaUtil.setSchema(liveChatData);
         return liveChatDataMapper.selectList(queryWrapper);
     }
 
@@ -106,12 +104,10 @@ public class LiveChatDataService {
         }
         queryWrapper.eq("blocked", 0);
         queryWrapper.orderBy(true, isAsc, "timestamp");
-        SchemaUtil.setSchema(liveChatData);
         return livingChatDataMapper.selectList(queryWrapper);
     }
 
     public Long selectStartTimestamp(LiveInfo liveInfo){
-        SchemaUtil.setSchema(liveInfo);
         LiveChatData liveChatData = liveChatDataMapper.selectStartMessage(liveInfo.getLiveDate());
         if(liveChatData == null){
             return null;
@@ -129,7 +125,6 @@ public class LiveChatDataService {
         QueryWrapper<LiveChatData> queryWrapper = new QueryWrapper<>();
         queryWrapper.likeRight("live_date", liveInfo.getLiveDate());
         queryWrapper.eq("blocked", 0);
-        SchemaUtil.setSchema(liveInfo);
         return Math.toIntExact(liveChatDataMapper.selectCount(queryWrapper));
     }
 
@@ -138,7 +133,6 @@ public class LiveChatDataService {
         QueryWrapper<LivingChatData> queryWrapper = new QueryWrapper<>();
         queryWrapper.likeRight("live_date", liveInfo.getLiveDate());
         queryWrapper.eq("blocked", 0);
-        SchemaUtil.setSchema(liveInfo);
         return Math.toIntExact(livingChatDataMapper.selectCount(queryWrapper));
     }
 
@@ -147,8 +141,6 @@ public class LiveChatDataService {
             return;
         }
         try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
-            LiveChatData liveChatData1 = batchList.get(0);
-            SchemaUtil.setSchema(liveChatData1);
             for (LiveChatData liveChatData : batchList) {
                 sqlSession.insert("com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper.insertNotExists", liveChatData);
             }
@@ -195,7 +187,6 @@ public class LiveChatDataService {
         queryWrapper.last("limit " + limit);
         if(StringUtils.isNotBlank(liveDate)){
             queryWrapper.likeRight("live_date", liveDate);
-            SchemaUtil.setSchema(liveChatData);
         }
         return liveChatDataMapper.selectList(queryWrapper);
     }
@@ -220,7 +211,6 @@ public class LiveChatDataService {
             JSONObject jsonObject = (JSONObject) jsonArray.get(i);
             LiveChatData dto = JsonUtil.getLiveChat(jsonObject);
             dto.setLiveDate(liveDate);
-            dto.setSchema(liveInfo.getSchema());
             String message = dto.getMessage();
             if(message == null){
                 logger.error("jsonArray 第" + i + "条数据有误，内容：");
@@ -232,7 +222,7 @@ public class LiveChatDataService {
                 //包含emoji
                 List<EmotesData> emotesDataList = JsonUtil.getEmotes(emotes);
                 for (EmotesData emotesData :  emotesDataList) {
-                    emotesDataService.insertNotExists(emotesData, liveInfo.getSchema());
+                    emotesDataService.insertNotExists(emotesData);
                 }
                 dto.setEmotesCount(emotes.size());
             }

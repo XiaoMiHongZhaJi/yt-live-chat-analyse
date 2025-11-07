@@ -43,8 +43,8 @@ public class BulletAssUtil {
         BulletAssUtil.emotesDataService = emotesDataService;
     }
 
-    private static void initEmoteMap(String schema) {
-        List<EmotesData> emotesData = emotesDataService.selectEmoji(schema);
+    private static void initEmoteMap() {
+        List<EmotesData> emotesData = emotesDataService.selectEmoji();
         emotesMap = new HashMap<>();
         for(EmotesData emote : emotesData){
             emotesMap.put(emote.getName(), emote.getEmotesId());
@@ -126,7 +126,7 @@ public class BulletAssUtil {
                     message = message.replaceAll("[&<>\u0000-\u0019]","_");
                     Integer emotesCount = liveChatData.getEmotesCount();
                     if(emotesCount != null && emotesCount > 0){
-                        message = getEmoteMssage(message, liveChatData.getSchema());
+                        message = getEmoteMssage(message);
                     }
                     message = "：" + message;
                 }
@@ -211,7 +211,7 @@ public class BulletAssUtil {
         return result;
     }
 
-    private static String getEmoteMssage(String message, String schema) {
+    private static String getEmoteMssage(String message) {
         int index = message.indexOf(":");
         if(index == -1){
             return message;
@@ -224,7 +224,7 @@ public class BulletAssUtil {
         while(endIndex > 2){
             String key = remain.substring(1, endIndex);
             if(emotesMap == null){
-                initEmoteMap(schema);
+                initEmoteMap();
             }
             String emote = emotesMap.get(key);
             if(StringUtils.isBlank(emote)){

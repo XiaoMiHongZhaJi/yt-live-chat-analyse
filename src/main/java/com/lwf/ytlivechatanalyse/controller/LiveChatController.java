@@ -6,7 +6,6 @@ import com.lwf.ytlivechatanalyse.bean.*;
 import com.lwf.ytlivechatanalyse.service.EmotesDataService;
 import com.lwf.ytlivechatanalyse.service.LiveChatDataService;
 import com.lwf.ytlivechatanalyse.service.LiveInfoService;
-import com.lwf.ytlivechatanalyse.util.Constant;
 import com.lwf.ytlivechatanalyse.util.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
@@ -17,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/liveChat")
+@RequestMapping("/api/liveChat")
 public class LiveChatController {
 
     @Autowired
@@ -48,7 +47,7 @@ public class LiveChatController {
     }
 
     @RequestMapping("/queryEmotes")
-    public List<EmotesData> queryEmotes(String schema){
-        return emotesDataService.selectAll(schema);
+    public List<EmotesData> queryEmotes(){
+        return emotesDataService.selectAll();
     }
 }

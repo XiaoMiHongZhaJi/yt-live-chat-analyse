@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,8 +29,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Calendar;
@@ -38,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/liveInfo")
+@RequestMapping("/api/liveInfo")
 public class LiveInfoController {
 
     private final Logger logger = LoggerFactory.getLogger(LiveInfoController.class);
@@ -53,12 +52,8 @@ public class LiveInfoController {
     SrtDataService srtDataService;
 
     @PostMapping("/addLiveInfo")
-    public Result addLiveInfo(HttpServletRequest request, HttpServletResponse response, LiveInfo liveInfo, boolean downLiveChat, boolean getLiveInfo, MultipartFile file){
-        if(!AuthUtil.auth(request)){
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
-            return new Result<>(500, "认证失败");
-        }
+    @PreAuthorize("principal.userName == 'admin'")
+    public Result addLiveInfo(LiveInfo liveInfo, boolean downLiveChat, boolean getLiveInfo, MultipartFile file){
         String url = liveInfo.getUrl();
         if(StringUtils.isBlank(url)){
             //从文件导入
@@ -80,10 +75,11 @@ public class LiveInfoController {
         if(StringUtils.isNotBlank(result)){
             return new Result<>(500, result);
         }
-        return new Result<>(200, "新增或更新成功");
+        return new Result<>("新增或更新成功");
     }
 
     @RequestMapping("/downloadBullet")
+    @PreAuthorize("principal.userName == 'admin'")
     public Result<String> downloadBullet(String liveDate, String startTime, Long startTimestamp, BulletConfig config){
         if(StringUtils.isBlank(liveDate) || liveDate.length() < 10){
             //未传入日期，尝试从 startTime 中获取日期
@@ -208,8 +204,8 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/queryListBySelector")
-    public List<LiveInfo> queryListBySelector(LiveInfo liveInfo, String schema){
-        return liveInfoService.queryListBySelector(liveInfo, schema);
+    public List<LiveInfo> queryListBySelector(LiveInfo liveInfo){
+        return liveInfoService.queryListBySelector(liveInfo);
     }
 
     @RequestMapping("/queryListById")
@@ -217,7 +213,6 @@ public class LiveInfoController {
         //用于定时器更新
         List<LiveInfo> liveInfoList = liveInfoService.queryListById(ids);
         for(LiveInfo liveInfo : liveInfoList){
-            String liveDate = liveInfo.getLiveDate();
             LiveInfo updateLiveInfo = new LiveInfo();
             updateLiveInfo.setId(liveInfo.getId());
             if(LiveInfo.LIVE_STATUS_DONE.equals(liveInfo.getLiveStatus())){
@@ -238,14 +233,10 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/queryList")
-    public Result<LiveInfo> queryList(HttpServletRequest request, HttpServletResponse response, int page, int limit, String schema){
-        if(!AuthUtil.auth(request)){
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
-            return new Result<>(500, "认证失败");
-        }
+    @PreAuthorize("principal.userName == 'admin' or principal.userName == 'benny'")
+    public Result<LiveInfo> queryList(int page, int limit){
         PageHelper.startPage(page, limit);
-        return new Result<>(new PageInfo<>(liveInfoService.selectList(schema)));
+        return new Result<>(new PageInfo<>(liveInfoService.selectList()));
     }
 
     @RequestMapping("/queryPrevLiveInfo")
@@ -268,6 +259,7 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/updateLiveInfo")
+    @PreAuthorize("principal.userName == 'admin'")
     public int updateLiveInfo(LiveInfo liveInfo){
         if(liveInfo == null || StringUtils.isBlank(liveInfo.getLiveDate())){
             throw new RuntimeException("更新失败：liveDate 不能为空");
@@ -290,23 +282,15 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/downloadChatData")
-    public Result downloadChatData(HttpServletRequest request, HttpServletResponse response, LiveInfo liveInfo){
-        if(!AuthUtil.auth(request)){
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
-            return new Result<>(500, "认证失败");
-        }
+    @PreAuthorize("principal.userName == 'admin'")
+    public Result downloadChatData(LiveInfo liveInfo){
         liveInfoService.downloadChatData(liveInfo);
         return new Result<>(200, "下载完成");
     }
 
     @RequestMapping("/importSrt")
-    public Result importSrt(HttpServletRequest request, HttpServletResponse response, String liveDate, String schema, MultipartFile file){
-        if(!AuthUtil.auth(request)){
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
-            return new Result<>(500, "认证失败");
-        }
+    @PreAuthorize("principal.userName == 'admin'")
+    public Result importSrt(String liveDate, MultipartFile file){
         //从文件导入
         if(file == null){
             return new Result<>(500, "文件不能为空");
@@ -315,8 +299,8 @@ public class LiveInfoController {
         if(filename == null || !filename.endsWith(".srt")){
             return new Result<>(500, "只能导入srt文件");
         }
-        String errMsg = srtDataService.importSrt(liveDate, schema, file);
-        Long count = srtDataService.selectCount(liveDate, schema);
+        String errMsg = srtDataService.importSrt(liveDate, file);
+        Long count = srtDataService.selectCount(liveDate);
         LiveInfo liveInfo = new LiveInfo();
         liveInfo.setLiveDate(liveDate);
         liveInfo.setSrtCount(count.intValue());
@@ -328,12 +312,8 @@ public class LiveInfoController {
     }
 
     @RequestMapping("/stopDownload")
-    public Result stopDownload(HttpServletRequest request, HttpServletResponse response, LiveInfo liveInfo){
-        if(!AuthUtil.auth(request)){
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setHeader("WWW-Authenticate", "Basic realm=\"Realm\"");
-            return new Result<>(500, "认证失败");
-        }
+    @PreAuthorize("principal.userName == 'admin'")
+    public Result stopDownload(LiveInfo liveInfo){
         String result = CmdUtil.kill("chat_downloader", liveInfo.getUrl());
         if(StringUtils.isBlank(result) || result.contains("未发现")){
             // 这种情况说明 chat_downloader 并未运行，只需要更新数据库状态即可
