@@ -32,6 +32,12 @@ public class Result<T> implements Serializable {
         this.msg = msg;
     }
 
+    public Result(int code, String msg, long count){
+        this.code = code;
+        this.msg = msg;
+        this.count = count;
+    }
+
     public Result(int code, String msg, List<T> list){
         this.code = code;
         this.msg = msg;

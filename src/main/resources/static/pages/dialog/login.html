@@ -12,5 +12,12 @@
             <input type="password" name="password" autocomplete="off" id="password" placeholder="请输入密码" class="layui-input">
         </div>
     </div>
-    <span class="errorInfo layui-hide" style="color: red; margin-left: 60px;"></span>
+    <div class="layui-form-item captcha-area layui-hide">
+        <label class="layui-form-label">验证码</label>
+        <div class="layui-input-block">
+            <input type="text" name="captcha" autocomplete="off" id="captcha" placeholder="验证码" class="layui-input" style="width: 80px; display: inline-block;">
+            <img id="captchaImg" alt="验证码" src="" style="height:40px; cursor:pointer; border:1px solid #ddd;">
+        </div>
+    </div>
+    <span class="errorInfo layui-hide" style="color: red; margin-left: 110px;"></span>
 </div>

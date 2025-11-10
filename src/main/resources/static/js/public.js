@@ -117,9 +117,10 @@ function initSchemaNav() {
         $(".layui-nav-avatar .logout").on("click", function () {
             localStorage.clear();
             indexedDB.deleteDatabase(DB_NAME);
-            layer.msg("正在退出登录...", { time: 1000 }, function () {
-                location.href = "../pages/liveChat.html";
-                layer.msg("已退出登录");
+            layer.msg("正在退出登录...", { time: 500 }, function () {
+                layer.msg("已退出登录", { time: 1000 }, function () {
+                    location.href = "../pages/liveChat.html";
+                });
             });
         });
     });
@@ -208,6 +209,14 @@ layui.use(['jquery'], function() {
             shade: 0.5,
             btn: ["登录"],
             success: function (layero, index) {
+                $(layero).find("#captchaImg").click(function () {
+                    $.ajax({url: '../api/auth/captcha'}).then(result => {
+                        if (result.code === 200) {
+                            $(layero).find("#captchaImg").attr("src", result.msg);
+                            $(layero).find(".captcha-area").removeClass("layui-hide");
+                        }
+                    });
+                });
                 $(document).on('keydown.enterSubmit', function(e) {
                     if (e.key === 'Enter') {
                         layero.find('.layui-layer-btn0').click();
@@ -221,8 +230,13 @@ layui.use(['jquery'], function() {
                 const btn = $(layero).find(".layui-layer-btn0");
                 const userName = $(layero).find("#userName").val();
                 const password = $(layero).find("#password").val();
+                const captcha = $(layero).find("#captcha").val();
                 if (!userName || !password) {
                     layer.msg("请输入用户名和密码", {time: 1000});
+                    return;
+                }
+                if ($(layero).find("#captchaImg").is(":visible") && !captcha) {
+                    layer.msg("请输入验证码", {time: 1000});
                     return;
                 }
                 btn.text("正在登录...");
@@ -231,16 +245,21 @@ layui.use(['jquery'], function() {
                 $.ajax({
                     url: '../api/auth/login',
                     method: 'post',
-                    data: {userName, password}
+                    data: {userName, password, captcha}
                 }).then(result => {
                     const code = result.code;
                     const msg = result.msg;
+                    const count = result.count;
                     if(code != 200){
-                        layer.msg("登录失败: " + msg, {time: 1000});
-                        $(layero).find(".errorInfo").text("登录失败: " + msg);
+                        layer.msg(msg, {time: 1000});
+                        $(layero).find(".errorInfo").text(msg);
                         $(layero).find(".errorInfo").removeClass("layui-hide");
                         btn.text("登录");
                         layer.close(load);
+                        if (count > 2) {
+                            $(layero).find("#captchaImg").trigger("click");
+                            $(layero).find("#captcha").val("");
+                        }
                         return;
                     }
                     layer.closeAll();
