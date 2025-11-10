@@ -25,6 +25,7 @@ public class SecurityConfig {
 
     // 你的白名单路径（可根据需要修改）
     private static final String[] STATIC_LIST = {
+        "/",
         "/favicon.ico",
         "/modules/**",
         "/img/**",

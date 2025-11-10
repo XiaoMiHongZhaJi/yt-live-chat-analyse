@@ -66,11 +66,19 @@ function initSchemaNav() {
                 btn: ["提交", "取消"],
                 success: function (layero){
                     $(layero).find("#userName").val(username);
+                    $(document).on('keydown.enterSubmit', function(e) {
+                        if (e.key === 'Enter') {
+                            layero.find('.layui-layer-btn0').click();
+                        }
+                    });
+                },
+                end: function () {
+                    $(document).off('keydown.enterSubmit');
                 },
                 yes: function (index, layero){
                     const btn = $(layero).find(".layui-layer-btn0");
-                    const newPassword = $("#newPassword").val();
-                    const newPasswordRepeat = $("#newPasswordRepeat").val();
+                    const newPassword = $(layero).find("#newPassword").val();
+                    const newPasswordRepeat = $(layero).find("#newPasswordRepeat").val();
                     const pwdRule = /^[\x00-\x7F]{5,}$/; // ASCII字符 0~127，长度≥5
                     if (!newPassword || !pwdRule.test(newPassword) || newPassword.length < 5) {
                         layer.msg("请输入5位以上的字母、数字、符号", {offset: '200px'});
@@ -109,8 +117,9 @@ function initSchemaNav() {
         $(".layui-nav-avatar .logout").on("click", function () {
             localStorage.clear();
             indexedDB.deleteDatabase(DB_NAME);
-            layer.msg("已退出登录", { time: 1000 }, function () {
-                location.href = "../index.html";
+            layer.msg("正在退出登录...", { time: 1000 }, function () {
+                location.href = "../pages/liveChat.html";
+                layer.msg("已退出登录");
             });
         });
     });
@@ -198,6 +207,16 @@ layui.use(['jquery'], function() {
             shadeClose: false,
             shade: 0.5,
             btn: ["登录"],
+            success: function (layero, index) {
+                $(document).on('keydown.enterSubmit', function(e) {
+                    if (e.key === 'Enter') {
+                        layero.find('.layui-layer-btn0').click();
+                    }
+                });
+            },
+            end: function () {
+                $(document).off('keydown.enterSubmit');
+            },
             yes: function (index, layero){
                 const btn = $(layero).find(".layui-layer-btn0");
                 const userName = $(layero).find("#userName").val();
@@ -208,7 +227,7 @@ layui.use(['jquery'], function() {
                 }
                 btn.text("正在登录...");
                 const load = layer.load(0);
-                $(".errorInfo").addClass("layui-hide");
+                $(layero).find(".errorInfo").addClass("layui-hide");
                 $.ajax({
                     url: '../api/auth/login',
                     method: 'post',
@@ -218,8 +237,8 @@ layui.use(['jquery'], function() {
                     const msg = result.msg;
                     if(code != 200){
                         layer.msg("登录失败: " + msg, {time: 1000});
-                        $(".errorInfo").text("登录失败: " + msg);
-                        $(".errorInfo").removeClass("layui-hide");
+                        $(layero).find(".errorInfo").text("登录失败: " + msg);
+                        $(layero).find(".errorInfo").removeClass("layui-hide");
                         btn.text("登录");
                         layer.close(load);
                         return;
@@ -228,12 +247,12 @@ layui.use(['jquery'], function() {
                     localStorage.setItem('auth_token', msg);
                     localStorage.setItem('auth_user', userName);
                     layer.msg("登录成功");
-                    location.href = "../index.html";
+                    location.href = "../pages/liveChat.html";
                 }, () => {
                     btn.text("登录");
                     layer.close(load);
-                    $(".errorInfo").text("登录失败");
-                    $(".errorInfo").removeClass("layui-hide");
+                    $(layero).find(".errorInfo").text("登录失败");
+                    $(layero).find(".errorInfo").removeClass("layui-hide");
                 });
             }
         })
@@ -451,7 +470,7 @@ function initLiveDateSelector(callback, showAll, param){
             localStorage.clear();
             indexedDB.deleteDatabase(DB_NAME);
             layer.msg("登录状态已过期，请重新登录", {time: 2500}, () => {
-                location.href = "../index.html"
+                location.href = "../pages/liveChat.html"
             });
             return;
         }
