@@ -84,9 +84,15 @@
             {field: 'liveDate', width: 125, title: '日期', sort: true, hide: true},
             {field: 'authorName', width: 180, title: '用户名',templet: (d)=>{
                 if(d.authorImage){
-                    return `<div class="authorInfo" data-id="${d.authorId}"><img alt="" class="header" src="${d.authorImage}=s32-c-k-c0x00ffffff-no-rj">${d.authorName}</div>`;
+                    if (d.authorImage.startsWith("https://yt4.ggpht.com/")) {
+                        return `<div class="authorInfo" data-id="${d.authorId}"><img alt="" class="header" src="${d.authorImage}=s32-c-k-c0x00ffffff-no-rj">${d.authorName}</div>`;
+                    } else {
+                        return `<div class="authorInfo" data-id="${d.authorId}"><img alt="" class="header" src="${d.authorImage}">${d.authorName}</div>`;
+                    }
+                } else if (d.authorId && !isNaN(d.authorId)) {
+                    return `<div class="authorInfo" data-id="${d.authorId}"><img alt="" class="twitch" src="https://twitch.tv/favicon.ico">${d.authorName}</div>`;
                 }
-                return `<div class="authorInfo" data-id="${d.authorId}"><img alt="" class="twitch" src="https://twitch.tv/favicon.ico">${d.authorName}</div>`;
+                return `<div data-id="${d.authorId}">${d.authorName}</div>`;
             }},
             {field: 'message', minWidth: 180, title: '消息',templet: (d)=>{
                 let message = d.message || '';
@@ -294,9 +300,13 @@
                             title = `${authorInfo.lastAuthorName}「${allAuthorNames}」`;
                             templet = `${authorInfo.lastAuthorName}<span style="color: #5f5f5f;">「${allAuthorNames}」</span>`;
                         }
-                        if (authorInfo.authorImage) {
-                            templet = `<div><img alt="" class="header" src="${authorInfo.authorImage}=s32-c-k-c0x00ffffff-no-rj">${templet}</div>`;
-                        } else {
+                        if(authorInfo.authorImage){
+                            if (authorInfo.authorImage.startsWith("https://yt4.ggpht.com/")) {
+                                templet = `<div><img alt="" class="header" src="${authorInfo.authorImage}=s32-c-k-c0x00ffffff-no-rj">${templet}</div>`;
+                            } else {
+                                templet = `<div><img alt="" class="header" src="${authorInfo.authorImage}">${templet}</div>`;
+                            }
+                        } else if (authorInfo.authorId && !isNaN(authorInfo.authorId)) {
                             templet = `<div><img alt="" class="twitch" src="https://twitch.tv/favicon.ico">${templet}</div>`;
                         }
                         authorData.push({

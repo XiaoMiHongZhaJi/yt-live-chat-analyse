@@ -19,9 +19,15 @@ function showLiveChatDetailDialog(liveDate, id, currentLiveInfo){
                     }},
                 {field: 'authorName', width: 180, title: '用户名', templet: (d)=>{
                         if(d.authorImage){
-                            return `<div><img alt="" class="header" src="${d.authorImage}=s32-c-k-c0x00ffffff-no-rj">${d.authorName}</div>`;
+                            if (d.authorImage.startsWith("https://yt4.ggpht.com/")) {
+                                return `<div><img alt="" class="header" src="${d.authorImage}=s32-c-k-c0x00ffffff-no-rj">${d.authorName}</div>`;
+                            } else {
+                                return `<div><img alt="" class="header" src="${d.authorImage}">${d.authorName}</div>`;
+                            }
+                        } else if (d.authorId && !isNaN(d.authorId)) {
+                            return `<div><img alt="" class="twitch" src="https://twitch.tv/favicon.ico">${d.authorName}</div>`;
                         }
-                        return `<div><img alt="" class="twitch" src="https://twitch.tv/favicon.ico">${d.authorName}</div>`;
+                        return `<div>${d.authorName}</div>`;
                     }},
                 {field: 'message', minWidth: 180, title: '消息', templet: (d)=>{
                         let message = d.message || '';
