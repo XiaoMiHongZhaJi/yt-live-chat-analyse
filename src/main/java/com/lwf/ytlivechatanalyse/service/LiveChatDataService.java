@@ -11,6 +11,7 @@ import com.lwf.ytlivechatanalyse.bean.LivingChatData;
 import com.lwf.ytlivechatanalyse.dao.LiveChatDataMapper;
 import com.lwf.ytlivechatanalyse.dao.LivingChatDataMapper;
 import com.lwf.ytlivechatanalyse.util.Constant;
+import com.lwf.ytlivechatanalyse.util.DateUtil;
 import com.lwf.ytlivechatanalyse.util.JsonUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.ExecutorType;
@@ -29,6 +30,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class LiveChatDataService {
@@ -239,5 +242,25 @@ public class LiveChatDataService {
         int count = selectCount(liveInfo);
         long time = System.currentTimeMillis() - startTime; //获取结束时间
         return String.format("%s json数据总条数：%d。导入条数：%d。用时：%d秒", liveDate, jsonArray.size(), count, time / 1000);
+    }
+
+    public void addLiveChat(LiveChatData liveChatData) {
+        if (StringUtils.isEmpty(liveChatData.getLiveDate())) {
+            liveChatData.setLiveDate(DateUtil.getNowDate());
+        }
+        if (StringUtils.isNotEmpty(liveChatData.getAuthorImage()) && StringUtils.isEmpty(liveChatData.getAuthorId())) {
+            liveChatData.setAuthorId(getAuthorId(liveChatData.getAuthorImage()));
+        }
+        liveChatDataMapper.insert(liveChatData);
+    }
+
+    private static final String regex = ".*/([^/]+?)~.*";
+    public String getAuthorId(String imgUrl) {
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(imgUrl);
+        if (matcher.matches()) {
+            return matcher.group(1);
+        }
+        return null;
     }
 }

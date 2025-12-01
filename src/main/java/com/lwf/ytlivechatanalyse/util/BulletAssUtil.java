@@ -65,9 +65,7 @@ public class BulletAssUtil {
 
         Long minTimestamp = chatList.get(0).getTimestamp();
         Long maxTimestamp = chatList.get(chatList.size() - 1).getTimestamp();
-        if(startTimestamp == null || startTimestamp < minTimestamp){
-            startTimestamp = minTimestamp;
-        }else if(startTimestamp > maxTimestamp){
+        if(startTimestamp == null || startTimestamp > maxTimestamp){
             startTimestamp = maxTimestamp;
         }
         String fileName = DateUtil.getDateTime(startTimestamp) + ".ass";

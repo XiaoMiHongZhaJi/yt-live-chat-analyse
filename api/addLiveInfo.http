@@ -1,5 +1,5 @@
 ###
-POST https://livechat.cyf.mom/liveInfo/addLiveInfo
+POST https://liveChat.cyf.mom/api/liveInfo/addLiveInfo
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
 --WebAppBoundary
@@ -12,4 +12,29 @@ Content-Disposition: form-data; name="file"; filename="file.json"
 Content-Type: application/json
 
 < E:\Videos\直播录像\2025-04-21\2025-04-21_05_10_02_l.json
+--WebAppBoundary--
+
+
+###
+POST https://liveChat.cyf.mom/api/liveChat/addLiveChat
+Content-Type: application/json
+authorization: Bearer xxxx
+
+ {
+    "authorImage": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-avt-0068/b6e33ab2975bf39b00ee2a4603ee35a4~tplv-tiktokx-cropcenter:100:100.webp?dr=14579&refresh_token=c85cd21a&x-expires=1764730800&x-signature=%2F07xoh3fyMHkLqUr2VcqwMHVJWw%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=fdd36af4&idc=my",
+    "authorName": "Guagua",
+    "message": "换spotify放",
+    "timestamp": 1764558603981
+ }
+
+###
+POST https://liveChat.cyf.mom/api/liveChat/addLiveChatJson
+authorization: Bearer xxxx
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="file.json"
+Content-Type: application/json
+
+< C:\Users\Administrator\IdeaProjects\yt-live-chat-analyse\src\test\2.json
 --WebAppBoundary--
