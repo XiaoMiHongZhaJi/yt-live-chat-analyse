@@ -31,7 +31,8 @@ public class SecurityConfig {
         "/img/**",
         "/**/*.html",
         "/**/*.js",
-        "/**/*.css"
+        "/**/*.css",
+        "/"
     };
 
     public SecurityConfig(JwtService jwtService, @Value("${app.security.whitelist:}") String whitelistRaw) {

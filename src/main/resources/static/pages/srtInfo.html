@@ -95,7 +95,7 @@
             //执行搜索重载
             const queryInfo = data.field;
             const currentYear = layui.data("navInfo")["year"];
-            if(!queryInfo.liveDate && defaultYear != currentYear){
+            if(!queryInfo.liveDate){
                 queryInfo.liveDate = currentYear;
             }
             if(!isNaN(queryInfo.content)){
@@ -117,7 +117,7 @@
                 cols[0][0]["hide"] = false;
             }
             const currentYear = layui.data("navInfo")["year"];
-            if(!data.liveDate && defaultYear != currentYear){
+            if(!data.liveDate){
                 data.liveDate = currentYear;
             }
             table.reload('srtData', {

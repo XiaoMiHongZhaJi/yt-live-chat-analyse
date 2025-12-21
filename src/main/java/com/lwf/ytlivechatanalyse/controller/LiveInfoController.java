@@ -22,11 +22,8 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -72,10 +69,7 @@ public class LiveInfoController {
         }else{
             result = liveInfoService.addTwitchLiveInfo(liveInfo, downLiveChat);
         }
-        if(StringUtils.isNotBlank(result)){
-            return new Result<>(500, result);
-        }
-        return new Result<>("新增或更新成功");
+        return new Result<>(200, result);
     }
 
     @RequestMapping("/downloadBullet")

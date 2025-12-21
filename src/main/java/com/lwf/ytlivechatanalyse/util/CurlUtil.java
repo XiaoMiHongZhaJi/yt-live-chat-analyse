@@ -20,11 +20,11 @@ public class CurlUtil {
 
     public static void main(String[] args) {
 //        execCurl("http://www.baidu.com/", "get");
-        CurlUtil.proxy = "http://192.168.10.30:7890";
-        CurlUtil.cookie = "C:\\Users\\Administrator\\IdeaProjects\\yt-live-chat-analyse\\cookies.txt";
-        CurlUtil.curlLog = "C:\\Users\\Administrator\\IdeaProjects\\yt-live-chat-analyse\\html\\";
+//        CurlUtil.proxy = "http://192.168.10.30:7890";
+//        CurlUtil.cookie = "C:\\Users\\Administrator\\IdeaProjects\\yt-live-chat-analyse\\cookies.txt";
+//        CurlUtil.curlLog = "C:\\Users\\Administrator\\IdeaProjects\\yt-live-chat-analyse\\html\\";
         Map<String, String> liveInfo = getLiveInfo("https://www.youtube.com/watch?v=ImR8jZ0SkRM");
-        System.out.println(liveInfo);
+        System.out.println(liveInfo.toString().replace(",", "\n"));
 //        List<Map<String, String>> playlist = getPlaylist("https://www.youtube.com/playlist?list=PLi3zrmUZHiY-eH8eNJiwj-viwP3ngIkcd");
 //        System.out.println(playlist);
     }
@@ -105,9 +105,9 @@ public class CurlUtil {
             }
         }
         //"videoPrimaryInfoRenderer":{
-        index = curl.indexOf("videoPrimaryInfoRenderer");
+        index = curl.indexOf("\"videoPrimaryInfoRenderer\":{");
         if (index > -1) {
-            String curlJson = curl.substring(index + 26);
+            String curlJson = curl.substring(index + 27);
             try {
                 JSONObject jsonObject = getJsonObject(curlJson);
                 putNotNull(info, jsonObject.getJSONObject("title")
@@ -127,9 +127,9 @@ public class CurlUtil {
             }
         }
         //需要cookie "playerMicroformatRenderer":{
-        index = curl.indexOf("playerMicroformatRenderer");
+        index = curl.indexOf("\"playerMicroformatRenderer\":{");
         if (index > -1) {
-            String curlJson = curl.substring(index + 27);
+            String curlJson = curl.substring(index + 28);
             try {
                 JSONObject jsonObject = getJsonObject(curlJson);
                 putNotNull(info, (JSONObject) jsonObject.get("title"), "simpleText", "title");

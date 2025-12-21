@@ -155,7 +155,7 @@ public class LiveInfoService {
         if(urlCount > 0){
             logger.warn("url 已存在，准备更新: {}", liveInfo);
             updateLiveInfoByUrl(liveInfo);
-            return null;
+            return "更新成功";
         }
         // 判断 Title 是否已存在，若已存在，则重命名
         Long titleCount = getTitleCount(liveInfo);
@@ -175,14 +175,13 @@ public class LiveInfoService {
         if(downLiveChat){
             downloadChatData(liveInfo);
         }
-        return null;
+        return "新增成功";
     }
 
     public String addTwitchLiveInfo(LiveInfo liveInfo, boolean downLiveChat) {
         String url = liveInfo.getUrl();
         // twitch平台
         liveInfo.setPlatform("t");
-        liveInfo.setLiveStatus(LiveInfo.LIVE_STATUS_PREVIEW);
         // 补全信息
         if(StringUtils.isBlank(liveInfo.getLiveDate())) {
             liveInfo.setLiveDate(DateUtil.getNowDate() + "_t");
@@ -197,11 +196,12 @@ public class LiveInfoService {
         Long titleCount = getTitleCount(liveInfo);
         if (titleCount == 0){
             insertLiveInfo(liveInfo);
+            return "新增成功";
         }
         if(downLiveChat){
             downloadChatData(liveInfo);
         }
-        return null;
+        return "日期已存在";
     }
 
     private Long getUrlCount(String url, LiveInfo liveInfo) {

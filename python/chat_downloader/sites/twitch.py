@@ -107,6 +107,11 @@ class TwitchChatDownloader(BaseChatDownloader):
 
     _NAME = 'twitch.tv'
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.proxy = kwargs["proxy"]
+
     _TESTS = [
         # Live
         {
@@ -210,7 +215,8 @@ class TwitchChatDownloader(BaseChatDownloader):
                         '''
     }
 
-    _CLIENT_ID = 'kimne78kx3ncx6brgo4mv6wki5h1ko'  # public client id
+    # _CLIENT_ID = 'kimne78kx3ncx6brgo4mv6wki5h1ko'  # public client id
+    _CLIENT_ID = 'kd1unb4b3q4t58fwlpcbzcbnm76a8fp'  # public client id
 
     _GQL_API_URL = 'https://gql.twitch.tv/gql'
 
@@ -463,7 +469,6 @@ class TwitchChatDownloader(BaseChatDownloader):
     _KNOWN_COMMENT_KEYS.update(BaseChatDownloader.get_mapped_keys({
         **_COMMENT_REMAPPING, **_MESSAGE_PARAM_REMAPPING
     }))
-    # print('_KNOWN_COMMENT_KEYS',_KNOWN_COMMENT_KEYS)
 
     _IRC_REMAPPING = {
         # CLEARCHAT
@@ -794,18 +799,33 @@ class TwitchChatDownloader(BaseChatDownloader):
             _MESSAGE_GROUPS[_message_group] = []
         _MESSAGE_GROUPS[_message_group] += list(_value.values())
 
-    _SUBSCRIBER_BADGE_INFO = {}  # local cache for subscriber badge info
-    _SUBSCRIBER_BADGE_URL = 'https://badges.twitch.tv/v1/badges/channels/{}/display'
+    def _update_badge_info(self, channel):
+        query = [{
+            'operationName': 'ChatList_Badges',
+            'variables': {
+                'channelLogin': channel
+            }
+        }]
+        gquery = [{
+            'operationName': 'GlobalBadges',
+        }]
+        data = multi_get(self._download_gql(query), 0, 'data') or {}
+        data.update(multi_get(self._download_gql(gquery), 0, 'data') or {})
 
-    def _update_subscriber_badge_info(self, channel_id):
-        # print('updated sub badges')
-        url = self._SUBSCRIBER_BADGE_URL.format(channel_id)
+        badges = data.get('badges') or []
+        user = multi_get(data, 'user', 'broadcastBadges') or []
+        for badge in badges + user:
+            setID, version, channelID = base64.b64decode(
+                badge['id']).decode().strip().split(';')
 
-        # only get if not in dict
-        channel_id = int(channel_id)  # ensure integer
-        if channel_id not in self._SUBSCRIBER_BADGE_INFO:
-            self._SUBSCRIBER_BADGE_INFO[channel_id] = self._session_get_json(
-                url).get('badge_sets') or {}
+            if channelID:
+                if channelID not in self._SUBSCRIBER_BADGE_INFO:
+                    self._SUBSCRIBER_BADGE_INFO[channelID] = {}
+
+                self._SUBSCRIBER_BADGE_INFO[channelID][(
+                    setID, version)] = badge
+            else:
+                self._BADGE_INFO[(setID, version)] = badge
 
     @staticmethod
     def _parse_item(item, offset, channel_id=None):
@@ -821,8 +841,14 @@ class TwitchChatDownloader(BaseChatDownloader):
 
         badges = info.pop('author_badges', None)
         if badges:
-            info['author']['badges'] = list(map(lambda x: TwitchChatDownloader._parse_badge_info(
-                x.get('setID'), x.get('version'), channel_id), badges))
+            info['author']['badges'] = [
+                TwitchChatDownloader._parse_badge_info(
+                    x.get('setID'), x.get('version'), channel_id)
+                for x in badges
+                if x.get('setID') and x.get('version')
+            ]
+            if not info['author']['badges']:
+                del info['author']['badges']
 
         BaseChatDownloader._move_to_dict(info, 'author')
 
@@ -836,19 +862,19 @@ class TwitchChatDownloader(BaseChatDownloader):
         return info
 
     _OPERATION_HASHES = {
-        'StreamMetadata': '1c719a40e481453e5c48d9bb585d971b8b372f8ebb105b17076722264dfa5b3e',
-        'BrowsePage_Popular': 'c3322a9df3121f437182beb5a75c2a8db9a1e27fa57701ffcae70e681f502557',
-        'ChannelVideoShelvesQuery': 'fb663273aa958ebe2f58d5fcb3aacc112d67ebfd7f414b095c5d1498d21aad92',
-        'ClipsCards__User': 'b73ad2bfaecfd30a9e6c28fada15bd97032c83ec77a0440766a56fe0bd632777',
-        'VideoMetadata': '226edb3e692509f727fd56821f5653c05740242c82b0388883e0c0e75dcbf687',
-        'FilterableVideoTower_Videos': 'a937f1d22e269e39a03b509f65a7490f9fc247d7f83d6ac1421523e3b68042cb',
-
-        'VideoCommentsByOffsetOrCursor': 'b70a3591ff0f4e0313d126c6a1502d79a1c02baebb288227c582044aa76adf6a',
-
+            'ChatList_Badges': '838a7e0b47c09cac05f93ff081a9ff4f876b68f7624f0fc465fe30031e372fc2',
+            'GlobalBadges': '9db27e18d61ee393ccfdec8c7d90f14f9a11266298c2e5eb808550b77d7bcdf6',
+            'StreamMetadata': 'b57f9b910f8cd1a4659d894fe7550ccc81ec9052c01e438b290fd66a040b9b93',
+            'BrowsePage_Popular': 'fb60a7f9b2fe8f9c9a080f41585bd4564bea9d3030f4d7cb8ab7f9e99b1cee67',
+            'ChannelVideoShelvesQuery': 'a30af24ef449ab2e9be4a9c187ef14d294e4ec3041420d219b4c60fc9de7f27c',
+            'ClipsCards__User': '90c33f5e6465122fba8f9371e2a97076f9ed06c6fed3788d002ab9eba8f91d88',
+            'VideoMetadata': '45111672eea2e507f8ba44d101a61862f9c56b11dee09a15634cb75cb9b9084d',
+            'FilterableVideoTower_Videos': '67004f7881e65c297936f32c75246470629557a393788fb5a69d6d9a25a8fd5f',
+            'VideoCommentsByOffsetOrCursor': 'b70a3591ff0f4e0313d126c6a1502d79a1c02baebb288227c582044aa76adf6a',
         # Not used yet
         # 'CollectionSideBar': '27111f1b382effad0b6def325caef1909c733fe6a4fbabf54f8d491ef2cf2f14',
         # 'ChannelCollectionsContent': '07e3691a1bad77a36aba590c351180439a40baefc1c275356f40fc7082419a84',
-        # 'ComscoreStreamingQuery': 'e1edae8122517d013405f237ffcc124515dc6ded82480a88daef69c83b53ac01',
+        'ComscoreStreamingQuery': 'e1edae8122517d013405f237ffcc124515dc6ded82480a88daef69c83b53ac01',
         # 'VideoPreviewOverlay': '3006e77e51b128d838fa4e835723ca4dc9a05c5efd4466c1085215c6e437e65c',
     }
 
@@ -891,6 +917,7 @@ class TwitchChatDownloader(BaseChatDownloader):
         'language': 'language',
         'curator': r('curator', _parse_user),
         'game': r('game', _parse_game),
+        'language': 'language',
         'broadcaster': r('broadcaster', _parse_user),
 
         'thumbnailURL': 'thumbnail_url',
@@ -1033,7 +1060,6 @@ class TwitchChatDownloader(BaseChatDownloader):
         }]
         edges = self._download_gql(
             query)[0]['data']['user']['videoShelves']['edges']
-        # print(len(edges))
         return edges
 
     _LIVESTREAM_REMAPPING = {
@@ -1061,7 +1087,6 @@ class TwitchChatDownloader(BaseChatDownloader):
             num_to_get = max(min(remaining_count, 30), 0)
             if num_to_get <= 0:
                 break
-            # print('num_to_get', num_to_get)
 
             query = [{
                 'operationName': 'BrowsePage_Popular',
@@ -1249,10 +1274,8 @@ class TwitchChatDownloader(BaseChatDownloader):
         title = video.get('title')
         duration = video.get('lengthSeconds')
 
-        # print('duration', duration)
-
-        channel_id = multi_get(video, 'owner', 'id')
-        self._update_subscriber_badge_info(channel_id)
+        channel_name = multi_get(video, 'owner', 'login')
+        self._update_badge_info(channel_name)
 
         return Chat(
             self._get_chat_messages_by_vod_id(
@@ -1272,7 +1295,7 @@ class TwitchChatDownloader(BaseChatDownloader):
         max_attempts = params.get('max_attempts')
 
         query = {
-            'query': '{ clip(slug: "%s") { broadcaster { id } video { id createdAt } createdAt durationSeconds videoOffsetSeconds title url slug } }' % clip_id,
+            'query': '{ clip(slug: "%s") { broadcaster { id login } video { id createdAt } createdAt durationSeconds videoOffsetSeconds title url slug } }' % clip_id,
         }
 
         for attempt_number in attempts(max_attempts):
@@ -1293,8 +1316,8 @@ class TwitchChatDownloader(BaseChatDownloader):
         duration = clip.get('durationSeconds')
         title = f"{clip.get('title')} ({clip_id})"
 
-        channel_id = multi_get(clip, 'broadcaster', 'id')
-        self._update_subscriber_badge_info(channel_id)
+        channel_name = multi_get(clip, 'broadcaster', 'login')
+        self._update_badge_info(channel_name)
 
         return Chat(
             self._get_chat_messages_by_vod_id(
@@ -1313,11 +1336,8 @@ class TwitchChatDownloader(BaseChatDownloader):
     # 2. Action type
     # 3. Message
 
-    # A full list can be found here: https://badges.twitch.tv/v1/badges/global/display
-
-    _BADGE_KEYS = ('title', 'description', 'image_url_1x',
-                   'image_url_2x', 'image_url_4x', 'click_action', 'click_url')
-    _BADGE_ID_REGEX = r'v1/([^/]+)/'
+    _BADGE_KEYS = ('title', 'image1x', 'image2x',
+                   'image4x', 'clickAction', 'clickURL')
 
     @staticmethod
     def _parse_badge_info(name, version, channel_id=None):
@@ -1327,33 +1347,25 @@ class TwitchChatDownloader(BaseChatDownloader):
         }
 
         # prioritise custom emotes (e.g. subscriber and bits)
-
         new_badge_info = None
         if channel_id is not None:
-            new_badge_info = multi_get(TwitchChatDownloader._SUBSCRIBER_BADGE_INFO, int(
-                channel_id), name, 'versions', version)
+            new_badge_info = multi_get(
+                TwitchChatDownloader._SUBSCRIBER_BADGE_INFO, str(channel_id), (name, version))
 
         if not new_badge_info:
             new_badge_info = multi_get(
-                TwitchChatDownloader._BADGE_INFO, name, 'versions', version)
+                TwitchChatDownloader._BADGE_INFO, (name, version))
 
         if new_badge_info:
             for key in TwitchChatDownloader._BADGE_KEYS:
                 new_badge[key] = new_badge_info.get(key)
 
             image_urls = [
-                (new_badge.pop(f'image_url_{i}x', ''), i * 18) for i in (1, 2, 4)]
-            if image_urls:
-                new_badge['icons'] = []
+                (new_badge.pop(f'image{i}x', ''), i * 18) for i in (1, 2, 4)]
 
+            new_badge['icons'] = []
             for image_url, size in image_urls:
                 new_badge['icons'].append(Image(image_url, size, size).json())
-
-            if image_urls:
-                badge_id = re.search(
-                    TwitchChatDownloader._BADGE_ID_REGEX, image_urls[0][0] or '')
-                if badge_id:
-                    new_badge['id'] = badge_id.group(1)
 
         return new_badge
 
@@ -1660,8 +1672,20 @@ class TwitchChatDownloader(BaseChatDownloader):
 
         query = [{
             'operationName': 'StreamMetadata',
-            'variables': {'channelLogin': stream_id.lower()}
-        }]
+            'variables': {
+                'channelLogin': stream_id.lower(),
+                'includeIsDJ': True
+            }
+        },{
+            'operationName': 'ComscoreStreamingQuery',
+            'variables': {
+                'channel': stream_id.lower(),
+                'clipSlug': '',
+                'isClip': False,
+                'isLive': True,
+                'isVodOrCollection': False,
+                'vodID': '',
+        }}]
 
         for attempt_number in attempts(max_attempts):
             try:
@@ -1678,7 +1702,7 @@ class TwitchChatDownloader(BaseChatDownloader):
         title = multi_get(stream_info, 'lastBroadcast',
                           'title') if is_live else stream_id
 
-        self._update_subscriber_badge_info(channel_id)
+        self._update_badge_info(stream_id)
 
         return Chat(
             self._get_chat_messages_by_stream_id(

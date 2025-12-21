@@ -5,15 +5,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.*;
 
-/* //获取video url列表，需要先引入jQuery
-var arr = [];
-$("#contents").each(function(){
-    $(this).find("ytd-rich-grid-media").each(function(){
-        var a = $(this).find("#video-title-link");
-        arr.push("https://www.youtube.com" + a.attr("href").split("&")[0]);
-    })
-})
-console.log(arr.join("\n"));
+/* //获取video url列表
+var urls = [];
+document.querySelectorAll('a#video-title-link').forEach(a => urls.push('https://www.youtube.com' + a.getAttribute('href').split("&")[0]));
+console.log(urls.join(","));
 */
 
 public class BatchUpdateVideoInfo {
@@ -22,17 +17,19 @@ public class BatchUpdateVideoInfo {
 
     public static void main(String[] args) throws Exception{
 
-        List<String> urlList = getUrlList("@Chenyifaer288", "2023-12-30", null);
+        List<String> urlList = getUrlList("@chenyifaer", "", null);
         int count = urlList.size();
         logger.info("获取到待更新url数量：" + count);
-        CurlUtil.proxy = "http://127.0.0.1:7890";
+//        CurlUtil.proxy = "http://127.0.0.1:7890";
+        CurlUtil.curlLog = "/Users/li/IdeaProjects/yt-live-chat-analyse/log/";
         int i = 0;
         for (String url : urlList){
             Map<String, String> liveInfo = CurlUtil.getLiveInfo(url);
             updateVideoInfo(url, liveInfo);
             i ++;
             logger.info("{}/{} 已更新 {} {}", i, count, liveInfo.get("publishDate"), liveInfo.get("title"));
-            Thread.sleep(1000 + (int)(Math.random() * 2 * 1000));
+            Thread.sleep(3000 + (int)(Math.random() * 3 * 1000));
+//            return;
         }
     }
 
@@ -90,6 +87,7 @@ public class BatchUpdateVideoInfo {
             sql += "and publish_date >= ? ";
             params.add(start);
         }
+        sql += "and publish_date is null ";
         if(StringUtils.isNotBlank(end)){
             sql += "and publish_date <= ? ";
             params.add(end);
