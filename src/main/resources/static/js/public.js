@@ -1,6 +1,6 @@
 
-const defaultSchema = "2025";
-const schemaList = ["2025", "2024", "2023", "2022", "2021", "et"];
+const defaultSchema = "2026";
+const schemaList = ["2026", "2025", "2024", "2023", "2022", "2021", "et"];
 let liveInfoDict = {};
 const DB_NAME = "emoteDB";
 const DB_VERSION = 1;
