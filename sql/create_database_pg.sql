@@ -64,6 +64,7 @@ comment on column author_info.blocked is '是否删除';
 alter table author_info owner to root;
 
 create unique index idx_17094_primary on author_info (id);
+create unique index uq_idx_author_id on author_info (author_id);
 
 create table blocked_keywords
 (
